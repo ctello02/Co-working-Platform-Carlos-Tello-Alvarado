@@ -38,15 +38,6 @@ VITE_API_ENDPOINT=http://localhost:3000/api/v1.0.0/
 VITE_API_DOMAIN=http://localhost:3000/
 ```
 
-###  ☝️ .env file in the `client` folder
-
-You should create a .env file in the `client` folder.
-
-```
-VITE_API_ENDPOINT=http://localhost:3000/api/v1.0.0/
-VITE_API_ENDPOINTHOST=http://localhost:3000/
-```
-
 ### 🛠️ How?
 
 - `cd server`
@@ -57,15 +48,11 @@ VITE_API_ENDPOINTHOST=http://localhost:3000/
 - `yarn install`
 - `yarn dev`
 
-- `cd client`
-- `yarn install`
-- `yarn dev`
-
 #### How can run the server and UI together
 
 `yarn start`
 
-That's all. It will run these scripts => `(cd server; yarn dev;) & (cd admin; yarn dev) & (cd client; yarn dev)` parallelly.
+That's all. It will run these scripts => `(cd server; yarn dev;) & (cd admin; yarn dev)` parallelly.
 
 ### How can I support?
 
