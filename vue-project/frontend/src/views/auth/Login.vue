@@ -46,8 +46,9 @@
 </template>
 
 <script>
-import axios from 'axios'
 import { useUserStore } from '@/store/userStore'
+import { authService } from '@/services/authService';
+
 
 export default {
   data: () => ({
@@ -66,28 +67,21 @@ export default {
   methods: {
     async submit() {
       if (this.$refs.form.validate()) {
-        try {
-          const response = await axios.post('http://localhost:3000/api/auth/login', {
-            email: this.email,
-            password: this.password
-          })
-
-          const _id = response.data._id
-          const token = response.data.token
-          const isAdmin = response.data.isAdmin          
-
-          const userStore = useUserStore();
-          userStore.setId(_id);   
-          userStore.setToken(token);   
-          userStore.setIsAdmin(isAdmin);
-
-          this.$router.push('/')
-
-        } catch (err) {
-          const message = err.response?.data?.message || 'Error occurred during login'
-          console.log(message);
-
-        }
+          authService.login(this.email, this.password)              
+            .then(res => {
+              console.log(res.data);
+              const _id = res.data._id
+              const token = res.data.token
+              const isAdmin = res.data.isAdmin          
+              const userStore = useUserStore();
+              userStore.setId(_id);   
+              userStore.setToken(token);   
+              userStore.setIsAdmin(isAdmin);
+              this.$router.push('/')
+            })
+            .catch(error => {
+                console.log(error);
+            });
       }
     },
     clear() {

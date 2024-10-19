@@ -5,12 +5,12 @@ export const useUserStore = defineStore({
     state: () => ({
         _id: localStorage.getItem("_id") || null,
         token: localStorage.getItem("token") || null,
-        // Comprobación precisa de 'true', 'false', o null
         isAdmin: localStorage.getItem("isAdmin") === 'true'
             ? true
             : localStorage.getItem("isAdmin") === 'false'
                 ? false
                 : null,
+        selectedUser: null, // Estado para el usuario seleccionado
     }),
     getters: {
         getId() {
@@ -22,6 +22,9 @@ export const useUserStore = defineStore({
         getIsAdmin() {
             return this.isAdmin;
         },
+        getSelectedUser() {
+            return this.selectedUser;
+        }
     },
     actions: {
         setId(id) {
@@ -36,9 +39,16 @@ export const useUserStore = defineStore({
             this.isAdmin = isAdmin;
             localStorage.setItem('isAdmin', isAdmin); // Sincronizar con localStorage
         },
+        setSelectedUser(user) {
+            this.selectedUser = user;
+        },
+        clearSelectedUser() {
+            this.selectedUser = null;
+        },
         clearUser() {
             this.token = null;
             this.isAdmin = null;
+            this.selectedUser = null;
             localStorage.removeItem('token');
             localStorage.removeItem('isAdmin');
             localStorage.clear();

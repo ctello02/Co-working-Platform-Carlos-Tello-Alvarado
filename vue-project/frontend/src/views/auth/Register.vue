@@ -169,7 +169,8 @@
 </template>
 
 <script>
-import axios from 'axios';
+import { authService } from '@/services/authService';
+
 
 export default {
   data: () => ({
@@ -215,23 +216,16 @@ export default {
   methods: {
     async submit() {
       if (this.$refs.form.validate()) {
-        try {
-          const response = await axios.post('http://localhost:3000/api/auth/signup', {
-            name: this.name,
-            email: this.email,
-            password: this.password,
-            phone: this.phone,
-            address: this.address,
-            isCompany: this.isCompany,
-            cif: this.cif,
-          });
-
-          this.$router.push("/login");
-          console.log("Registrado con éxito");
-        } catch (err) {
-          const message = err.response?.data?.message || 'Ocurrió un error durante el registro';
-          console.log(message);
-        }
+          authService.signUp(this.name, this.email, this.password, this.phone, this.address, this.isCompany, this.cif)
+            .then(res => {
+              console.log(res.data);
+              this.$router.push("/login");
+            })
+            .catch(error => {
+              console.log(error);
+            });
+      }else{
+        console.log("Error en validación");
       }
     },
     clear() {

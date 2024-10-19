@@ -57,4 +57,27 @@ router.put("/users/updateUser", verifyToken, async (req, res) => {
     }
 });
 
+router.delete("/users/deleteUser/:id", verifyToken, async (req, res) => {
+    try {
+        let user = await User.findOne({ _id: req.params.id });
+        if (user) {
+            await User.deleteOne({ _id: req.params.id });
+            res.json({
+                success: true,
+                message: "User deleted successfully"
+            });
+        } else {
+            res.status(404).json({
+                success: false,
+                message: "User not found"
+            });
+        }
+    } catch (err) {
+        res.status(500).json({
+            success: false,
+            message: err.message
+        });
+    }
+});
+
 module.exports = router;

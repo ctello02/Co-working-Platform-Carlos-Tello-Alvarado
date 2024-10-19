@@ -25,6 +25,13 @@ const routes = [
         component: () => import("../views/auth/Profile.vue")
     },
     {
+        path: "/editProfileInfo",
+        name: "editProfileInfo",
+        component: () => import("../views/auth/EditProfileInfo.vue"),
+        meta: { adminOnly: true }, // Solo accesible para usuarios administradores
+        props: true
+    },
+    {
         path: "/forgot_password",
         name: "forgot_password",
         component: () => import("../views/auth/ForgotPassword.vue"),
@@ -39,8 +46,19 @@ const routes = [
     {
         path: "/users",
         name: "users",
-        component: () => import("../views/Users.vue"),
+        component: () => import("../views/user/Users.vue"),
         meta: { adminOnly: true } // Solo accesible para usuarios administradores
+    },
+    {
+        path: "/userInfo",
+        name: "userInfo",
+        component: () => import("../views/user/UserInfo.vue"),
+        meta: { adminOnly: true }, // Solo accesible para usuarios administradores
+    },
+    {
+        path: "/editUserInfo",
+        name: "editUserInfo",
+        component: () => import("../views/user/EditUserInfo.vue"),
     }
 ];
 
