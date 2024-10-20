@@ -8,8 +8,11 @@
 
     <v-navigation-drawer permanent :rail="rail" v-model="drawer" app>
         <v-list>
-            <v-list-item prepend-icon="mdi-home-outline" @click="toHome()">
-                Home
+            <v-list-item prepend-icon="mdi-home-outline" @click="toHome">
+                Vista principal
+            </v-list-item>
+            <v-list-item prepend-icon="mdi-table-chair" @click="toSpaces">
+                Espacios
             </v-list-item>
             <!-- Mostramos el link a "Usuarios" solo si el usuario es admin -->
             <v-list-item v-if="userStore.getIsAdmin" prepend-icon="mdi-account-group-outline" @click="toUsers">
@@ -37,6 +40,9 @@ export default {
     methods: {
         toHome() {
             this.$router.push('/')
+        },
+        toSpaces() {
+            this.$router.push('/spaces')
         },
         toUsers() {
             this.$router.push('/users')

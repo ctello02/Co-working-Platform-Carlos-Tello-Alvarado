@@ -1,10 +1,12 @@
 <template>
   <v-container fluid>
-    <v-row>
-      <v-col cols="12">
-        <h1>Usuarios</h1>
-        <!-- Tabla de Usuarios dentro de una tarjeta para mejor manejo del ancho -->
-        <v-card>
+    <v-col>
+      <v-row cols="12">
+        <span class="text-h4">Usuarios</span>
+      </v-row>
+
+      <v-row class="py-5">
+        <v-card style="width: 100%;">
           <v-table class="full-width-table">
             <thead>
               <tr>
@@ -21,7 +23,6 @@
                 <td>{{ user.name }}</td>
                 <td>{{ user.email }}</td>
                 <td>{{ user.isAdmin ? 'Si' : 'No' }}</td>
-
                 <td>
                   <v-form style="display: flex; gap: 10px;">
                     <v-btn @click="openUserInfo(user)" icon="mdi-account-search-outline" variant="text">
@@ -34,8 +35,9 @@
             </tbody>
           </v-table>
         </v-card>
-      </v-col>
-    </v-row>
+      </v-row>
+      
+    </v-col>
 
     <!-- Modal de eliminación -->
     <v-dialog v-model="deleteModal" max-width="600px">
@@ -111,7 +113,7 @@ export default {
     getUsers() {
       userService.getUsers()
         .then(res => {
-          console.log(res.data);
+          //console.log(res.data);
           this.users = res.data.users.filter(user => user._id !== this.currentUserId);
         })
         .catch(error => {
@@ -121,7 +123,7 @@ export default {
     deleteUser() {
       userService.deleteUser(this.selectedUser._id)
         .then(res => {
-          console.log(res.data);
+          //console.log(res.data);
           this.deleteModal = false;
           this.getUsers();
         })

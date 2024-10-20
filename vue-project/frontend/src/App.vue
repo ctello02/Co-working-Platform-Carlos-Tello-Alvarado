@@ -1,8 +1,8 @@
 <template>
   <v-app>
     <NavBar v-if="isLogged"/>
-    <v-main>
-      <v-container>
+    <v-main class="main-background">
+      <v-container fluid class="px-10">
         <RouterView />
       </v-container>
     </v-main>
@@ -20,12 +20,15 @@ export default {
   },
   computed: {
     isLogged() {
-        if (this.$route.name === 'login' || this.$route.name === 'register' || this.$route.name === 'forgot_password' || this.$route.name === 'reset') {
-          return false;
-        } else {
-          return true;
-        }
+        return !['login', 'register', 'forgot_password', 'reset'].includes(this.$route.name);
     } 
   }
 }
 </script>
+
+<style scoped>
+.main-background {
+  background-color: #f8f9f9; 
+  min-height: 100vh; 
+}
+</style>

@@ -11,13 +11,13 @@ const routes = [
         path: "/login",
         name: "login",
         component: () => import("../views/auth/Login.vue"),
-        meta: { guestOnly: true } // Solo accesible para usuarios no autenticados
+        meta: { notLoggedUsers: true } // Solo accesible para usuarios no autenticados
     },
     {
         path: "/register",
         name: "register",
         component: () => import("../views/auth/Register.vue"),
-        meta: { guestOnly: true } // Solo accesible para usuarios no autenticados
+        meta: { notLoggedUsers: true } // Solo accesible para usuarios no autenticados
     },
     {
         path: "/profile",
@@ -28,20 +28,18 @@ const routes = [
         path: "/editProfileInfo",
         name: "editProfileInfo",
         component: () => import("../views/auth/EditProfileInfo.vue"),
-        meta: { adminOnly: true }, // Solo accesible para usuarios administradores
-        props: true
     },
     {
         path: "/forgot_password",
         name: "forgot_password",
         component: () => import("../views/auth/ForgotPassword.vue"),
-        meta: { guestOnly: true } // Solo accesible para usuarios no autenticados
+        meta: { notLoggedUsers: true } // Solo accesible para usuarios no autenticados
     },
     {
         path: "/reset",
         name: "reset",
         component: () => import("../views/auth/ResetPassword.vue"),
-        meta: { guestOnly: true } // Solo accesible para usuarios no autenticados
+        meta: { notLoggedUsers: true } // Solo accesible para usuarios no autenticados
     },
     {
         path: "/users",
@@ -59,7 +57,18 @@ const routes = [
         path: "/editUserInfo",
         name: "editUserInfo",
         component: () => import("../views/user/EditUserInfo.vue"),
-    }
+        meta: { adminOnly: true }, // Solo accesible para usuarios administradores
+    },
+    {
+        path: "/spaces",
+        name: "spaces",
+        component: () => import("../views/spaces/Spaces.vue"),
+    },
+    {
+        path: "/createSpace",
+        name: "createSpace",
+        component: () => import("../views/spaces/CreateSpace.vue"),
+    },
 ];
 
 const router = createRouter({
@@ -74,7 +83,7 @@ router.beforeEach((to, from, next) => {
     const isAdmin = userStore.getIsAdmin; // Obtén el estado de admin desde el store
 
     // Verificar si la ruta es solo para invitados
-    if (to.matched.some(record => record.meta.guestOnly)) {
+    if (to.matched.some(record => record.meta.notLoggedUsers)) {
         if (token) {
             // Si el usuario está autenticado, redirige a la página de inicio
             next({ name: "home" });

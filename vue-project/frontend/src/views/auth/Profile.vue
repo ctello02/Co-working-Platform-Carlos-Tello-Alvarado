@@ -1,8 +1,8 @@
 <template>
   <v-container class="pa-10 container">
-    <v-card outlined>
-      <v-card-title>
-        <h2 class="title">Perfil</h2>
+    <v-card class="pa-3" outlined>
+      <v-card-title >
+        <span class="text-h4">Perfil</span>
       </v-card-title>
 
       <v-card-text v-if="user">
@@ -126,7 +126,6 @@ export default {
 
 <style scoped>
 .title {
-  font-weight: bold;
   margin-bottom: 20px;
 }
 

@@ -228,9 +228,6 @@ export default {
         console.log("Error en validación");
       }
     },
-    clear() {
-      this.$refs.form.reset();
-    }
   }
 }
 </script>

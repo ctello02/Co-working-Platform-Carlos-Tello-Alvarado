@@ -1,8 +1,8 @@
 <template>
     <v-container class="pa-10 container">
-        <v-card>
-            <v-card-title>
-                <span class="text-h5">Información del usuario</span>
+        <v-card class="pa-3" outlined>
+            <v-card-title >
+                <span class="text-h4">Información del usuario</span>
             </v-card-title>
 
             <v-card-text>
@@ -157,6 +157,11 @@ export default {
 .v-list-item-subtitle{
   margin-bottom: 5px;
   padding-bottom: 3px;
+}
+
+.title {
+  font-weight: bold;
+  margin-bottom: 20px;
 }
 
 </style>

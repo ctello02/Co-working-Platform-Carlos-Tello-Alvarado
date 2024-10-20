@@ -1,9 +1,9 @@
 <template>
   <v-container class="pa-10 container">
     <!-- Modal de edición -->
-      <v-card>
-        <v-card-title>
-          <span class="text-h5">Editar usuario</span>
+      <v-card class="pa-3" outlined>
+        <v-card-title >
+          <span class="text-h4">Editar usuario</span>
         </v-card-title>
 
         <v-card-text v-if="user">

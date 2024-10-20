@@ -69,14 +69,18 @@ export default {
       if (this.$refs.form.validate()) {
           authService.login(this.email, this.password)              
             .then(res => {
-              console.log(res.data);
-              const _id = res.data._id
-              const token = res.data.token
-              const isAdmin = res.data.isAdmin          
+              console.log(res.data.user);
               const userStore = useUserStore();
-              userStore.setId(_id);   
-              userStore.setToken(token);   
-              userStore.setIsAdmin(isAdmin);
+
+              const _id = res.data.user._id;
+              userStore.setId(_id);
+              
+              const token = res.data.token;
+              userStore.setToken(token); 
+
+              const isAdmin = res.data.user.isAdmin;
+              userStore.setIsAdmin(isAdmin);         
+
               this.$router.push('/')
             })
             .catch(error => {

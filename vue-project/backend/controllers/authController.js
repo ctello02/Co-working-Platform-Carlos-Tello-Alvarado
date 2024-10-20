@@ -27,7 +27,7 @@ exports.login = async (req, res) => {
     try {
         const user = await User.findOne({ email: req.body.email });
         if (user && user.comparePassword(req.body.password)) {
-            const token = jwt.sign(foundUser.toJSON(), process.env.SECRET, { expiresIn: '1w' });
+            const token = jwt.sign(user.toJSON(), process.env.SECRET, { expiresIn: '1w' });
             res.json({ token, user });
         } else {
             res.status(401).json({ message: 'Authentication failed' });
