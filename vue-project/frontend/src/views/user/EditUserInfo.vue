@@ -6,21 +6,21 @@
                 <span class="text-h5">Editar usuario</span>
             </v-card-title>
 
-            <v-card-text v-if="user">
+            <v-card-text v-if="newUser">
                 <v-form>
-                    <v-text-field v-model="user.name" label="Nombre" required></v-text-field>
-                    <v-text-field v-model="user.email" label="E-mail" required></v-text-field>
-                    <v-text-field v-model="user.phone" label="Teléfono" required></v-text-field>
-                    <v-text-field v-model="user.address" label="Dirección" required></v-text-field>
+                    <v-text-field v-model="newUser.name" label="Nombre" required></v-text-field>
+                    <v-text-field v-model="newUser.email" label="E-mail" required></v-text-field>
+                    <v-text-field v-model="newUser.phone" label="Teléfono" required></v-text-field>
+                    <v-text-field v-model="newUser.address" label="Dirección" required></v-text-field>
 
-                    <v-radio-group v-model="user.isCompany" label="¿Es empresa?">
+                    <v-radio-group v-model="newUser.isCompany" label="¿Es empresa?">
                         <v-radio label="Si" :value="true"></v-radio>
                         <v-radio label="No" :value="false"></v-radio>
                     </v-radio-group>
 
-                    <v-text-field v-if="user.isCompany" v-model="user.cif" label="CIF" required></v-text-field>
+                    <v-text-field v-if="newUser.isCompany" v-model="newUser.cif" label="CIF" required></v-text-field>
 
-                    <v-radio-group v-model="user.isAdmin" label="Usuario administrador">
+                    <v-radio-group v-model="newUser.isAdmin" label="Usuario administrador">
                         <v-radio label="Si" :value="true"></v-radio>
                         <v-radio label="No" :value="false"></v-radio>
                     </v-radio-group>
@@ -33,7 +33,6 @@
                 </v-fade-transition>
             </v-card-text>
 
-
             <v-card-actions>
                 <v-spacer></v-spacer>
                 <v-btn color="primary" @click="routerBack">Volver</v-btn>
@@ -41,7 +40,7 @@
             </v-card-actions>
         </v-card>
     </v-container>
-</template>	
+</template>
 
 <script>
 import { useUserStore } from '@/store/userStore';
@@ -52,32 +51,33 @@ export default {
         return {
             userStore: null,
             user: null,
+            newUser: null,
             success: false,
         };
     },
     mounted() {
         this.userStore = useUserStore();
-        this.user = this.userStore.getSelectedUser;        
+        this.user = this.userStore.getSelectedUser; 
+        this.newUser = { ...this.user };    // Hacer una copia del objeto user
     },
     methods: {
         routerBack() {
             this.$router.push('/userInfo');
         },
         updateUser() {
-            if (this.user.isCompany == false) {
-                this.user.cif = null;
+            if (this.newUser.isCompany === false) {
+                this.newUser.cif = null;
             }
 
-            userService.updateUser(this.user)
+            userService.updateUser(this.newUser)
                 .then(res => {
                     console.log(res.data);
-                    this.userStore.setSelectedUser(this.user);
-                    this.user = this.userStore.getSelectedUser;
+                    this.userStore.setSelectedUser(this.newUser);
                     // Mostrar la alerta de éxito y ocultarla después de 3 segundos
                     this.success = true;
                     setTimeout(() => {
                         this.success = false;
-                    }, 3000); // 3 segundos
+                    }, 3000);
                 })
                 .catch(error => {
                     console.log(error);
@@ -85,7 +85,6 @@ export default {
         },
     },
 }
-
 </script>
 
 <style scoped>
