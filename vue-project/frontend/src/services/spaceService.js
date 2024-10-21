@@ -17,4 +17,8 @@ export const spaceService = {
         });
     },
 
+    deleteSpace(id) {
+        return axiosInstance.delete(`${API_URL}/deleteSpace/${id}`, { requiresToken: true });
+    },
+
 };

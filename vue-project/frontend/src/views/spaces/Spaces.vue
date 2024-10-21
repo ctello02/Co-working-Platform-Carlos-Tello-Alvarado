@@ -41,8 +41,14 @@
 
                                 <td>
                                     <v-form style="display: flex; gap: 10px;">
-                                        <v-btn icon="mdi-magnify" variant="text"></v-btn>
-                                        <v-btn v-if="userStore.getIsAdmin" color="error" icon="mdi-trash-can-outline" variant="text"></v-btn>
+                                        <v-btn icon="mdi-magnify" variant="text"></v-btn> 
+                                        <v-btn 
+                                        v-if="userStore.getIsAdmin" 
+                                        color="error" 
+                                        icon="mdi-trash-can-outline" 
+                                        variant="text"
+                                        @click="openDeleteModal(space)"
+                                        ></v-btn>
                                     </v-form>
                                 </td>
                             </tr>
@@ -67,13 +73,55 @@
                                 <v-card-actions v-if="userStore.getIsAdmin" class="mt-n1 mb-n4">
                                     <v-btn icon="mdi-magnify" variant="text"></v-btn>
                                     <v-spacer></v-spacer>
-                                    <v-btn v-if="userStore.getIsAdmin" color="error" icon="mdi-trash-can-outline" variant="text"></v-btn>
+                                    <v-btn 
+                                    v-if="userStore.getIsAdmin" 
+                                    color="error" 
+                                    icon="mdi-trash-can-outline" 
+                                    variant="text"
+                                    @click="openDeleteModal(space)"
+                                    ></v-btn>
                                 </v-card-actions>
                             </v-card>
                         </v-col>
                     </v-row>
                 </v-container>
             </v-row>
+
+            <!-- Modal de eliminación -->
+            <v-dialog v-model="deleteModal" max-width="600px">
+                <v-card>
+                    <v-card-title>
+                        <span class="text-h4">Borrar espacio</span>
+                    </v-card-title>
+
+                    <v-card-text>
+                        <v-col>
+                            <v-row>
+                                <h2>¿Estás seguro de que quieres borrar este espacio?</h2>
+                            </v-row>
+                            <v-row>
+                                <h3 style="color: tomato;">Esta acción no se puede deshacer.</h3>
+                            </v-row>
+                            <v-container id="info-container">
+                                <p>Nombre: <span class="text-h6">{{ selectedSpace?.name }}</span></p>
+                                <p>Descripción: <span class="text-h6">{{ selectedSpace?.description }}</span></p>
+                                <p>Imagen: <v-img
+                                    :src="selectedSpace?.imageUrl"
+                                    height="150px"
+                                    contain  
+                                    class="mb-2"
+                                ></v-img></p>
+                            </v-container>
+                        </v-col>
+                    </v-card-text>
+
+                    <v-card-actions>
+                        <v-spacer></v-spacer>
+                        <v-btn color="primary" @click="deleteModal = false">Cancelar</v-btn>
+                        <v-btn color="error" @click="deleteSpace(this.selectedSpace._id)">Borrar</v-btn>
+                    </v-card-actions>
+                </v-card>
+            </v-dialog>
         </v-col>
     </v-container>
 </template>
@@ -86,8 +134,10 @@ export default {
     data() {
         return {
             spaces: [],
+            selectedSpace: null,
             list: true,
             user: null,
+            deleteModal: false,
         };
     },
     mounted() {
@@ -113,6 +163,20 @@ export default {
         },
         openCreateSpace() {
             this.$router.push('/createSpace');
+        },
+        openDeleteModal(space){
+            this.selectedSpace = { ...space }; // Hacer una copia del usuario seleccionado
+            this.deleteModal = true;
+        },
+        deleteSpace(id){
+            spaceService.deleteSpace(id)
+            .then(res => {
+                this.getSpaces();
+                this.deleteModal = false;
+            })
+            .catch(error => {
+                console.log(error);
+            });
         }
     },
 };

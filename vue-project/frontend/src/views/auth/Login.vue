@@ -69,7 +69,6 @@ export default {
       if (this.$refs.form.validate()) {
           authService.login(this.email, this.password)              
             .then(res => {
-              console.log(res.data.user);
               const userStore = useUserStore();
 
               const _id = res.data.user._id;
