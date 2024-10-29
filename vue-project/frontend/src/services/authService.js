@@ -5,23 +5,23 @@ const API_URL = '/auth';
 export const authService = {
 
     signUp(name, email, password, phone, address, isCompany, cif) {
-        return axiosInstance.post(`${API_URL}/signup`, { name, email, password, phone, address, isCompany, cif }, { requiresToken: false });
+        return axiosInstance.post(`${API_URL}/signup`, { name, email, password, phone, address, isCompany, cif });
     },
 
     login(email, password) {
-        return axiosInstance.post(`${API_URL}/login`, { email, password }, { requiresToken: false });
+        return axiosInstance.post(`${API_URL}/login`, { email, password });
     },
 
     getUser() {
-        return axiosInstance.get(`${API_URL}/user`, { requiresToken: true });
+        return axiosInstance.get(`${API_URL}/user`);
     },
 
     forgotPassword(email) {
-        return axiosInstance.post(`${API_URL}/forgotPassword`, { email }, { requiresToken: false });
+        return axiosInstance.post(`${API_URL}/forgotPassword`, { email });
     },
 
     updatePassword(password, token) {
-        return axiosInstance.post(`${API_URL}/updatePassword`, { password, token }, { requiresToken: false });
+        return axiosInstance.post(`${API_URL}/updatePassword`, { password, token });
     },
 
 };
