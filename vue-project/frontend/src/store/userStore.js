@@ -3,7 +3,7 @@ import { defineStore } from "pinia";
 export const useUserStore = defineStore({
     id: "user",
     state: () => ({
-        _id: localStorage.getItem("_id") || null,
+        _id: localStorage.getItem("user_id") || null,
         token: localStorage.getItem("token") || null,
         isAdmin: localStorage.getItem("isAdmin") === 'true'
             ? true
@@ -29,7 +29,7 @@ export const useUserStore = defineStore({
     actions: {
         setId(id) {
             this._id = id;
-            localStorage.setItem('_id', id); // Sincronizar con localStorage
+            localStorage.setItem('user_id', id); // Sincronizar con localStorage
         },
         setToken(token) {
             this.token = token;
