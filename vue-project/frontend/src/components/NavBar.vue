@@ -18,6 +18,11 @@
             <v-list-item v-if="userStore.getIsAdmin" prepend-icon="mdi-account-group-outline" @click="toUsers">
                 Usuarios
             </v-list-item>
+            <v-list-item :prepend-icon="userStore.getIsAdmin? 'mdi-close': 'mdi-check'" @click="changeAdmin">
+                <span v-if="userStore.getIsAdmin">Quitar</span>
+                <span v-else>Hacer</span>
+                Admin
+            </v-list-item>
         </v-list>
     </v-navigation-drawer>
 </template>
@@ -49,6 +54,14 @@ export default {
         },
         toProfile() {
             this.$router.push('/profile')
+        },
+
+
+
+
+        changeAdmin() {
+            this.userStore.setIsAdmin(!this.userStore.getIsAdmin);
+            localStorage.setItem('isAdmin', this.userStore.getIsAdmin);
         }
     }
 }

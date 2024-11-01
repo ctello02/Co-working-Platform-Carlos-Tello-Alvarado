@@ -64,7 +64,7 @@
                 <v-container class="pa-0" v-else style="width: 100%;">
                     <v-row>
                         <v-col cols="12" sm="6" md="4" lg="3" v-for="space in spaces" :key="space._id">
-                            <v-card class="pa-5" outlined>
+                            <v-card v-if="userStore.getIsAdmin" class="pa-5" outlined>
                                 <v-img
                                     :src="space.imageUrl"
                                     height="150px"
@@ -89,6 +89,16 @@
                                     @click="openDeleteModal(space)"
                                     ></v-btn>
                                 </v-card-actions>
+                            </v-card>
+                            <v-card v-else @click="openSpace(space)" class="pa-5" outlined>
+                                <v-img
+                                    :src="space.imageUrl"
+                                    height="150px"
+                                    contain  
+                                    class="mb-2"
+                                ></v-img>
+                                <v-card-title>{{ space.name }}</v-card-title>
+                                <v-card-subtitle>{{ space.description }}</v-card-subtitle>
                             </v-card>
                         </v-col>
                     </v-row>
