@@ -30,7 +30,7 @@
                                 <th>#</th>
                                 <th>Nombre</th>
                                 <th>Descripción</th>
-                                <th v-if="userStore.getIsAdmin">Acciones</th>
+                                <th>Acciones</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -41,7 +41,11 @@
 
                                 <td>
                                     <v-form style="display: flex; gap: 10px;">
-                                        <v-btn icon="mdi-magnify" variant="text"></v-btn> 
+                                        <v-btn 
+                                        icon="mdi-magnify" 
+                                        variant="text"
+                                        @click="openSpace(space)"
+                                        ></v-btn> 
                                         <v-btn 
                                         v-if="userStore.getIsAdmin" 
                                         color="error" 
@@ -71,7 +75,11 @@
                                 <v-card-subtitle>{{ space.description }}</v-card-subtitle>
 
                                 <v-card-actions v-if="userStore.getIsAdmin" class="mt-n1 mb-n4">
-                                    <v-btn icon="mdi-magnify" variant="text"></v-btn>
+                                    <v-btn 
+                                    icon="mdi-magnify" 
+                                    variant="text"
+                                    @click="openSpace(space)"
+                                    ></v-btn>
                                     <v-spacer></v-spacer>
                                     <v-btn 
                                     v-if="userStore.getIsAdmin" 
@@ -128,20 +136,23 @@
 
 <script>
 import { useUserStore } from '@/store/userStore';
+import { useSpaceStore } from '@/store/spaceStore';
 import { spaceService } from '@/services/spaceService';
 
 export default {
     data() {
         return {
-            spaces: [],
-            selectedSpace: null,
-            list: true,
             user: null,
+            list: true,
+            spaces: [],
+            spaceStore: null,
+            selectedSpace: null,
             deleteModal: false,
         };
     },
     mounted() {
         this.getSpaces();
+        this.spaceStore = useSpaceStore();
     },
     computed: {
         userStore() {
@@ -160,6 +171,8 @@ export default {
         },
         openSpace(space) {
             console.log("Información del espacio: ", space.name, space.description, space.imageUrl);
+            this.spaceStore.setSelectedSpace(space); // Guardar el espacio seleccionado en el store
+            this.$router.push('/spaceInfo');    // Navegar a la nueva ruta
         },
         openCreateSpace() {
             this.$router.push('/createSpace');

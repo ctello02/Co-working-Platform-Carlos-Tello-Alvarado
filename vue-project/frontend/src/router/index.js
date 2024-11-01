@@ -68,6 +68,12 @@ const routes = [
         path: "/createSpace",
         name: "createSpace",
         component: () => import("../views/spaces/CreateSpace.vue"),
+        meta: { adminOnly: true }, // Solo accesible para usuarios administradores
+    },
+    {
+        path: "/spaceInfo",
+        name: "spaceInfo",
+        component: () => import("../views/spaces/SpaceInfo.vue"),
     },
 ];
 
