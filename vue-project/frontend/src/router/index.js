@@ -80,6 +80,11 @@ const routes = [
         name: "editSpaceInfo",
         component: () => import("../views/spaces/EditSpaceInfo.vue"),
         meta: { adminOnly: true }, // Solo accesible para usuarios administradores
+    },
+    {
+        path: "/reserves",
+        name: "reserves",
+        component: () => import("../views/reserves/Reserves.vue"),
     }
 ];
 

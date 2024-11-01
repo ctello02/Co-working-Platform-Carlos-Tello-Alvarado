@@ -18,6 +18,9 @@
             <v-list-item v-if="userStore.getIsAdmin" prepend-icon="mdi-account-group-outline" @click="toUsers">
                 Usuarios
             </v-list-item>
+            <v-list-item prepend-icon="mdi-calendar-outline" @click="toReserves">
+                Reservas
+            </v-list-item>
             <v-list-item :prepend-icon="userStore.getIsAdmin? 'mdi-close': 'mdi-check'" @click="changeAdmin">
                 <span v-if="userStore.getIsAdmin">Quitar</span>
                 <span v-else>Hacer</span>
@@ -54,6 +57,9 @@ export default {
         },
         toProfile() {
             this.$router.push('/profile')
+        },
+        toReserves() {
+            this.$router.push('/reserves')
         },
 
 
