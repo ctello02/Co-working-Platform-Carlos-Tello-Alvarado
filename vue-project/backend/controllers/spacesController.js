@@ -32,6 +32,43 @@ exports.createSpace = async (req, res) => {
     }
 };
 
+exports.updateSpace = async (req, res) => {
+    try {
+        const space = await Space.findOne({ _id: req.body.id });
+        if (!space) {
+            return res.status(404).json({ message: 'Space not found' });
+        }
+
+        // Si se subió una nueva imagen, eliminamos la anterior
+        if (req.file) {
+            const imagePath = path.join(__dirname, '..', 'uploads', path.basename(space.imageUrl));
+
+            // Eliminar la imagen anterior del sistema de archivos
+            fs.unlink(imagePath, (err) => {
+                if (err) {
+                    console.error('Error al eliminar la imagen:', err);
+                } else {
+                    console.log('Imagen eliminada correctamente:', imagePath);
+                }
+            });
+
+            // Actualizar la URL de la imagen con la nueva
+            space.imageUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
+        }
+
+        // Actualizar otros campos
+        space.name = req.body.name;
+        space.description = req.body.description;
+
+        const savedSpace = await space.save();
+        res.status(201).json(savedSpace);
+
+    } catch (error) {
+        console.error('Error al actualizar el espacio:', error);
+        res.status(500).json({ message: error.message });
+    }
+};
+
 exports.deleteSpace = async (req, res) => {
     try {
         const space = await Space.findOne({ _id: req.params.id });

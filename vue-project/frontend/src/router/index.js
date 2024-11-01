@@ -75,6 +75,12 @@ const routes = [
         name: "spaceInfo",
         component: () => import("../views/spaces/SpaceInfo.vue"),
     },
+    {
+        path: "/editSpaceInfo",
+        name: "editSpaceInfo",
+        component: () => import("../views/spaces/EditSpaceInfo.vue"),
+        meta: { adminOnly: true }, // Solo accesible para usuarios administradores
+    }
 ];
 
 const router = createRouter({

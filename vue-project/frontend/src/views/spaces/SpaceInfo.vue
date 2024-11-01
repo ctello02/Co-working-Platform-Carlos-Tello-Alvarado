@@ -116,7 +116,7 @@ export default {
             this.$router.push('/spaces');
         },
         openEditSpaceInfo() {
-            //this.$router.push('/editSpaceInfo');
+            this.$router.push('/editSpaceInfo');
         },
         deleteSpace() {
             spaceService.deleteSpace(this.space._id)

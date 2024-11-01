@@ -16,6 +16,14 @@ export const spaceService = {
         });
     },
 
+    updateSpace(formData) {
+        return axiosInstance.put(`${API_URL}/updateSpace`, formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data'
+            }
+        });
+    },
+
     deleteSpace(id) {
         return axiosInstance.delete(`${API_URL}/deleteSpace/${id}`);
     },

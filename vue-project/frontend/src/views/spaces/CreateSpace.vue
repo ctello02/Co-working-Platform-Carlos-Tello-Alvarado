@@ -22,6 +22,7 @@
             />
             <v-file-input
               v-model="spaceImage"
+              accept="image/*"
               label="Imagen"
               prepend-icon="mdi-camera"
               variant="filled"

@@ -64,7 +64,7 @@
                 <v-container class="pa-0" v-else style="width: 100%;">
                     <v-row>
                         <v-col cols="12" sm="6" md="4" lg="3" v-for="space in spaces" :key="space._id">
-                            <v-card @click="openSpace(space)" class="pa-5" outlined>
+                            <v-card class="pa-5" outlined>
                                 <v-img
                                     :src="space.imageUrl"
                                     height="150px"
