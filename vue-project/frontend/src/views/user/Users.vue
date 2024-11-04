@@ -1,11 +1,15 @@
 <template>
-  <v-container fluid>
+  <v-container fluid v-if="users">
     <v-col>
       <v-row cols="12">
         <span class="text-h4">Usuarios</span>
       </v-row>
 
-      <v-row class="py-5">
+      <v-row v-if="!users">
+          <span class="text-h5">Aún no hay más usuarios en la plataforma</span>
+      </v-row>
+
+      <v-row v-else class="py-5">
         <v-card style="width: 100%;">
           <v-table class="full-width-table">
             <thead>
@@ -118,6 +122,7 @@ export default {
         })
         .catch(error => {
           console.log(error);
+          this.users = null;
         });
     },
     deleteUser() {

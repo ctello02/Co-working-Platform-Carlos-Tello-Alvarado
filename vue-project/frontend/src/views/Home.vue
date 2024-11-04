@@ -1,19 +1,46 @@
 <template>
-    <v-container fluid>
-        <v-row>
-            <v-col>
-                <span class="text-h4">Co-Working Platform</span>
-            
-                <div>
-                    <p>Este es el contenido de la página de inicio.</p>
+    <v-container fluid v-if="user">
+        <v-col>
+            <v-row>
+                <span class="text-h4">Bienvenido {{ user.name }},</span>
+            </v-row>
+            <v-row class="mt-12">
+                <div class="d-flex flex-column ga-4">
+                    <span class="text-h5">Aún no tiene reservas</span>
+                    <v-btn
+                    variant="tonal"
+                    size="x-large"
+                    >Reservar</v-btn>
                 </div>
-            </v-col>
-        </v-row>
+            </v-row>
+        </v-col>
     </v-container>
 </template>
 
-<script>
-export default {
-    name: 'Home'
-};
+<script setup>
+import { ref, onMounted } from 'vue';
+import { useUserStore } from '@/store/userStore';
+import { authService } from '@/services/authService';
+
+const userStore = useUserStore();
+const user = ref(null);
+
+console.log(userStore.getId);
+
+onMounted(() => {
+    getUser();
+})
+
+function getUser() {
+    authService.getUser()
+        .then(res => {
+            userStore.setSelectedUser(res.data.user);
+            user.value = res.data.user;
+        })
+        .catch(error => {
+            console.log(error);
+        });
+}
+
+
 </script>

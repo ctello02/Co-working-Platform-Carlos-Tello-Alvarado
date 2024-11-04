@@ -1,5 +1,5 @@
 <template>
-    <v-container fluid>
+    <v-container fluid v-if="spaces">
         <v-col>
             <v-row>
                 <span class="text-h4">Espacios</span>
@@ -21,7 +21,11 @@
                 </div>
             </v-row>
 
-            <v-row class="py-3">
+            <v-row v-if="!spaces">
+                <span class="text-h5">Aún no hay espacios creados</span>
+            </v-row>
+
+            <v-row v-else class="py-3">
                 <!-- Vista de lista -->
                 <v-card v-if="list" style="width: 100%;">
                     <v-table>
@@ -154,7 +158,7 @@ export default {
         return {
             user: null,
             list: true,
-            spaces: [],
+            spaces: null,
             spaceStore: null,
             selectedSpace: null,
             deleteModal: false,
@@ -177,6 +181,7 @@ export default {
                 })
                 .catch(error => {
                     console.log(error);
+                    this.spaces = null;
                 });
         },
         openSpace(space) {

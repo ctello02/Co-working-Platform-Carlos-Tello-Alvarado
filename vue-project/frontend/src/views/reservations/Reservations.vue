@@ -2,8 +2,9 @@
   <v-container fluid class="d-flex gap-4">
     <v-row>
       <v-col cols="12" lg="3">
-        <v-card class="pa-2">
-            <v-card-title>All Events ({{ events.length }})</v-card-title>
+        <span class="text-h4">Reservas</span>
+        <v-card class="pa-2 mt-4">
+            <v-card-title>Eventos ({{ events.length }})</v-card-title>
             <v-divider></v-divider>
             <v-list v-if="events.length > 0">
               <v-list-item
