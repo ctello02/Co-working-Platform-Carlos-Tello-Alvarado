@@ -1,12 +1,12 @@
 <template>
-    <v-app-bar prominent app>
+    <v-app-bar app :style="color_nav">
         <v-app-bar-nav-icon @click.stop="rail = !rail"></v-app-bar-nav-icon>
         <v-toolbar-title>Co-Working Platform</v-toolbar-title>
         <v-spacer></v-spacer>
         <v-btn class="ma-2" icon="mdi-account" @click="toProfile()"></v-btn>
     </v-app-bar>
 
-    <v-navigation-drawer permanent :rail="rail" v-model="drawer" app>
+    <v-navigation-drawer :color="color_sidebar" permanent :rail="rail" v-model="drawer" app>
         <v-list>
             <v-list-item prepend-icon="mdi-home-outline" @click="toHome">
                 Vista principal
@@ -38,6 +38,8 @@ export default {
         return {
             drawer: true,
             rail: false,
+            color_nav: 'color:white; background: rgb(0,45,98); background: linear-gradient(61deg, rgba(0,45,98,1) 75%, rgba(16,86,189,1) 75%);',
+            color_sidebar: '#002D62'            
         }
     },
     computed: {
@@ -62,9 +64,6 @@ export default {
             this.$router.push('/reservations')
         },
 
-
-
-
         changeAdmin() {
             this.userStore.setIsAdmin(!this.userStore.getIsAdmin);
             localStorage.setItem('isAdmin', this.userStore.getIsAdmin);
@@ -73,7 +72,7 @@ export default {
 }
 </script>
 
-<style scooped>
+<style scoped>
 .hamburger {
     font-size: 24px;
     cursor: pointer;
@@ -137,6 +136,5 @@ export default {
     margin: 15px;
     border-radius: 10px;
     border: 1px solid #585858;
-
 }
 </style>

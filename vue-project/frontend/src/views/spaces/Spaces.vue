@@ -5,13 +5,13 @@
                 <span class="text-h4">Espacios</span>
                 <v-spacer></v-spacer>
                 <div class="d-flex align-center">
-                    <v-btn
+                    <TonalButton
+                        color="blue"
+                        text="Reservar"
                         class="mr-3"
-                        variant="outlined"
                         v-if="userStore.getIsAdmin"
-                        color="primary"
                         @click="openCreateSpace"
-                    >Crear espacio</v-btn>
+                    />
                     <v-btn
                         variant="text"
                         :ripple="false"
@@ -152,6 +152,7 @@
 import { useUserStore } from '@/store/userStore';
 import { useSpaceStore } from '@/store/spaceStore';
 import { spaceService } from '@/services/spaceService';
+import TonalButton from '@/components/TonalButton.vue'
 
 export default {
     data() {
@@ -163,6 +164,9 @@ export default {
             selectedSpace: null,
             deleteModal: false,
         };
+    },
+    components: {
+        TonalButton
     },
     mounted() {
         this.getSpaces();

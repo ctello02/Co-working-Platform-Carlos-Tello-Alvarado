@@ -1,11 +1,11 @@
 <template>
-  <v-container class="pa-10 container">
+  <v-container class="pa-10 container" v-if="user">
     <v-card class="pa-3" outlined>
       <v-card-title >
         <span class="text-h4">Perfil</span>
       </v-card-title>
 
-      <v-card-text v-if="user">
+      <v-card-text >
         <v-col>
           <v-row v-if="user.isCompany" cols="12" md="6">
             <v-list-item>
@@ -74,11 +74,31 @@
       </v-card-text>
 
       <v-card-actions>
-        <v-btn @click="openEditProfileInfo()" color="primary">Actualizar información</v-btn>
-        <v-btn @click="changePassword">Cambiar contraseña</v-btn>
-        <v-btn @click="logout" color="error">Cerrar sesión</v-btn>
+        <TonalButton text="Editar información" color="blue" @click="openEditProfileInfo()"/>
+        <TonalButton text="Cambiar contraseña" color="grey" @click="changePassword" />
+        <TonalButton text="Cerrar sesión" color="red" @click="logOutModal = true" />
       </v-card-actions>
     </v-card>
+
+    <v-dialog v-model="logOutModal" max-width="600px">
+      <v-card>
+        <v-card-title>
+          <span class="text-h4">¿Cerrar sesión?</span>
+        </v-card-title>
+
+        <v-card-text>
+            <v-row>
+              <span class="text-h6" style="color: tomato;">¿Estás seguro de que quieres cerrar sesión?</span>
+            </v-row>
+        </v-card-text>
+
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <TonalButton color="grey" text="Cancelar" @click="logOutModal=false" />
+          <TonalButton color="red" text="Cerrar sesión" @click="logoutUser" />
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
 
   </v-container>
 </template>
@@ -86,14 +106,19 @@
 <script>
 import { useUserStore } from "@/store/userStore";
 import { authService } from '@/services/authService';
+import TonalButton from '@/components/TonalButton.vue'
 
 export default {
   name: "Profile",
   data() {
     return {
       user: null,
-      payment_method: null,
+      payment_method: null, 
+      logOutModal: false,
     };
+  },
+  components: {
+    TonalButton
   },
   mounted() {
     this.getUser();
@@ -112,14 +137,14 @@ export default {
     openEditProfileInfo() {
       this.$router.push('/editProfileInfo');
     },
-    logout() {
+    logoutUser() {
       const userStore = useUserStore();
       userStore.clearUser();
       this.$router.push("/login");
     },
     changePassword() {
       //Abrir modal de cambio de contraseña
-    }
+    },
   }
 };
 </script>

@@ -1,12 +1,12 @@
 <template>
-  <v-container class="pa-10 container">
+  <v-container class="pa-10 container" v-if="user">
     <!-- Modal de edición -->
       <v-card class="pa-3" outlined>
         <v-card-title >
           <span class="text-h4">Editar usuario</span>
         </v-card-title>
 
-        <v-card-text v-if="user">
+        <v-card-text >
           <v-form>
             <v-text-field v-model="user.name" label="Nombre" required></v-text-field>
             <v-text-field v-model="user.email" label="E-mail" required></v-text-field>
@@ -31,8 +31,8 @@
 
         <v-card-actions>
           <v-spacer></v-spacer>
-          <v-btn color="primary" @click="routerBack">Volver</v-btn>
-          <v-btn color="primary" @click="updateUser">Guardar</v-btn>
+          <TonalButton color="grey" text="Volver" @click="routerBack"/>
+          <TonalButton color="blue" text="Actualizar" @click="updateUser"/>
         </v-card-actions>
       </v-card>
   </v-container>
@@ -42,6 +42,8 @@
 import { useUserStore } from '@/store/userStore';
 import { userService } from '@/services/userService';
 import { authService } from '@/services/authService';
+import TonalButton from '@/components/TonalButton.vue'
+
 
 export default {
   data() {
@@ -50,6 +52,9 @@ export default {
         user: null,
         success: false,
     };
+  },
+  components: {
+    TonalButton
   },
   mounted() {
     this.userStore = useUserStore();

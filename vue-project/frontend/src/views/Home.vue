@@ -7,10 +7,11 @@
             <v-row class="mt-12">
                 <div class="d-flex flex-column ga-4">
                     <span class="text-h5">Aún no tiene reservas</span>
-                    <v-btn
-                    variant="tonal"
+                    <TonalButton
+                    color="blue"
+                    text="Reservar"
                     size="x-large"
-                    >Reservar</v-btn>
+                    />
                 </div>
             </v-row>
         </v-col>
@@ -21,6 +22,7 @@
 import { ref, onMounted } from 'vue';
 import { useUserStore } from '@/store/userStore';
 import { authService } from '@/services/authService';
+import TonalButton from '@/components/TonalButton.vue'
 
 const userStore = useUserStore();
 const user = ref(null);
