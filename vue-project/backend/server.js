@@ -13,6 +13,7 @@ connectDB();
 const authRoutes = require('./routes/authRoutes');
 const usersRoutes = require('./routes/usersRoutes');
 const spacesRoutes = require('./routes/spacesRoutes');
+const reservationsRoutes = require('./routes/reservationsRoutes');
 
 const app = express();
 
@@ -29,6 +30,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/api/auth', authRoutes);
 app.use('/api/users', usersRoutes);
 app.use('/api/spaces', spacesRoutes);
+app.use('/api/reservations', reservationsRoutes);
 
 // Ruta principal
 app.get('/', (req, res) => {

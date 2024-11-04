@@ -82,9 +82,9 @@ const routes = [
         meta: { adminOnly: true }, // Solo accesible para usuarios administradores
     },
     {
-        path: "/reserves",
-        name: "reserves",
-        component: () => import("../views/reserves/Reserves.vue"),
+        path: "/reservations",
+        name: "reservations",
+        component: () => import("../views/reservations/Reservations.vue"),
     }
 ];
 
