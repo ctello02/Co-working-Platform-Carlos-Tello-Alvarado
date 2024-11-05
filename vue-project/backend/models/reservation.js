@@ -14,6 +14,9 @@ const ReservationSchema = new Schema({
     end: {
         type: String,
     },
+    calendarId: {
+        type: String,
+    }
 });
 
 const Reservation = mongoose.model("Reservation", ReservationSchema);

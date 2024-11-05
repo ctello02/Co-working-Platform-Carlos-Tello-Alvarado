@@ -80,7 +80,7 @@
       </v-card-actions>
     </v-card>
 
-    <v-dialog v-model="logOutModal" max-width="600px">
+    <v-dialog v-model="logOutModal" max-width="400px">
       <v-card>
         <v-card-title>
           <span class="text-h4">¿Cerrar sesión?</span>
@@ -88,7 +88,7 @@
 
         <v-card-text>
             <v-row>
-              <span class="text-h6" style="color: tomato;">¿Estás seguro de que quieres cerrar sesión?</span>
+              <span class="ml-2 text-h6" style="color: tomato;">¿Estás seguro de que quieres cerrar sesión?</span>
             </v-row>
         </v-card-text>
 

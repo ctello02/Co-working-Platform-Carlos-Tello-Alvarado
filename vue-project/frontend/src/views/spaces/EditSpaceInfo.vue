@@ -63,8 +63,8 @@
 
             <v-card-actions>
                 <v-spacer></v-spacer>
-                <v-btn color="primary" @click="routerBack">Volver</v-btn>
-                <v-btn color="primary" @click="updateSpace">Guardar</v-btn>
+                <TonalButton color="grey" text="Volver" @click="routerBack"/>
+                <TonalButton color="blue" text="Guardar" @click="updateSpace"/>
             </v-card-actions>
         </v-card>
     </v-container>
@@ -73,6 +73,8 @@
 <script>
 import { useSpaceStore } from '@/store/spaceStore';
 import { spaceService } from '@/services/spaceService';
+import TonalButton from '@/components/TonalButton.vue'
+
 
 export default {
     data() {
@@ -90,6 +92,9 @@ export default {
                 v => !!v || 'La imagen es requerida',
             ]
         };
+    },
+    components: {
+        TonalButton
     },
     mounted() {
         this.spaceStore = useSpaceStore();

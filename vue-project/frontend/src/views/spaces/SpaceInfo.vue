@@ -1,11 +1,15 @@
 <template>
     <v-container class="pa-10 container">
         <v-card class="pa-3" outlined>
-            <v-card-title >
+            <v-card-title v-if="space">
                 <span class="text-h4">Información del espacio</span>
             </v-card-title>
 
-            <v-card-text>
+            <v-card-title v-else>
+                <span class="text-h4">Espacio no encontrado</span>
+            </v-card-title>
+
+            <v-card-text v-if="space">
                 <v-col>
                     <v-row v-if="space?.name" cols="12" md="6">
                         <v-list-item>
@@ -41,48 +45,50 @@
                 </v-col>
             </v-card-text>
 
+            <v-card-text v-else>
+                <span class="text-h6">Por favor vuelva a la lista de espacios</span>
+            </v-card-text>
+
             <v-card-actions>
                 <v-spacer></v-spacer>
-                <v-btn 
-                    color="primary" 
-                    @click="routerBack"
-                >Volver</v-btn>
-                <div v-if="userStore.getIsAdmin">
-                    <v-btn
-                        color="primary"
-                        @click="openEditSpaceInfo()"
-                    >Editar información</v-btn>
-                    <v-btn
-                        color="error"
-                        @click="this.deleteModal = true"
-                    >Borrar espacio</v-btn>
-                </div>
+                <TonalButton
+                    color="grey"
+                    text="Volver"
+                    @click="routerBack" 
+                />
+                <TonalButton
+                    v-if="userStore.getIsAdmin && space"
+                    color="blue"
+                    text="Editar información"
+                    @click="openEditSpaceInfo()"
+                />
+                <TonalButton
+                    v-if="userStore.getIsAdmin && space"
+                    color="red"
+                    text="Borrar espacio"
+                    @click="this.deleteModal = true"
+                />
             </v-card-actions>
         </v-card>
     </v-container>
 
     <!-- Modal de eliminación -->
-    <v-dialog v-model="deleteModal" max-width="600px">
+    <v-dialog v-model="deleteModal" max-width="400px">
       <v-card>
         <v-card-title>
-          <span class="text-h4">Borrar espacio</span>
+          <span class="ml-1 text-h4">Borrar espacio</span>
         </v-card-title>
 
         <v-card-text>
-          <v-col>
             <v-row>
-              <h2>¿Estás seguro de que quieres borrar este espacio?</h2>
+              <span class="ml-2 text-h6" style="color: tomato;">Esta acción no se puede deshacer.</span>
             </v-row>
-            <v-row>
-              <h3 style="color: tomato;">Esta acción no se puede deshacer.</h3>
-            </v-row>
-          </v-col>
         </v-card-text>
 
         <v-card-actions>
           <v-spacer></v-spacer>
-          <v-btn color="primary" @click="deleteModal = false">Cancelar</v-btn>
-          <v-btn color="error" @click="deleteSpace">Borrar</v-btn>
+          <TonalButton color="grey" text="Cancelar" @click="deleteModal = false"/>
+          <TonalButton color="red" text="Borrar" @click="deleteSpace"/>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -93,6 +99,8 @@
 import { useUserStore } from '@/store/userStore';
 import { useSpaceStore } from '@/store/spaceStore';
 import { spaceService } from '@/services/spaceService';
+import TonalButton from '@/components/TonalButton.vue'
+
 
 export default {
     data() {
@@ -101,6 +109,9 @@ export default {
             space: null,
             deleteModal: false,
         };
+    },
+    components: {
+        TonalButton
     },
     computed: {
         userStore() {

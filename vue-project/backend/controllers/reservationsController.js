@@ -15,12 +15,14 @@ exports.getReservations = async (req, res) => {
 exports.createReservation = async (req, res) => {
     try {
         const { title, description, start, end } = req.body;
+        const calendarId = 'espacios';
 
         const newReservation = new Reservation({
             title,
             description,
             start,
-            end
+            end,
+            calendarId
         });
 
         const savedReservation = await newReservation.save();

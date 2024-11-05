@@ -25,7 +25,7 @@
                 </v-list-item-content>
               </v-list-item>
             </v-list>
-            <span class="text-h6 ml-4" v-else type="info">No hay eventos para mostrar</span>
+            <span class="ml-4" v-else type="info">No hay eventos para mostrar</span>
             <v-card-actions>
               <v-btn 
               variant="outlined"
@@ -82,6 +82,21 @@ const calendarApp = createCalendar({
     gridHeight: 2500,
     timeAxisFormatOptions: { hour: '2-digit', minute: '2-digit' },
   },
+  calendars: {
+    espacios:{
+      colorName: 'espacios',
+      lightColors:{
+        main: '#1c7df9',
+        container: '#d2e7ff',
+        onContainer: '#002859',
+      },
+      darkColors: {
+        main: '#c0dfff',
+        onContainer: '#dee6ff',
+        container: '#426aa2',
+      },
+    }
+  },
   callbacks: {
     /**
     * Is called when an event is clicked
@@ -99,7 +114,8 @@ const calendarApp = createCalendar({
         title: 'Evento día ' + date,
         description: 'Descripción ejemplo',
         start : date,
-        end: date
+        end: date,
+        calendarId: 'espacios'
       }
       
       addEventMonth(event)
@@ -129,7 +145,8 @@ function addEvent() {
     title: 'Evento 1',
     description: 'Descripción ejemplo',
     start : '2024-11-07',
-    end: '2024-11-07'
+    end: '2024-11-07',
+    calendarId: 'espacios'
   }
   reservationsService.createReservation(data).then(res => {
     eventsServicePlugin.add(res.data)

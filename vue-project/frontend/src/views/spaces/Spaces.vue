@@ -7,7 +7,7 @@
                 <div class="d-flex align-center">
                     <TonalButton
                         color="blue"
-                        text="Reservar"
+                        text="Crear espacio"
                         class="mr-3"
                         v-if="userStore.getIsAdmin"
                         @click="openCreateSpace"
@@ -139,8 +139,8 @@
 
                     <v-card-actions>
                         <v-spacer></v-spacer>
-                        <v-btn color="primary" @click="deleteModal = false">Cancelar</v-btn>
-                        <v-btn color="error" @click="deleteSpace(this.selectedSpace._id)">Borrar</v-btn>
+                        <TonalButton color="grey" text="Cancelar" @click="deleteModal = false"/>
+                        <TonalButton color="red" text="Borrar" @click="deleteSpace(this.selectedSpace._id)"/>
                     </v-card-actions>
                 </v-card>
             </v-dialog>
