@@ -1,12 +1,15 @@
 <template>
     <v-container class="pa-10 container">
-        <!-- Modal de edición -->
         <v-card class="pa-3" outlined>
-            <v-card-title>
+            <v-card-title class="my-2" v-if="space">
                 <span class="text-h4">Editar espacio</span>
             </v-card-title>
 
-            <v-card-text v-if="newSpace">
+            <v-card-title v-else>
+                <span class="text-h4">Espacio no encontrado</span>
+            </v-card-title>
+
+            <v-card-text v-if="newSpace && space">
                 <v-form>
                     <v-text-field 
                         v-model="newSpace.name" 
@@ -61,10 +64,23 @@
                 </v-fade-transition>
             </v-card-text>
 
+            <v-card-text v-else>
+                <span class="text-h6">Por favor vuelva a la lista de espacios</span>
+            </v-card-text>
+
             <v-card-actions>
                 <v-spacer></v-spacer>
-                <TonalButton color="grey" text="Volver" @click="routerBack"/>
-                <TonalButton color="blue" text="Guardar" @click="updateSpace"/>
+                <TonalButton 
+                    color="grey" 
+                    text="Volver" 
+                    @click="routerBack"
+                />
+                <TonalButton 
+                    v-if="space"
+                    color="blue" 
+                    text="Guardar" 
+                    @click="updateSpace"
+                />
             </v-card-actions>
         </v-card>
     </v-container>
@@ -103,7 +119,9 @@ export default {
     },
     methods: {
         routerBack() {
-            this.$router.push('/spaceInfo');
+            if (this.space) {
+                this.$router.push('/spaceInfo');
+            }else this.$router.push('/spaces');
         },
         triggerFileInput() {
             this.$refs.fileInput.click();

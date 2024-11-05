@@ -46,8 +46,8 @@
     <!-- Modal de eliminación -->
     <v-dialog v-model="deleteModal" max-width="600px">
       <v-card>
-        <v-card-title>
-          <span class="text-h4">Borrar usuario</span>
+        <v-card-title class="mt-3 mb-n3">
+          <span class="ml-2 text-h4">Borrar usuario</span>
         </v-card-title>
 
         <v-card-text>
@@ -73,8 +73,8 @@
 
         <v-card-actions>
           <v-spacer></v-spacer>
-          <v-btn color="primary" @click="deleteModal = false">Cancelar</v-btn>
-          <v-btn color="error" @click="deleteUser">Borrar</v-btn>
+          <TonalButton color="grey" text="Cancelar" @click="deleteModal = false"/>
+          <TonalButton color="red" text="Borrar" @click="deleteUser"/>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -85,6 +85,7 @@
 <script>
 import { useUserStore } from '@/store/userStore';
 import { userService } from '@/services/userService';
+import TonalButton from '@/components/TonalButton.vue';
 
 export default {
   name: 'UsersTable',
@@ -97,6 +98,9 @@ export default {
       selectedUser: null,
       currentUserId: null
     };
+  },
+  components: {
+    TonalButton
   },
   computed: {
   },

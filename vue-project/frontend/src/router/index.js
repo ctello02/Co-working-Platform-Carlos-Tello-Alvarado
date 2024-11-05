@@ -11,13 +11,13 @@ const routes = [
         path: "/login",
         name: "login",
         component: () => import("../views/auth/Login.vue"),
-        meta: { notLoggedUsers: true } // Solo accesible para usuarios no autenticados
+        meta: { notLoggedUsers: true, gradient: true } // Solo accesible para usuarios no autenticados
     },
     {
         path: "/register",
         name: "register",
         component: () => import("../views/auth/Register.vue"),
-        meta: { notLoggedUsers: true } // Solo accesible para usuarios no autenticados
+        meta: { notLoggedUsers: true, gradient: true } // Solo accesible para usuarios no autenticados
     },
     {
         path: "/profile",
@@ -33,13 +33,13 @@ const routes = [
         path: "/forgot_password",
         name: "forgot_password",
         component: () => import("../views/auth/ForgotPassword.vue"),
-        meta: { notLoggedUsers: true } // Solo accesible para usuarios no autenticados
+        meta: { notLoggedUsers: true, gradient: true } // Solo accesible para usuarios no autenticados
     },
     {
         path: "/reset",
         name: "reset",
         component: () => import("../views/auth/ResetPassword.vue"),
-        meta: { notLoggedUsers: true } // Solo accesible para usuarios no autenticados
+        meta: { notLoggedUsers: true, gradient: true } // Solo accesible para usuarios no autenticados
     },
     {
         path: "/users",

@@ -1,7 +1,7 @@
 <template>
     <v-container class="pa-10 container">
         <v-card class="pa-3" outlined>
-            <v-card-title v-if="space">
+            <v-card-title v-if="space" class="my-2">
                 <span class="text-h4">Información del espacio</span>
             </v-card-title>
 
@@ -9,7 +9,7 @@
                 <span class="text-h4">Espacio no encontrado</span>
             </v-card-title>
 
-            <v-card-text v-if="space">
+            <v-card-text class="mx-n3" v-if="space">
                 <v-col>
                     <v-row v-if="space?.name" cols="12" md="6">
                         <v-list-item>
@@ -73,15 +73,15 @@
     </v-container>
 
     <!-- Modal de eliminación -->
-    <v-dialog v-model="deleteModal" max-width="400px">
+    <v-dialog v-model="deleteModal" max-width="450px">
       <v-card>
-        <v-card-title>
-          <span class="ml-1 text-h4">Borrar espacio</span>
+        <v-card-title class="ml-2 mt-3">
+          <span class="text-h4">Borrar espacio</span>
         </v-card-title>
 
         <v-card-text>
             <v-row>
-              <span class="ml-2 text-h6" style="color: tomato;">Esta acción no se puede deshacer.</span>
+              <span class="ml-3 text-h6" style="color: tomato;">Esta acción no se puede deshacer.</span>
             </v-row>
         </v-card-text>
 

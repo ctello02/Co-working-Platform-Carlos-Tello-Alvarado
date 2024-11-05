@@ -1,7 +1,7 @@
 <template>
   <v-container class="pa-10 container">
     <v-card class="pa-3" outlined>
-      <v-card-title>
+      <v-card-title class="my-2">
         <span class="text-h4">Crear espacio</span>
       </v-card-title>
       <v-card-text>

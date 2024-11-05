@@ -1,11 +1,11 @@
 <template>
   <v-container class="pa-10 container" v-if="user">
     <v-card class="pa-3" outlined>
-      <v-card-title >
-        <span class="text-h4">Perfil</span>
+      <v-card-title class="my-2">
+        <span class=" text-h4">Perfil</span>
       </v-card-title>
 
-      <v-card-text >
+      <v-card-text class="mx-n3">
         <v-col>
           <v-row v-if="user.isCompany" cols="12" md="6">
             <v-list-item>
@@ -80,15 +80,15 @@
       </v-card-actions>
     </v-card>
 
-    <v-dialog v-model="logOutModal" max-width="400px">
+    <v-dialog v-model="logOutModal" max-width="450px">
       <v-card>
-        <v-card-title>
+        <v-card-title class="ml-2 mt-3">
           <span class="text-h4">¿Cerrar sesión?</span>
         </v-card-title>
 
         <v-card-text>
             <v-row>
-              <span class="ml-2 text-h6" style="color: tomato;">¿Estás seguro de que quieres cerrar sesión?</span>
+              <span class="ml-3 text-h6" style="color: tomato;">¿Estás seguro de que quieres cerrar sesión?</span>
             </v-row>
         </v-card-text>
 

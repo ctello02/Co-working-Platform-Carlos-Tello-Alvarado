@@ -56,9 +56,9 @@ exports.forgotPassword = async (req, res) => {
             const user = await User.findOne({ email: req.body.email });
             if (user) {
                 const token = jwt.sign({ _id: user._id }, process.env.RESET_PASSWORD_KEY, { expiresIn: '15m' });
-                await sendResetPasswordEmail(user, token);
+                await sendResetPasswordEmail(req.body.email, token);
                 await user.updateOne({ resetLink: token });
-                res.json({ message: 'Email sent' });
+                res.json({ message: 'Email sent to ' + req.body.email });
             } else {
                 res.status(404).json({ message: 'User not found' });
             }

@@ -3,7 +3,6 @@
   <v-card class="pa-10 container" outlined>
     <v-form
       ref="form"
-      v-model="valid"
       @submit.prevent="handleSubmit"
     >
       <v-row>
@@ -28,21 +27,21 @@
 
       <v-row v-if="this.saveButton">
         <v-col cols="12">
-          <v-btn
-            class="cta-btn"
-            color="primary"
+          <TonalButton
+            class="cta-btn custom-disabled-btn"
+            text="Save"
+            color="blue"
             type="submit"
-            :disabled="!valid"
+            :disabled="camposVacios()"
             block
-          >
-            Save
-          </v-btn>
+          />
+          
         </v-col>
       </v-row>
 
       <v-row v-if="this.loginForm">
         <v-col cols="12" class="text-center">
-          <v-btn @click="toLogin" color="primary">Volver a iniciar sesión</v-btn>
+          <TonalButton @click="toLogin" color="blue" text="Iniciar sesión"/>
         </v-col>
       </v-row>
 
@@ -56,13 +55,13 @@
 </template>
 
 <script>
+import TonalButton from '@/components/TonalButton.vue';
 import { authService } from '@/services/authService';
 
 
 export default {
   data() {
     return {
-      valid: true,
       loginForm: false,
       saveButton: true,
       password: "",
@@ -73,7 +72,16 @@ export default {
       ],
     };
   },
+  components:{
+    TonalButton
+  },
   methods: {
+    camposVacios(){
+      // Verificar que los campos no estén vacíos y que cumplan las reglas de validación
+      const passwordValid = this.passwordRules.every(rule => rule(this.password) === true);
+
+      return !(this.password && passwordValid);
+    },
     async handleSubmit() {
       if (this.$refs.form.validate()) {
         authService.updatePassword(this.password, this.$route.query.token)
@@ -115,5 +123,11 @@ export default {
   margin: 0 auto;
   margin-top: 2em;
 }
-
+.custom-disabled-btn:disabled {
+  background-color: #bfbfbf; 
+  color: white !important; 
+  cursor: not-allowed; 
+  opacity: 1; 
+  border: 1px solid #bbb; 
+}
 </style>

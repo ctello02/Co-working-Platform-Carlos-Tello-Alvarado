@@ -2,7 +2,6 @@
   <v-card class="pa-10 container" outlined>
     <v-form
       ref="form"
-      v-model="valid"
       @submit.prevent="handleSubmit"
     >
       <v-row>
@@ -27,15 +26,16 @@
 
       <v-row>
         <v-col cols="12">
-          <v-btn
-            class="cta-btn"
-            color="primary"
+          <TonalButton
+            class="cta-btn custom-disabled-btn"
+            text="Send"
+            color="blue"
             type="submit"
-            :disabled="!valid"
+            :disabled="camposVacios()"
             block
-          >
-            Send
-          </v-btn>
+          />
+            
+          
         </v-col>
       </v-row>
 
@@ -50,11 +50,12 @@
   
 <script>
 import { authService } from '@/services/authService';
+import TonalButton from '@/components/TonalButton.vue';
+
 
 export default {
   data() {
     return {
-      valid: true,
       email: "",
       message: "",
       emailRules: [
@@ -63,7 +64,16 @@ export default {
       ]
     };
   },
+  components: {
+    TonalButton,
+  },
   methods: {
+    camposVacios() {
+      // Verificar que los campos no estén vacíos y que cumplan las reglas de validación
+      const emailValido = this.emailRules.every(rule => rule(this.email) === true);
+
+      return !(this.email && emailValido);
+    },
     async handleSubmit() {
       if (this.$refs.form.validate()) {
 
@@ -102,5 +112,12 @@ export default {
   margin-top: 2em;
 }
 
+.custom-disabled-btn:disabled {
+  background-color: #bfbfbf; 
+  color: white !important; 
+  cursor: not-allowed; 
+  opacity: 1; 
+  border: 1px solid #bbb; 
+}
 </style>
   

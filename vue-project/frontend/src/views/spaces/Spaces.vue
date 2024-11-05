@@ -75,8 +75,8 @@
                                     contain  
                                     class="mb-2"
                                 ></v-img>
-                                <v-card-title>{{ space.name }}</v-card-title>
-                                <v-card-subtitle>{{ space.description }}</v-card-subtitle>
+                                <v-card-title class="ml-n3 text-h5">{{ space.name }}</v-card-title>
+                                <v-card-subtitle class="ml-n3">{{ space.description }}</v-card-subtitle>
 
                                 <v-card-actions v-if="userStore.getIsAdmin" class="mt-n1 mb-n4">
                                     <v-btn 
@@ -101,8 +101,8 @@
                                     contain  
                                     class="mb-2"
                                 ></v-img>
-                                <v-card-title>{{ space.name }}</v-card-title>
-                                <v-card-subtitle>{{ space.description }}</v-card-subtitle>
+                                <v-card-title class="ml-n3 text-h5">{{ space.name }}</v-card-title>
+                                <v-card-subtitle class="ml-n3">{{ space.description }}</v-card-subtitle>
                             </v-card>
                         </v-col>
                     </v-row>
@@ -112,11 +112,11 @@
             <!-- Modal de eliminación -->
             <v-dialog v-model="deleteModal" max-width="600px">
                 <v-card>
-                    <v-card-title>
-                        <span class="text-h4">Borrar espacio</span>
+                    <v-card-title class="mt-3 mb-n3">
+                        <span class="ml-2 text-h4">Borrar espacio</span>
                     </v-card-title>
 
-                    <v-card-text>
+                    <v-card-text class="">
                         <v-col>
                             <v-row>
                                 <h2>¿Estás seguro de que quieres borrar este espacio?</h2>

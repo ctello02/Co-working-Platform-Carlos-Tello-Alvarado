@@ -35,8 +35,8 @@
 
             <v-card-actions>
                 <v-spacer></v-spacer>
-                <v-btn color="primary" @click="routerBack">Volver</v-btn>
-                <v-btn color="primary" @click="updateUser">Guardar</v-btn>
+                <TonalButton color="grey" text="Volver" @click="routerBack"/>
+                <TonalButton color="blue" text="Guardar" @click="updateUser"/>
             </v-card-actions>
         </v-card>
     </v-container>
@@ -45,6 +45,8 @@
 <script>
 import { useUserStore } from '@/store/userStore';
 import { userService } from '@/services/userService';
+import TonalButton from '@/components/TonalButton.vue';
+
 
 export default {
     data() {
@@ -54,6 +56,9 @@ export default {
             newUser: null,
             success: false,
         };
+    },
+    components:{
+        TonalButton
     },
     mounted() {
         this.userStore = useUserStore();

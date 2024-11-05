@@ -1,11 +1,15 @@
 <template>
     <v-container class="pa-10 container">
         <v-card class="pa-3" outlined>
-            <v-card-title >
+            <v-card-title v-if="user" class="my-2">
                 <span class="text-h4">Información del usuario</span>
             </v-card-title>
 
-            <v-card-text>
+            <v-card-title v-else>
+                <span class="text-h4">Usuario no encontrado</span>
+            </v-card-title>
+
+            <v-card-text class="mx-n3" v-if="user">
                 <v-col>
                     <v-row v-if="user?.isCompany" cols="12" md="6">
                         <v-list-item>
@@ -72,11 +76,29 @@
                 </v-col>
             </v-card-text>
 
+            <v-card-text v-else>
+                <span class="text-h6">Por favor vuelva a la lista de usuarios</span>
+            </v-card-text>
+
             <v-card-actions>
                 <v-spacer></v-spacer>
-                <v-btn color="primary" @click="routerBack">Volver</v-btn>
-                <v-btn color="primary" @click="openEditUserInfo()">Editar información</v-btn>
-                <v-btn color="error" @click="this.deleteModal = true">Borrar usuario</v-btn>
+                <TonalButton 
+                    color="grey" 
+                    text="Volver" 
+                    @click="routerBack"
+                />
+                <TonalButton 
+                    v-if="user"
+                    color="blue" 
+                    text="Editar información" 
+                    @click="openEditUserInfo()"
+                />
+                <TonalButton 
+                    v-if="user"
+                    color="red" 
+                    text="Borrar usuario" 
+                    @click="this.deleteModal = true"
+                />
             </v-card-actions>
         </v-card>
     </v-container>
@@ -101,8 +123,8 @@
 
         <v-card-actions>
           <v-spacer></v-spacer>
-          <v-btn color="primary" @click="deleteModal = false">Cancelar</v-btn>
-          <v-btn color="error" @click="deleteUser">Borrar</v-btn>
+          <TonalButton color="grey" text="Cancelar" @click="deleteModal = false"/>
+          <TonalButton color="red" text="Borrar" @click="deleteUser"/>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -112,6 +134,7 @@
 <script>
 import { useUserStore } from '@/store/userStore';
 import { userService } from '@/services/userService';
+import TonalButton from '@/components/TonalButton.vue';
 
 export default {
     data() {
@@ -124,6 +147,9 @@ export default {
     mounted() {
         this.userStore = useUserStore();
         this.user = this.userStore.getSelectedUser;
+    },
+    components:{
+        TonalButton
     },
     methods: {
         routerBack() {
