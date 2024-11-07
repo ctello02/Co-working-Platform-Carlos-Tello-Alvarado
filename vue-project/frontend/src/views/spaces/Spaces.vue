@@ -44,7 +44,7 @@
                                 <td>{{ space.description }}</td>
 
                                 <td>
-                                    <v-form style="display: flex; gap: 10px;">
+                                    <v-form class="d-flex">
                                         <v-btn 
                                         icon="mdi-magnify" 
                                         variant="text"

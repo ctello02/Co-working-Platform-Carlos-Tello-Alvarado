@@ -177,11 +177,6 @@ export default {
     margin: 0 auto;
 }
 
-.title {
-  font-weight: bold;
-  margin-bottom: 20px;
-}
-
 .avatar-container {
   position: relative;
   border: 1px solid gray;

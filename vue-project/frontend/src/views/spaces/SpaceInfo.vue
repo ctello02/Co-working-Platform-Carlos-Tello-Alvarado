@@ -1,46 +1,75 @@
 <template>
-    <v-container class="pa-10 container">
-        <v-card class="pa-3" outlined>
-            <v-card-title v-if="space" class="my-2">
-                <span class="text-h4">Información del espacio</span>
+    <v-container class="pa-5 container">
+        <v-card class="mx-auto" max-width="600" >
+            <v-img
+                v-if="space?.imageUrl"
+                :src="space?.imageUrl"
+                color="surface-variant"
+                height="300px"
+                cover  
+            />                            
+
+            <v-card-title v-if="!space" class="my-2">
+                <span class="mt-2 text-h4">Espacio no encontrado</span>
             </v-card-title>
 
-            <v-card-title v-else>
-                <span class="text-h4">Espacio no encontrado</span>
-            </v-card-title>
-
-            <v-card-text class="mx-n3" v-if="space">
+            <v-card-text v-if="space">
                 <v-col>
-                    <v-row v-if="space?.name" cols="12" md="6">
-                        <v-list-item>
-                        <v-list-item-content>
-                            <v-list-item-title>Nombre del espacio</v-list-item-title>
-                            <v-list-item-subtitle>{{ space?.name }}</v-list-item-subtitle>
-                        </v-list-item-content>
-                        </v-list-item>
+                    <v-row class="mt-n5 mb-n3" v-if="space?.name" cols="12">
+                        <v-col>
+                            <span class="text-h4">{{ space?.name }}</span>
+                        </v-col>
+                        <v-col class="d-flex align-center justify-end ga-2">
+                            <v-btn 
+                            v-if="userStore.getIsAdmin && space"
+                            @click="openEditSpaceInfo()"
+                                variant="tonal"
+                                size="small"
+                                icon="mdi-pencil" 
+                            />
+                            <v-btn 
+                            v-if="userStore.getIsAdmin && space"
+                            @click="this.deleteModal = true"
+                                variant="tonal"
+                                size="small"
+                                icon="mdi-trash-can-outline" 
+                            />
+                        </v-col>
                     </v-row>
 
-                    <v-row v-if="space?.description" cols="12" md="6">
-                        <v-list-item>
-                        <v-list-item-content>
-                            <v-list-item-title>Descripción del espacio</v-list-item-title>
-                            <v-list-item-subtitle>{{ space?.description }}</v-list-item-subtitle>
-                        </v-list-item-content>
-                        </v-list-item>
+                    <v-row class="my-n3" v-if="space?.description" cols="12">
+                        <v-col cols="1" class="d-flex align-center">
+                            <v-icon
+                            icon="mdi-text"
+                            ></v-icon>
+                        </v-col>
+                        <v-col>
+                            <span class="pt-2 text-h6">{{ space?.description }}</span>
+                        </v-col>
                     </v-row>
 
-                    <v-row v-if="space?.imageUrl" cols="12" md="6">
-                        <v-list-item>
-                        <v-list-item-content>
-                            <v-list-item-title class="mb-2">Imagen del espacio</v-list-item-title>
-                            <v-img
-                                :src="space?.imageUrl"
-                                height="150px"
-                                contain  
-                                class="mb-2"
-                            ></v-img>
-                        </v-list-item-content>
-                        </v-list-item>                        
+                    <v-row class="my-n3" cols="12">
+                        <v-col cols="1" class="d-flex align-center">
+                            <v-icon
+                            icon="mdi-table-chair"
+                            size="small"
+                            ></v-icon>
+                        </v-col>
+                        <v-col>
+                            <span class="pt-2 text-h6">{{space?.seats}} asientos</span>
+                        </v-col>
+                    </v-row>
+
+                    <v-row class="mt-n3 mb-n5" cols="12">
+                        <v-col cols="1" class="d-flex align-center">
+                            <v-icon
+                            icon="mdi-clock-outline"
+                            size="small"
+                            ></v-icon>
+                        </v-col>
+                        <v-col>
+                            <span class="pt-2 text-h6">Reservas de {{space?.time}} minutos</span>
+                        </v-col>
                     </v-row>
                 </v-col>
             </v-card-text>
@@ -49,24 +78,18 @@
                 <span class="text-h6">Por favor vuelva a la lista de espacios</span>
             </v-card-text>
 
-            <v-card-actions>
-                <v-spacer></v-spacer>
+            <v-card-actions class="mt-n2 mb-3">
                 <TonalButton
+                    class="ml-5"
                     color="grey"
                     text="Volver"
                     @click="routerBack" 
                 />
+                <v-spacer></v-spacer>
                 <TonalButton
-                    v-if="userStore.getIsAdmin && space"
+                    class="mr-5"
                     color="blue"
-                    text="Editar información"
-                    @click="openEditSpaceInfo()"
-                />
-                <TonalButton
-                    v-if="userStore.getIsAdmin && space"
-                    color="red"
-                    text="Borrar espacio"
-                    @click="this.deleteModal = true"
+                    text="Reservar"
                 />
             </v-card-actions>
         </v-card>

@@ -4,8 +4,10 @@
       <v-card-title class="my-2">
         <span class="text-h4">Crear espacio</span>
       </v-card-title>
+
       <v-card-text>
         <v-form ref="form">
+          
           <v-text-field 
             v-model="spaceName" 
             label="Nombre" 
@@ -20,15 +22,6 @@
             required
             :rules="textRules"
           />
-          <v-file-input
-            v-model="spaceImage"
-            accept="image/*"
-            label="Imagen"
-            prepend-icon="mdi-camera"
-            variant="filled"
-            required
-            :rules="imageRules"
-          />
         </v-form>
 
         <!-- Alertas de éxito o error -->
@@ -42,14 +35,18 @@
         </v-fade-transition>
       </v-card-text>
 
-      <v-card-actions>
-        <v-spacer></v-spacer>
-        <TonalButton color="grey" text="Volver" @click="routerBack"/>
+      <v-card-actions class="mt-n2">
         <TonalButton 
+          color="grey"
+          text="Volver" 
+          @click="routerBack"
+        />
+        <v-spacer></v-spacer>
+        <TonalButton 
+          color="blue"
           text="Crear"
           @click="submit" 
           :disabled="camposVacios()"  
-          color="blue"
         />
       </v-card-actions>
     </v-card>
@@ -65,6 +62,8 @@ export default {
     return {
       spaceName: '',
       spaceDescription: '',
+      newImageUrl: null,
+      isNewImage: false,
       spaceImage: null, 
       success: false,
       alertModal: false,
@@ -84,6 +83,23 @@ export default {
     routerBack() {
       this.$router.push('/spaces');
     },
+    triggerFileInput() {
+        this.$refs.fileInput.click();
+    },
+    onFileChange(e) {
+        const file = e.target.files[0];
+        if (file) {
+            this.isNewImage = true;
+            this.newImageUrl = file; // Guardamos el archivo para el FormData
+
+            // Previsualizar la imagen seleccionada
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                this.newSpace.imageUrl = e.target.result; // Asigna la URL de la imagen previsualizada
+            };
+            reader.readAsDataURL(file);
+        }
+    },
     camposVacios() {
       return !this.spaceName || !this.spaceDescription || !this.spaceImage;
     },
@@ -100,7 +116,9 @@ export default {
         const formData = new FormData();
         formData.append('name', this.spaceName);
         formData.append('description', this.spaceDescription);
-        formData.append('image', this.spaceImage); 
+        if (this.isNewImage && this.newImageUrl) {
+            formData.append('image', this.newImageUrl); // Agrega la nueva imagen al FormData
+        }
 
         spaceService.createSpace(formData)
             .then(res => {
@@ -127,6 +145,29 @@ export default {
 .container {
     max-width: 700px;
     margin: 0 auto;
+}
+
+
+.avatar-container {
+  position: relative;
+  border: 1px solid gray;
+}
+
+.avatar-container:hover .camera-icon {
+  opacity: 1;
+}
+
+.avatar-container img {
+  transition: filter 0.3s ease;
+}
+
+.avatar-container:hover img {
+  filter: brightness(50%);
+}
+
+.camera-icon {
+  opacity: 0;
+  transition: opacity 0.3s ease;
 }
 </style>
   
