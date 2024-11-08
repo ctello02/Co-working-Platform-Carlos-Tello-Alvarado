@@ -9,8 +9,8 @@
                 cover  
             />                            
 
-            <v-card-title v-if="!space" class="my-2">
-                <span class="mt-2 text-h4">Espacio no encontrado</span>
+            <v-card-title v-if="!space" class="mt-4">
+                <span class="ml-3 text-h4">Espacio no encontrado</span>
             </v-card-title>
 
             <v-card-text v-if="space">
@@ -68,17 +68,17 @@
                             ></v-icon>
                         </v-col>
                         <v-col>
-                            <span class="pt-2 text-h6">Reservas de {{space?.time}} minutos</span>
+                            <span class="pt-2 text-h6">Reservas de {{space?.time}}</span>
                         </v-col>
                     </v-row>
                 </v-col>
             </v-card-text>
 
             <v-card-text v-else>
-                <span class="text-h6">Por favor vuelva a la lista de espacios</span>
+                <span class="ml-3 text-h6">Por favor vuelva a la lista de espacios</span>
             </v-card-text>
 
-            <v-card-actions class="mt-n2 mb-3">
+            <v-card-actions v-if="space" class="mt-n2 mb-4">
                 <TonalButton
                     class="ml-5"
                     color="grey"
@@ -91,6 +91,15 @@
                     color="blue"
                     text="Reservar"
                 />
+            </v-card-actions>
+            <v-card-actions v-else class="mt-n2 mb-4">
+                <v-spacer></v-spacer>
+                <TonalButton
+                    class="mr-4"
+                    color="grey"
+                    text="Volver"
+                    @click="routerBack" 
+                />               
             </v-card-actions>
         </v-card>
     </v-container>
@@ -144,6 +153,17 @@ export default {
     mounted() {
         this.spaceStore = useSpaceStore();
         this.space = this.spaceStore.getSelectedSpace;
+
+        if (this.space?.time) {
+            const timeInMinutes = parseFloat(this.space.time);
+
+            if (timeInMinutes >= 60) {
+                const timeInHours = timeInMinutes / 60;
+                this.space.time = timeInHours === 1 ? '1 hora' : `${timeInHours} horas`;
+            } else {
+                this.space.time = `${timeInMinutes} minutos`;
+            }
+        }
     },
     methods: {
         routerBack() {

@@ -189,7 +189,6 @@ export default {
                 });
         },
         openSpace(space) {
-            console.log("Información del espacio: ", space.name, space.description, space.imageUrl);
             this.spaceStore.setSelectedSpace(space); // Guardar el espacio seleccionado en el store
             this.$router.push('/spaceInfo');    // Navegar a la nueva ruta
         },

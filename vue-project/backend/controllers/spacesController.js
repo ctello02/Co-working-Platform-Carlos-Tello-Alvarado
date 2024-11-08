@@ -16,12 +16,14 @@ exports.getSpaces = async (req, res) => {
 
 exports.createSpace = async (req, res) => {
     try {
-        const { name, description } = req.body;
+        const { name, description, time, seats } = req.body;
         const imageUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;  // Generar la URL de la imagen
 
         const newSpace = new Space({
             name,
             description,
+            time,
+            seats,
             imageUrl  // Almacena la URL de la imagen en la base de datos
         });
 

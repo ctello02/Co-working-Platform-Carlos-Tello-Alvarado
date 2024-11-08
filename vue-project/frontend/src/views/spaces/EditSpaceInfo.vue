@@ -1,12 +1,12 @@
 <template>
     <v-container class="pa-10 container">
-        <v-card class="pa-3" outlined>
+        <v-card outlined>
             <v-card-title class="my-2" v-if="space">
                 <span class="text-h4">Editar espacio</span>
             </v-card-title>
 
-            <v-card-title v-else>
-                <span class="text-h4">Espacio no encontrado</span>
+            <v-card-title v-else class="mt-4">
+                <span class="ml-3 text-h4">Espacio no encontrado</span>
             </v-card-title>
 
             <v-card-text v-if="newSpace && space">
@@ -65,12 +65,13 @@
             </v-card-text>
 
             <v-card-text v-else>
-                <span class="text-h6">Por favor vuelva a la lista de espacios</span>
+                <span class="ml-3 text-h6">Por favor vuelva a la lista de espacios</span>
             </v-card-text>
 
             <v-card-actions>
                 <v-spacer></v-spacer>
                 <TonalButton 
+                    class="mt-n2 mr-4 mb-4"
                     color="grey" 
                     text="Volver" 
                     @click="routerBack"

@@ -4,49 +4,81 @@
       <v-card-title class="my-2">
         <span class="text-h4">Crear espacio</span>
       </v-card-title>
-
       <v-card-text>
         <v-form ref="form">
-          
           <v-text-field 
             v-model="spaceName" 
             label="Nombre" 
             type="text"
+            variant="outlined"
             required
-            :rules="textRules"
+            :rules="[v => !!v || 'El campo es obligatorio']"
           />
           <v-text-field 
             v-model="spaceDescription" 
-            label="Descripción" 
+            label="Descripción"
+            prepend-icon="mdi-text" 
             type="text"
+            variant="outlined"
             required
-            :rules="textRules"
+            :rules="[v => !!v || 'El campo es obligatorio']"
           />
+          <v-select
+            v-model="selectedTimeFrame"
+            :items="timeFrames"
+            item-title="label"
+            item-value="value"
+            label="Duración de las reservas"
+            prepend-icon="mdi-clock-outline"
+            :rules="[v => !!v || 'El campo es obligatorio']"
+            variant="outlined"
+          ></v-select>
+          <v-row>
+            <v-col>
+              <v-file-input
+                v-model="spaceImage"
+                accept="image/*"
+                label="Imagen"
+                prepend-icon="mdi-camera"
+                variant="outlined"
+                required
+                :rules="[v => !!v || 'La imagen es obligatoria']"
+              />
+            </v-col>
+            <v-col>
+              <v-text-field 
+                v-model.number="spaceSeats" 
+                label="Número de asientos"
+                prepend-icon="mdi-table-chair" 
+                type="number"
+                variant="outlined"
+                required
+                :rules="[v => !!v || 'El campo es obligatorio']"
+                @input="spaceSeats = Math.max(0, spaceSeats)"
+              /> 
+            </v-col>
+          </v-row>   
         </v-form>
 
         <!-- Alertas de éxito o error -->
         <v-fade-transition>
-          <v-alert v-if="success" type="success" border="left">
+          <v-alert v-if="success" type="success">
             ¡Espacio creado con éxito!
           </v-alert>
-          <v-alert v-if="alertModal" type="error" border="left">
+          <v-alert v-if="alertModal" type="error">
             Error, campo obligatorio vacío
           </v-alert>
         </v-fade-transition>
       </v-card-text>
 
-      <v-card-actions class="mt-n2">
-        <TonalButton 
-          color="grey"
-          text="Volver" 
-          @click="routerBack"
-        />
+      <v-card-actions>
         <v-spacer></v-spacer>
+        <TonalButton color="grey" text="Volver" @click="routerBack"/>
         <TonalButton 
-          color="blue"
           text="Crear"
           @click="submit" 
           :disabled="camposVacios()"  
+          color="blue"
         />
       </v-card-actions>
     </v-card>
@@ -60,20 +92,25 @@ import TonalButton from '@/components/TonalButton.vue'
 export default {
   data() {
     return {
-      spaceName: '',
-      spaceDescription: '',
-      newImageUrl: null,
-      isNewImage: false,
+      spaceName: null,
+      spaceDescription: null,
       spaceImage: null, 
+      spaceSeats: null,
       success: false,
       alertModal: false,
       alertMessage: null,
-      textRules: [
-        v => !!v || 'El campo es obligatorio',
+      selectedTimeFrame: null,
+      timeFrames: [
+        { label: '15 mins', value: 15 },
+        { label: '20 mins', value: 20 },
+        { label: '30 mins', value: 30 },
+        { label: '1 hora', value: 60 },
+        { label: '1.5 horas', value: 90 },
+        { label: '2 horas', value: 120 },
+        { label: '3 horas', value: 180 },
+        { label: '4 horas', value: 240 },
+        { label: '5 horas', value: 300 },
       ],
-      imageRules: [
-        v => !!v || 'La imagen es obligatoria',
-      ]
     };
   },
   components: {
@@ -83,25 +120,8 @@ export default {
     routerBack() {
       this.$router.push('/spaces');
     },
-    triggerFileInput() {
-        this.$refs.fileInput.click();
-    },
-    onFileChange(e) {
-        const file = e.target.files[0];
-        if (file) {
-            this.isNewImage = true;
-            this.newImageUrl = file; // Guardamos el archivo para el FormData
-
-            // Previsualizar la imagen seleccionada
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                this.newSpace.imageUrl = e.target.result; // Asigna la URL de la imagen previsualizada
-            };
-            reader.readAsDataURL(file);
-        }
-    },
     camposVacios() {
-      return !this.spaceName || !this.spaceDescription || !this.spaceImage;
+      return !this.spaceName || !this.spaceDescription || !this.selectedTimeFrame || !this.spaceImage || !this.spaceSeats;
     },
     async submit() {
       if (this.$refs.form.validate()) {
@@ -113,12 +133,14 @@ export default {
           return;
         }
 
+        console.log(this.selectedTimeFrame + ' es un ' + typeof this.selectedTimeFrame);
+
         const formData = new FormData();
         formData.append('name', this.spaceName);
         formData.append('description', this.spaceDescription);
-        if (this.isNewImage && this.newImageUrl) {
-            formData.append('image', this.newImageUrl); // Agrega la nueva imagen al FormData
-        }
+        formData.append('image', this.spaceImage); 
+        formData.append('seats', this.spaceSeats);
+        formData.append('time', this.selectedTimeFrame);
 
         spaceService.createSpace(formData)
             .then(res => {
@@ -145,29 +167,6 @@ export default {
 .container {
     max-width: 700px;
     margin: 0 auto;
-}
-
-
-.avatar-container {
-  position: relative;
-  border: 1px solid gray;
-}
-
-.avatar-container:hover .camera-icon {
-  opacity: 1;
-}
-
-.avatar-container img {
-  transition: filter 0.3s ease;
-}
-
-.avatar-container:hover img {
-  filter: brightness(50%);
-}
-
-.camera-icon {
-  opacity: 0;
-  transition: opacity 0.3s ease;
 }
 </style>
   
