@@ -61,6 +61,8 @@ exports.updateSpace = async (req, res) => {
         // Actualizar otros campos
         space.name = req.body.name;
         space.description = req.body.description;
+        space.seats = req.body.seats;
+        space.time = req.body.time;
 
         const savedSpace = await space.save();
         res.status(201).json(savedSpace);

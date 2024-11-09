@@ -13,7 +13,7 @@
                 <span class="ml-3 text-h4">Espacio no encontrado</span>
             </v-card-title>
 
-            <v-card-text v-if="space">
+            <v-card-text v-if="space && this.timeFrame">
                 <v-col>
                     <v-row class="mt-n5 mb-n3" v-if="space?.name" cols="12">
                         <v-col>
@@ -68,7 +68,7 @@
                             ></v-icon>
                         </v-col>
                         <v-col>
-                            <span class="pt-2 text-h6">Reservas de {{space?.time}}</span>
+                            <span class="pt-2 text-h6">Reservas de {{timeFrame}}</span>
                         </v-col>
                     </v-row>
                 </v-col>
@@ -140,6 +140,7 @@ export default {
             spaceStore: null,
             space: null,
             deleteModal: false,
+            timeFrame: null,
         };
     },
     components: {
@@ -159,9 +160,9 @@ export default {
 
             if (timeInMinutes >= 60) {
                 const timeInHours = timeInMinutes / 60;
-                this.space.time = timeInHours === 1 ? '1 hora' : `${timeInHours} horas`;
+                this.timeFrame = timeInHours === 1 ? '1 hora' : `${timeInHours} horas`;
             } else {
-                this.space.time = `${timeInMinutes} minutos`;
+                this.timeFrame = `${timeInMinutes} minutos`;
             }
         }
     },

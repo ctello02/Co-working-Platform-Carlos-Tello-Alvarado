@@ -23,16 +23,6 @@
             required
             :rules="[v => !!v || 'El campo es obligatorio']"
           />
-          <v-select
-            v-model="selectedTimeFrame"
-            :items="timeFrames"
-            item-title="label"
-            item-value="value"
-            label="Duración de las reservas"
-            prepend-icon="mdi-clock-outline"
-            :rules="[v => !!v || 'El campo es obligatorio']"
-            variant="outlined"
-          ></v-select>
           <v-row>
             <v-col>
               <v-file-input
@@ -57,7 +47,17 @@
                 @input="spaceSeats = Math.max(0, spaceSeats)"
               /> 
             </v-col>
-          </v-row>   
+          </v-row>
+          <v-select
+            v-model="selectedTimeFrame"
+            :items="timeFrames"
+            item-title="label"
+            item-value="value"
+            label="Duración de las reservas"
+            prepend-icon="mdi-clock-outline"
+            :rules="[v => !!v || 'El campo es obligatorio']"
+            variant="outlined"
+          ></v-select>
         </v-form>
 
         <!-- Alertas de éxito o error -->
@@ -98,7 +98,6 @@ export default {
       spaceSeats: null,
       success: false,
       alertModal: false,
-      alertMessage: null,
       selectedTimeFrame: null,
       timeFrames: [
         { label: '15 mins', value: 15 },
