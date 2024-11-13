@@ -1,8 +1,7 @@
 <template>
-    <v-container class="pa-10 container">
-        <v-card>
+    <v-container class="pa-5 container">
+        <v-card v-if="space" class="mx-auto" max-width="600">
             <v-img
-                v-if="newSpace?.imageUrl"
                 :src="newSpace?.imageUrl"
                 color="surface-variant"
                 height="300px"
@@ -31,11 +30,7 @@
                 />
             </v-img>
 
-            <v-card-title v-if="!space" class="mt-4">
-                <span class="ml-3 text-h4">Espacio no encontrado</span>
-            </v-card-title>
-
-            <v-card-text v-if="newSpace && space">
+            <v-card-text>
                 <v-form ref="form">
                     <v-col>
                         <v-row class="mb-n5">
@@ -102,20 +97,16 @@
                 </v-fade-transition>
             </v-card-text>
 
-            <v-card-text v-else>
-                <span class="ml-3 text-h6">Por favor vuelva a la lista de espacios</span>
-            </v-card-text>
-
-            <v-card-actions>
-                <v-spacer></v-spacer>
+            <v-card-actions class="mt-n8 mb-4">
                 <TonalButton 
-                    class="mt-n2 mr-4 mb-4"
+                    class="ml-5"
                     color="grey" 
                     text="Volver" 
                     @click="routerBack"
                 />
+                <v-spacer></v-spacer>
                 <TonalButton 
-                    v-if="space"
+                    class="mr-5"
                     color="blue" 
                     text="Guardar" 
                     @click="submit" 
@@ -123,6 +114,9 @@
                 />
             </v-card-actions>
         </v-card>
+
+        <InfoNotFound v-else max_width="600" text="Espacio" routeBack="/spaces"/>
+
     </v-container>
 </template>
 
@@ -130,7 +124,7 @@
 import { useSpaceStore } from '@/store/spaceStore';
 import { spaceService } from '@/services/spaceService';
 import TonalButton from '@/components/TonalButton.vue'
-
+import InfoNotFound from '@/components/InfoNotFound.vue';
 
 export default {
     data() {
@@ -153,28 +147,21 @@ export default {
                 { label: '4 horas', value: 240 },
                 { label: '5 horas', value: 300 },
             ],
-            textRules: [
-                v => !!v || 'El texto es requerido',
-            ],
-            imageRules: [
-                v => !!v || 'La imagen es requerida',
-            ]
         };
     },
     components: {
-        TonalButton
+        TonalButton,
+        InfoNotFound
     },
     mounted() {
         this.spaceStore = useSpaceStore();
         this.space = this.spaceStore.getSelectedSpace;
         this.newSpace = { ...this.space };    // Hacer una copia del objeto space
-        this.selectedTimeFrame = this.space.time;
+        this.selectedTimeFrame = this.space?.time;
     },
     methods: {
         routerBack() {
-            if (this.space) {
-                this.$router.push('/spaceInfo');
-            }else this.$router.push('/spaces');
+            this.$router.push('/spaceInfo');
         },
         triggerFileInput() {
             this.$refs.fileInput.click();
@@ -219,10 +206,8 @@ export default {
                 spaceService.updateSpace(formData)
                     .then(res => {
                         console.log(res.data);
-                        this.spaceStore.setSelectedSpace(this.newSpace);
-                        console.log("NewSpace que se guarda en la spaceStore: "+this.newSpace);
-
-
+                        const newSpaceSelected = { ...this.newSpace };
+                        this.spaceStore.setSelectedSpace(newSpaceSelected);
                         // Mostrar la alerta de éxito y ocultarla después de 3 segundos
                         this.success = true;
                         setTimeout(() => {

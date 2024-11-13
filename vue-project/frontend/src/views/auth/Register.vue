@@ -195,24 +195,37 @@ export default {
     address: '',
     isCompany: false,
     cif: '',
-    nameRules: [v => !!v || 'El nombre es requerido'],
-    emailRules: [
-      v => !!v || 'El email es obligatorio',
-      v => /.+@.+\..+/.test(v) || 'El email debe ser válido',
+    nameRules : [v => !!v || 'El nombre es requerido'],
+    companyNameRules: [v => !!v || 'El nombre de la empresa es requerido'],
+    emailRules : [
+        v => !!v || 'El email es obligatorio',
+        v => /^[\w.-]+@[a-zA-Z\d.-]+\.[a-zA-Z]{2,}$/i.test(v) || 'El email debe ser válido',
+    ],
+    companyEmailRules: [
+      v => !!v || 'El email de la empresa es requerido',
+      v => /^[\w.-]+@[a-zA-Z\d.-]+\.[a-zA-Z]{2,}$/i.test(v) || 'El email debe ser válido',
     ],
     passwordRules: [
       v => !!v || 'La contraseña es requerida',
-      v => v.length >= 6 || 'La contraseña debe tener al menos 6 caracteres',
+      v => v.length >= 8 || 'La contraseña debe tener al menos 8 caracteres',
+      v => /[A-Z]/.test(v) || 'La contraseña debe incluir al menos una letra mayúscula',
+      v => /[a-z]/.test(v) || 'La contraseña debe incluir al menos una letra minúscula',
+      v => /\d/.test(v) || 'La contraseña debe incluir al menos un número',
     ],
-    phoneRules: [v => !!v || 'El teléfono de contacto es requerido'],
-    addressRules: [v => !!v || 'La dirección es requerida'],
-    companyNameRules: [v => !!v || 'El nombre de la empresa es requerido'],
-    cifRules: [v => !!v || 'El CIF es requerido'],
-    companyEmailRules: [
-      v => !!v || 'El email de la empresa es requerido',
-      v => /\S+@\S+\.\S+/.test(v) || 'El email debe ser válido',
+    phoneRules : [
+        v => !!v || 'El teléfono de contacto es requerido',
+        v => /^[6-9]\d{8}$/.test(v) || 'El teléfono debe tener 9 dígitos y empezar con un número válido (6-9)',
     ],
-    companyAddressRules: [v => !!v || 'La dirección de la empresa es requerida'],
+    addressRules : [
+        v => !!v || 'La dirección es requerida',
+    ],
+    companyAddressRules : [
+        v => !!v || 'La dirección es requerida',
+    ],
+    cifRules : [
+        v => !!v || 'El CIF es requerido',
+        v => /^[A-HJNP-SUVW]\d{7}[A-J]$/i.test(v) || 'El CIF debe ser válido y comenzar con una letra válida',
+    ],
   }),
   methods: {
     camposVacios() {

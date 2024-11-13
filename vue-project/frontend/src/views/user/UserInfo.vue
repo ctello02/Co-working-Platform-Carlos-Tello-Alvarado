@@ -1,130 +1,125 @@
 <template>
-    <v-container class="pa-10 container">
-        <v-card class="pa-3" outlined>
-            <v-card-title v-if="user" class="my-2">
-                <span class="text-h4">Información del usuario</span>
-            </v-card-title>
-
-            <v-card-title v-else>
-                <span class="text-h4">Usuario no encontrado</span>
-            </v-card-title>
-
-            <v-card-text class="mx-n3" v-if="user">
+    <v-container class="pa-5 container">
+        <v-card v-if="user" class="mx-auto" max-width="500">
+            <v-card-text>
                 <v-col>
-                    <v-row v-if="user?.isCompany" cols="12" md="6">
-                        <v-list-item>
-                        <v-list-item-content>
-                            <v-list-item-title>Empresa</v-list-item-title>
-                            <v-list-item-subtitle>{{ user?.name }}</v-list-item-subtitle>
-                        </v-list-item-content>
-                        </v-list-item>
+                    <v-row cols="12">
+                        <v-col cols="1" class="d-flex align-center">
+                            <v-icon
+                                size="x-large"
+                                :icon="user?.isCompany? 'mdi-office-building-outline': 'mdi-account-circle-outline'"
+                            />
+                        </v-col>
+                        <v-col>
+                            <span class="pt-2 text-h4">{{ user?.name }}</span>
+                            <v-spacer/>
+                            <span v-if="user?.isCompany" style="color: grey;" class="text-h6">Empresa, CIF: {{ user?.cif }}</span>
+                            <span v-else style="color: grey;" class="text-h6">Usuario</span>
+                        </v-col>
+                        
                     </v-row>
 
-                    <v-row v-if="user?.isCompany" cols="12" md="6">
-                        <v-list-item>
-                        <v-list-item-content>
-                            <v-list-item-title>CIF</v-list-item-title>
-                            <v-list-item-subtitle>{{ user?.cif }}</v-list-item-subtitle>
-                        </v-list-item-content>
-                        </v-list-item>
+                    <v-row v-if="user?.isAdmin" cols="12">
+                        <v-col cols="1" class="d-flex align-center">
+                            <v-icon
+                            size="x-large"
+                            icon="mdi-account-lock-outline"
+                            ></v-icon>
+                        </v-col>
+                        <v-col>
+                            <span class="text-h6">Administrador</span>
+                        </v-col>
                     </v-row>
 
-                    <v-row v-if="!user?.isCompany" cols="12" md="6">
-                        <v-list-item>
-                        <v-list-item-content>
-                            <v-list-item-title>Nombre</v-list-item-title>
-                            <v-list-item-subtitle>{{ user?.name }}</v-list-item-subtitle>
-                        </v-list-item-content>
-                        </v-list-item>
+                    <v-row cols="12">
+                        <v-col cols="1" class="d-flex align-center">
+                            <v-icon
+                            size="x-large"
+                            icon="mdi-email-outline"
+                            ></v-icon>
+                        </v-col>
+                        <v-col>
+                            <span class="text-h6">{{ user?.email }}</span>
+                        </v-col>
                     </v-row>
 
-                    <v-row cols="12" md="6">
-                        <v-list-item>
-                        <v-list-item-content>
-                            <v-list-item-title>Email</v-list-item-title>
-                            <v-list-item-subtitle>{{ user?.email }}</v-list-item-subtitle>
-                        </v-list-item-content>
-                        </v-list-item>
+                    <v-row cols="12">
+                        <v-col cols="1" class="d-flex align-center">
+                            <v-icon
+                            size="x-large"
+                            icon="mdi-phone-outline"
+                            ></v-icon>
+                        </v-col>
+                        <v-col>
+                            <span class="text-h6">{{ user?.phone }}</span>
+                        </v-col>
                     </v-row>
 
-                    <v-row cols="12" md="6">
-                        <v-list-item>
-                        <v-list-item-content>
-                            <v-list-item-title>Teléfono</v-list-item-title>
-                            <v-list-item-subtitle>{{ user?.phone }}</v-list-item-subtitle>
-                        </v-list-item-content>
-                        </v-list-item>
-                    </v-row>
-
-                    <v-row cols="12" md="6">
-                        <v-list-item>
-                        <v-list-item-content>
-                            <v-list-item-title>Dirección</v-list-item-title>
-                            <v-list-item-subtitle>{{ user?.address }}</v-list-item-subtitle>
-                        </v-list-item-content>
-                        </v-list-item>
-                    </v-row>
-
-                    <v-row cols="12" md="6">
-                        <v-list-item>
-                        <v-list-item-content>
-                            <v-list-item-title>Administrador</v-list-item-title>
-                            <v-list-item-subtitle>{{ user?.isAdmin ? 'Si' : 'No' }}</v-list-item-subtitle>
-                        </v-list-item-content>
-                        </v-list-item>
+                    <v-row cols="12">
+                        <v-col cols="1" class="d-flex align-center">
+                            <v-icon
+                                size="x-large"
+                                :icon="user?.isCompany? 'mdi-map-marker-outline': 'mdi-home-outline'"
+                                icon="mdi-map-marker-outline"
+                            ></v-icon>
+                        </v-col>
+                        <v-col>
+                            <span class="text-h6">{{ user?.address }}</span>
+                        </v-col>
                     </v-row>
                 </v-col>
             </v-card-text>
 
-            <v-card-text v-else>
-                <span class="text-h6">Por favor vuelva a la lista de usuarios</span>
-            </v-card-text>
-
-            <v-card-actions>
-                <v-spacer></v-spacer>
+            <v-card-actions v-if="user" class="mt-n3 mb-3 mr-3 d-flex justify-end ga-3">
+                <v-btn 
+                    v-if="this.userStore.getIsAdmin"
+                    @click="openEditUserInfo()"
+                    variant="tonal"
+                    size="small"
+                    icon="mdi-pencil" 
+                />
+                <v-btn 
+                    v-if="this.userStore.getIsAdmin"
+                    @click="this.deleteModal = true"
+                    variant="tonal"
+                    size="small"
+                    icon="mdi-trash-can-outline" 
+                />
                 <TonalButton 
                     color="grey" 
                     text="Volver" 
                     @click="routerBack"
                 />
-                <TonalButton 
-                    v-if="user"
-                    color="blue" 
-                    text="Editar información" 
-                    @click="openEditUserInfo()"
-                />
-                <TonalButton 
-                    v-if="user"
-                    color="red" 
-                    text="Borrar usuario" 
-                    @click="this.deleteModal = true"
-                />
             </v-card-actions>
         </v-card>
+
+        <InfoNotFound v-else max_width="500" text="Usuario" routeBack="/users"/>
     </v-container>
 
     <!-- Modal de eliminación -->
-    <v-dialog v-model="deleteModal" max-width="600px">
+    <v-dialog v-model="deleteModal" max-width="450px">
       <v-card>
-        <v-card-title>
+        <v-card-title class="ml-2 mt-3">
           <span class="text-h4">Borrar usuario</span>
         </v-card-title>
 
         <v-card-text>
-          <v-col>
             <v-row>
-              <h2>¿Estás seguro de que quieres borrar este usuario?</h2>
+              <span class="ml-3 text-h6" style="color: #EF0107;">Esta acción no se puede deshacer.</span>
             </v-row>
-            <v-row>
-              <h3 style="color: tomato;">Esta acción no se puede deshacer.</h3>
-            </v-row>
-          </v-col>
         </v-card-text>
 
-        <v-card-actions>
-          <v-spacer></v-spacer>
-          <TonalButton color="grey" text="Cancelar" @click="deleteModal = false"/>
-          <TonalButton color="red" text="Borrar" @click="deleteUser"/>
+        <v-card-actions class="mt-n2 mb-3 mr-3 d-flex justify-end ga-3">
+          <TonalButton 
+            color="grey" 
+            text="Cancelar" 
+            @click="deleteModal = false"
+          />
+          <TonalButton 
+            color="red" 
+            text="Borrar" 
+            @click="deleteUser"
+          />
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -135,6 +130,7 @@
 import { useUserStore } from '@/store/userStore';
 import { userService } from '@/services/userService';
 import TonalButton from '@/components/TonalButton.vue';
+import InfoNotFound from '@/components/InfoNotFound.vue';
 
 export default {
     data() {
@@ -149,7 +145,8 @@ export default {
         this.user = this.userStore.getSelectedUser;
     },
     components:{
-        TonalButton
+        TonalButton,
+        InfoNotFound
     },
     methods: {
         routerBack() {

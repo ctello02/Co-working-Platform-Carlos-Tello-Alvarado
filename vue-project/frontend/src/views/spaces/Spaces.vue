@@ -122,7 +122,7 @@
                                 <h2>¿Estás seguro de que quieres borrar este espacio?</h2>
                             </v-row>
                             <v-row>
-                                <h3 style="color: tomato;">Esta acción no se puede deshacer.</h3>
+                                <h3 style="color: #EF0107;">Esta acción no se puede deshacer.</h3>
                             </v-row>
                             <v-container id="info-container">
                                 <p>Nombre: <span class="text-h6">{{ selectedSpace?.name }}</span></p>

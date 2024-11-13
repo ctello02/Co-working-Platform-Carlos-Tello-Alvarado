@@ -88,7 +88,7 @@
 
         <v-card-text>
             <v-row>
-              <span class="ml-3 text-h6" style="color: tomato;">¿Estás seguro de que quieres cerrar sesión?</span>
+              <span class="ml-3 text-h6" style="color: #EF0107;">¿Estás seguro de que quieres cerrar sesión?</span>
             </v-row>
         </v-card-text>
 

@@ -1,34 +1,28 @@
 <template>
     <v-container class="pa-5 container">
-        <v-card class="mx-auto" max-width="600" >
+        <v-card v-if="space" class="mx-auto" max-width="600" >
             <v-img
-                v-if="space?.imageUrl"
                 :src="space?.imageUrl"
                 color="surface-variant"
                 height="300px"
                 cover  
             />                            
-
-            <v-card-title v-if="!space" class="mt-4">
-                <span class="ml-3 text-h4">Espacio no encontrado</span>
-            </v-card-title>
-
-            <v-card-text v-if="space && this.timeFrame">
+            <v-card-text v-if="this.timeFrame">
                 <v-col>
-                    <v-row class="mt-n5 mb-n3" v-if="space?.name" cols="12">
-                        <v-col>
+                    <v-row class="mt-n5 mb-n3" cols="12">
+                        <v-col cols="9">
                             <span class="text-h4">{{ space?.name }}</span>
                         </v-col>
-                        <v-col class="d-flex align-center justify-end ga-2">
+                        <v-col class="d-flex align-center justify-end ga-3">
                             <v-btn 
-                            v-if="userStore.getIsAdmin && space"
+                            v-if="userStore.getIsAdmin"
                             @click="openEditSpaceInfo()"
                                 variant="tonal"
                                 size="small"
                                 icon="mdi-pencil" 
                             />
                             <v-btn 
-                            v-if="userStore.getIsAdmin && space"
+                            v-if="userStore.getIsAdmin"
                             @click="this.deleteModal = true"
                                 variant="tonal"
                                 size="small"
@@ -37,11 +31,11 @@
                         </v-col>
                     </v-row>
 
-                    <v-row class="my-n3" v-if="space?.description" cols="12">
+                    <v-row class="my-n3" cols="12">
                         <v-col cols="1" class="d-flex align-center">
                             <v-icon
-                            icon="mdi-text"
-                            ></v-icon>
+                                icon="mdi-text"
+                            />
                         </v-col>
                         <v-col>
                             <span class="pt-2 text-h6">{{ space?.description }}</span>
@@ -51,9 +45,9 @@
                     <v-row class="my-n3" cols="12">
                         <v-col cols="1" class="d-flex align-center">
                             <v-icon
-                            icon="mdi-table-chair"
-                            size="small"
-                            ></v-icon>
+                                icon="mdi-table-chair"
+                                size="small"
+                            />
                         </v-col>
                         <v-col>
                             <span class="pt-2 text-h6">{{space?.seats}} asientos</span>
@@ -63,9 +57,9 @@
                     <v-row class="mt-n3 mb-n5" cols="12">
                         <v-col cols="1" class="d-flex align-center">
                             <v-icon
-                            icon="mdi-clock-outline"
-                            size="small"
-                            ></v-icon>
+                                icon="mdi-clock-outline"
+                                size="small"
+                            />
                         </v-col>
                         <v-col>
                             <span class="pt-2 text-h6">Reservas de {{timeFrame}}</span>
@@ -74,11 +68,7 @@
                 </v-col>
             </v-card-text>
 
-            <v-card-text v-else>
-                <span class="ml-3 text-h6">Por favor vuelva a la lista de espacios</span>
-            </v-card-text>
-
-            <v-card-actions v-if="space" class="mt-n2 mb-4">
+            <v-card-actions class="mt-n2 mb-4">
                 <TonalButton
                     class="ml-5"
                     color="grey"
@@ -92,16 +82,9 @@
                     text="Reservar"
                 />
             </v-card-actions>
-            <v-card-actions v-else class="mt-n2 mb-4">
-                <v-spacer></v-spacer>
-                <TonalButton
-                    class="mr-4"
-                    color="grey"
-                    text="Volver"
-                    @click="routerBack" 
-                />               
-            </v-card-actions>
         </v-card>
+
+        <InfoNotFound v-else max_width="600" text="Espacio" routeBack="/spaces"/>
     </v-container>
 
     <!-- Modal de eliminación -->
@@ -113,14 +96,21 @@
 
         <v-card-text>
             <v-row>
-              <span class="ml-3 text-h6" style="color: tomato;">Esta acción no se puede deshacer.</span>
+              <span class="ml-3 text-h6" style="color: #EF0107;">Esta acción no se puede deshacer.</span>
             </v-row>
         </v-card-text>
 
-        <v-card-actions>
-          <v-spacer></v-spacer>
-          <TonalButton color="grey" text="Cancelar" @click="deleteModal = false"/>
-          <TonalButton color="red" text="Borrar" @click="deleteSpace"/>
+        <v-card-actions class="mt-n2 mb-3 mr-3 d-flex justify-end ga-3">
+          <TonalButton 
+            color="grey" 
+            text="Cancelar" 
+            @click="deleteModal = false"
+          />
+          <TonalButton 
+            color="red" 
+            text="Borrar" 
+            @click="deleteSpace"
+          />
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -132,7 +122,7 @@ import { useUserStore } from '@/store/userStore';
 import { useSpaceStore } from '@/store/spaceStore';
 import { spaceService } from '@/services/spaceService';
 import TonalButton from '@/components/TonalButton.vue'
-
+import InfoNotFound from '@/components/InfoNotFound.vue';
 
 export default {
     data() {
@@ -144,7 +134,8 @@ export default {
         };
     },
     components: {
-        TonalButton
+        TonalButton,
+        InfoNotFound
     },
     computed: {
         userStore() {

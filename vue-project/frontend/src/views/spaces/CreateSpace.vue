@@ -1,8 +1,8 @@
 <template>
-  <v-container class="pa-10 container">
-    <v-card class="pa-3" outlined>
+  <v-container class="pa-5 container">
+    <v-card class="mx-auto pa-3" max-width="600">
       <v-card-title class="my-2">
-        <span class="text-h4">Crear espacio</span>
+        <span class="text-h4">Nuevo espacio</span>
       </v-card-title>
       <v-card-text>
         <v-form ref="form">
@@ -71,9 +71,13 @@
         </v-fade-transition>
       </v-card-text>
 
-      <v-card-actions>
+      <v-card-actions class="mx-2 mt-n5 mb-1">
+        <TonalButton 
+          color="grey" 
+          text="Volver" 
+          @click="routerBack"
+        />
         <v-spacer></v-spacer>
-        <TonalButton color="grey" text="Volver" @click="routerBack"/>
         <TonalButton 
           text="Crear"
           @click="submit" 
