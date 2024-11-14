@@ -40,44 +40,16 @@
           </v-table>
         </v-card>
       </v-row>
-      
     </v-col>
 
-    <!-- Modal de eliminación -->
-    <v-dialog v-model="deleteModal" max-width="600px">
-      <v-card>
-        <v-card-title class="mt-3 mb-n3">
-          <span class="ml-2 text-h4">Borrar usuario</span>
-        </v-card-title>
-
-        <v-card-text>
-          <v-col>
-            <v-row>
-              <h2>¿Estás seguro de que quieres borrar este usuario?</h2>
-            </v-row>
-            <v-row>
-              <h3 style="color: #EF0107;">Esta acción no se puede deshacer.</h3>
-            </v-row>
-            <v-container id="info-container">
-              <p>Nombre: <span class="text-h6">{{ selectedUser?.name }}</span></p>
-              <p>Email: <span class="text-h6">{{ selectedUser?.email }}</span></p>
-              <p>Teléfono: <span class="text-h6">{{ selectedUser?.phone }}</span></p>
-              <p>Dirección: <span class="text-h6">{{ selectedUser?.address }}</span></p>
-              <p>¿Es empresa?: <span class="text-h6">{{ selectedUser?.isCompany ? 'Si' : 'No' }}</span></p>
-              <p v-if="selectedUser.isCompany" class="text-h6">CIF: <span class="text-h6">{{ selectedUser?.cif }}</span>
-              </p>
-              <p>¿Es administrador?: <span class="text-h6">{{ selectedUser?.isAdmin ? 'Si' : 'No' }}</span></p>
-            </v-container>
-          </v-col>
-        </v-card-text>
-
-        <v-card-actions>
-          <v-spacer></v-spacer>
-          <TonalButton color="grey" text="Cancelar" @click="deleteModal = false"/>
-          <TonalButton color="red" text="Borrar" @click="deleteUser"/>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+    <AskModal
+      v-model="deleteModal"
+      :title="'¿Borrar usuario?'"
+      :message="'¿Estás seguro de que quieres borrar este usuario?'"
+      :actionText="'Borrar usuario'"
+      :closeModal="closeDialog"
+      :action="deleteUser"
+    />
 
   </v-container>
 </template>
@@ -85,7 +57,9 @@
 <script>
 import { useUserStore } from '@/store/userStore';
 import { userService } from '@/services/userService';
+import { useToast } from 'vue-toastification';
 import TonalButton from '@/components/TonalButton.vue';
+import AskModal from '@/components/AskModal.vue';
 
 export default {
   name: 'UsersTable',
@@ -100,7 +74,8 @@ export default {
     };
   },
   components: {
-    TonalButton
+    TonalButton,
+    AskModal
   },
   computed: {
   },
@@ -118,6 +93,9 @@ export default {
       this.selectedUser = { ...user }; // Hacer una copia del usuario seleccionado
       this.deleteModal = true;
     },
+    closeDialog() {
+      this.deleteModal = false;
+    },
     getUsers() {
       userService.getUsers()
         .then(res => {
@@ -130,11 +108,13 @@ export default {
         });
     },
     deleteUser() {
+      const toast = useToast();
       userService.deleteUser(this.selectedUser._id)
         .then(res => {
           //console.log(res.data);
           this.deleteModal = false;
           this.getUsers();
+          toast.error('Usuario eliminado con éxito');
         })
         .catch(error => {
           console.log(error);

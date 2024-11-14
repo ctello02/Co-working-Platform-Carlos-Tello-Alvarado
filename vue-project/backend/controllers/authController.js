@@ -14,14 +14,21 @@ exports.signup = async (req, res) => {
             isCompany: req.body.isCompany,
             cif: req.body.cif,
         });
+
         await newUser.save();
         const token = jwt.sign({ _id: newUser._id }, process.env.SECRET, { expiresIn: '1w' });
 
         res.status(201).json({ token, user: newUser });
     } catch (error) {
+        // Verificar si el error es de clave duplicada
+        if (error.code === 11000 && error.keyPattern && error.keyPattern.email) {
+            // Código 409: "Conflict" 
+            return res.status(409).json({ message: "El correo ya está en uso" });
+        }
         res.status(500).json({ message: error.message });
     }
 };
+
 
 exports.login = async (req, res) => {
     try {

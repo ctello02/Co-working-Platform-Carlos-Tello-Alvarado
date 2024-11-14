@@ -1,55 +1,60 @@
 <template>
-  <v-card class="pa-10 container" outlined>
-    <v-form
-      ref="form"
-      @submit.prevent="handleSubmit"
-    >
-      <v-row>
-        <v-col cols="12">
-          <h2 class="title">Forgot Password</h2>
-        </v-col>
-      </v-row>
+  <v-container class="container">
+    <v-card class="mx-auto px-3" max-width="450">
+      <v-card-title class="my-3">
+        <span class="text-h4"><b>Recuperar contraseña</b></span>
+      </v-card-title>
+      <v-card-text>
+        <v-col>
+          <v-row>
+            <v-text-field
+              v-model="email"
+              label="Email"
+              type="email"
+              variant="outlined"
+              prepend-icon="mdi-email-outline"
+              required
+              :rules="emailRules"
+              autocomplete="off"
+              class="my-1"
+            />
+          </v-row>
 
-      <v-row>
-        <v-col cols="12">
-          <v-text-field
-            v-model="email"
-            label="Enter email"
-            type="email"
-            required
-            :rules="emailRules"
-            autocomplete="off"
-            outlined
-          />
-        </v-col>
-      </v-row>
+          <v-row>
+            <v-btn
+              class="cta-btn custom-disabled-btn"
+              color="#1056bd"
+              variant="tonal"
+              @click="submit"
+              :disabled="camposVacios() || loading"
+              block
+            >
+              <template v-if="loading">
+                <v-progress-circular indeterminate size="20" color="white" />
+              </template>
+              <template v-else>
+                <b>Enviar correo</b>
+              </template>
+            </v-btn>
 
-      <v-row>
-        <v-col cols="12">
-          <TonalButton
-            class="cta-btn custom-disabled-btn"
-            text="Send"
-            color="blue"
-            type="submit"
-            :disabled="camposVacios()"
-            block
-          />
-            
-          
+          </v-row>
+          <v-row>
+            <v-col class="text-center">
+              <p class="subtitle">
+                ¿Prefiere volver?
+                <router-link class="routerLink" to="/login">Inicia sesión</router-link>
+              </p>
+            </v-col>
+          </v-row>
         </v-col>
-      </v-row>
-
-      <v-row>
-        <v-col cols="12" class="text-center">
-          <p v-if="message">{{ message }}</p>
-        </v-col>
-      </v-row>
-    </v-form>
-  </v-card>
+      </v-card-text>
+    </v-card>
+  </v-container>
 </template>
   
 <script>
 import { authService } from '@/services/authService';
+import { useToast } from 'vue-toastification';
 import TonalButton from '@/components/TonalButton.vue';
 
 
@@ -57,11 +62,11 @@ export default {
   data() {
     return {
       email: "",
-      message: "",
-      emailRules: [
-        v => !!v || 'E-mail is required',
-        v => /\S+@\S+\.\S+/.test(v) || 'E-mail must be valid',
-      ]
+      loading: false, // Estado de carga
+      emailRules : [
+        v => !!v || 'El email es obligatorio',
+        v => /^[\w.-]+@[a-zA-Z\d.-]+\.[a-zA-Z]{2,}$/i.test(v) || 'El email debe ser válido',
+      ],
     };
   },
   components: {
@@ -71,45 +76,32 @@ export default {
     camposVacios() {
       // Verificar que los campos no estén vacíos y que cumplan las reglas de validación
       const emailValido = this.emailRules.every(rule => rule(this.email) === true);
-
       return !(this.email && emailValido);
     },
-    async handleSubmit() {
-      if (this.$refs.form.validate()) {
-
-        authService.forgotPassword(this.email)
-          .then(res => {
-            console.log(res.data);
-            this.message = res.data.message;
-          })
-          .catch(error => {
-            console.log(error);
-          });
-      }
+    async submit() {
+      this.loading = true; // Activa el estado de carga
+      const toast = useToast();
+      authService.forgotPassword(this.email)
+        .then(res => {
+          console.log(res.data);
+          toast.success(res.data.message);
+          this.email = null;
+        })
+        .catch(error => {
+          console.log(error);
+        })
+        .finally(() => {
+          this.loading = false; // Desactiva el estado de carga
+        });
     },
-    clear() {
-      this.$refs.form.reset();
-    }
   }
 };
 </script>
 
 <style scoped>
-.title {
-  text-align: center;
-  font-weight: bold;
-  margin-bottom: 20px;
-}
-
 .cta-btn {
   font-weight: bold;
   text-transform: uppercase;
-}
-
-.container {
-  max-width: 400px;
-  margin: 0 auto;
-  margin-top: 2em;
 }
 
 .custom-disabled-btn:disabled {
@@ -118,6 +110,22 @@ export default {
   cursor: not-allowed; 
   opacity: 1; 
   border: 1px solid #bbb; 
+}
+
+.routerLink {
+  text-decoration: none; 
+  font-weight: bold;
+  cursor: pointer;
+  color: rgb(16, 86, 189);
+  font-size: medium;
+}
+
+.routerLink:hover {
+  text-decoration: underline; 
+}
+
+.routerLink:visited {
+  color: rgb(16, 86, 189);
 }
 </style>
   

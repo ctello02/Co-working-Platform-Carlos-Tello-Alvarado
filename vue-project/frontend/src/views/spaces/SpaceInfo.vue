@@ -68,52 +68,30 @@
                 </v-col>
             </v-card-text>
 
-            <v-card-actions class="mt-n2 mb-4">
+            <v-card-actions class="d-flex justify-end ga-3 mt-n3 mb-3 mr-5">
                 <TonalButton
-                    class="ml-5"
                     color="grey"
                     text="Volver"
                     @click="routerBack" 
                 />
-                <v-spacer></v-spacer>
                 <TonalButton
-                    class="mr-5"
+                    class=""
                     color="blue"
                     text="Reservar"
                 />
             </v-card-actions>
         </v-card>
 
-        <InfoNotFound v-else max_width="600" text="Espacio" routeBack="/spaces"/>
     </v-container>
 
-    <!-- Modal de eliminación -->
-    <v-dialog v-model="deleteModal" max-width="450px">
-      <v-card>
-        <v-card-title class="ml-2 mt-3">
-          <span class="text-h4">Borrar espacio</span>
-        </v-card-title>
-
-        <v-card-text>
-            <v-row>
-              <span class="ml-3 text-h6" style="color: #EF0107;">Esta acción no se puede deshacer.</span>
-            </v-row>
-        </v-card-text>
-
-        <v-card-actions class="mt-n2 mb-3 mr-3 d-flex justify-end ga-3">
-          <TonalButton 
-            color="grey" 
-            text="Cancelar" 
-            @click="deleteModal = false"
-          />
-          <TonalButton 
-            color="red" 
-            text="Borrar" 
-            @click="deleteSpace"
-          />
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+    <AskModal
+        v-model="deleteModal"
+        :title="'¿Borrar espacio?'"
+        :message="'¿Estás seguro de que quieres borrar este espacio?'"
+        :actionText="'Borrar espacio'"
+        :closeModal="closeDialog"
+        :action="deleteSpace"
+    />
 
 </template>
 
@@ -122,7 +100,7 @@ import { useUserStore } from '@/store/userStore';
 import { useSpaceStore } from '@/store/spaceStore';
 import { spaceService } from '@/services/spaceService';
 import TonalButton from '@/components/TonalButton.vue'
-import InfoNotFound from '@/components/InfoNotFound.vue';
+import AskModal from '@/components/AskModal.vue';
 
 export default {
     data() {
@@ -135,7 +113,7 @@ export default {
     },
     components: {
         TonalButton,
-        InfoNotFound
+        AskModal
     },
     computed: {
         userStore() {
@@ -145,6 +123,10 @@ export default {
     mounted() {
         this.spaceStore = useSpaceStore();
         this.space = this.spaceStore.getSelectedSpace;
+
+        if (!this.space) {
+            this.$router.push('/spaces'); // Redirigir al componente padre
+        }
 
         if (this.space?.time) {
             const timeInMinutes = parseFloat(this.space.time);
@@ -164,6 +146,9 @@ export default {
         openEditSpaceInfo() {
             this.$router.push('/editSpaceInfo');
         },
+        closeDialog() {
+            this.deleteModal = false;
+        },
         deleteSpace() {
             spaceService.deleteSpace(this.space._id)
             .then(res => {
@@ -179,21 +164,3 @@ export default {
     },
 };
 </script>
-
-<style scoped>  
-.container {
-    max-width: 700px;
-    margin: 0 auto;
-}
-
-.v-list-item-subtitle{
-  margin-bottom: 5px;
-  padding-bottom: 3px;
-}
-
-.title {
-  font-weight: bold;
-  margin-bottom: 20px;
-}
-
-</style>

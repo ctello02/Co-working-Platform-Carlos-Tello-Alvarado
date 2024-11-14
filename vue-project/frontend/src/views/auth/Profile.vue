@@ -1,104 +1,104 @@
 <template>
-  <v-container class="pa-10 container" v-if="user">
-    <v-card class="pa-3" outlined>
-      <v-card-title class="my-2">
-        <span class=" text-h4">Perfil</span>
-      </v-card-title>
-
-      <v-card-text class="mx-n3">
+  <v-container class="container">
+    <v-card v-if="user" class="mx-auto px-2" max-width="550">
+      <v-card-text>
         <v-col>
-          <v-row v-if="user.isCompany" cols="12" md="6">
-            <v-list-item>
-              <v-list-item-content>
-                <v-list-item-title>Empresa</v-list-item-title>
-                <v-list-item-subtitle>{{ user.name }}</v-list-item-subtitle>
-              </v-list-item-content>
-            </v-list-item>
+          <v-row cols="12">
+            <v-col cols="1" class="d-flex align-center">
+              <v-icon
+                  size="x-large"
+                  :icon="user?.isCompany? 'mdi-office-building-outline': 'mdi-account-circle-outline'"
+              />
+            </v-col>
+            <v-col>
+              <span class="ml-n1 text-h4">{{ user?.name }}</span>
+              <v-spacer/>
+              <span v-if="user?.isCompany" style="color: grey;" class="text-h6">Empresa, CIF: {{ user?.cif }}</span>
+              <span v-else style="color: grey;" class="text-h6">Usuario</span>
+            </v-col>
           </v-row>
 
-          <v-row v-if="user.isCompany" cols="12" md="6">
-            <v-list-item>
-              <v-list-item-content>
-                <v-list-item-title>CIF</v-list-item-title>
-                <v-list-item-subtitle>{{ user.cif }}</v-list-item-subtitle>
-              </v-list-item-content>
-            </v-list-item>
+          <v-row v-if="user?.isAdmin" cols="12">
+            <v-col cols="1" class="d-flex align-center">
+              <v-icon
+                size="x-large"
+                icon="mdi-account-lock-outline"
+              ></v-icon>
+            </v-col>
+            <v-col>
+              <span class="text-h6">Administrador</span>
+            </v-col>
           </v-row>
 
-          <v-row v-if="!user.isCompany" cols="12" md="6">
-            <v-list-item>
-              <v-list-item-content>
-                <v-list-item-title>Nombre</v-list-item-title>
-                <v-list-item-subtitle>{{ user.name }}</v-list-item-subtitle>
-              </v-list-item-content>
-            </v-list-item>
+          <v-row cols="12">
+            <v-col cols="1" class="d-flex align-center">
+              <v-icon
+                size="x-large"
+                icon="mdi-email-outline"
+              ></v-icon>
+            </v-col>
+            <v-col>
+              <span class="text-h6">{{ user?.email }}</span>
+            </v-col>
           </v-row>
 
-          <v-row cols="12" md="6">
-            <v-list-item>
-              <v-list-item-content>
-                <v-list-item-title>Email</v-list-item-title>
-                <v-list-item-subtitle>{{ user.email }}</v-list-item-subtitle>
-              </v-list-item-content>
-            </v-list-item>
+          <v-row cols="12">
+            <v-col cols="1" class="d-flex align-center">
+              <v-icon
+                size="x-large"
+                icon="mdi-phone-outline"
+              ></v-icon>
+            </v-col>
+            <v-col>
+              <span class="text-h6">{{ user?.phone }}</span>
+            </v-col>
           </v-row>
 
-          <v-row cols="12" md="6">
-            <v-list-item>
-              <v-list-item-content>
-                <v-list-item-title>Teléfono</v-list-item-title>
-                <v-list-item-subtitle>{{ user.phone }}</v-list-item-subtitle>
-              </v-list-item-content>
-            </v-list-item>
-          </v-row>
-
-          <v-row cols="12" md="6">
-            <v-list-item>
-              <v-list-item-content>
-                <v-list-item-title>Dirección</v-list-item-title>
-                <v-list-item-subtitle>{{ user.address }}</v-list-item-subtitle>
-              </v-list-item-content>
-            </v-list-item>
-          </v-row>
-
-          <v-row cols="12" md="6">
-            <v-list-item>
-              <v-list-item-content>
-                <v-list-item-title>Métodos de pago</v-list-item-title>
-                <v-list-item-subtitle v-if="payment_method"></v-list-item-subtitle>
-                <v-list-item-subtitle v-else>Sin configurar</v-list-item-subtitle>
-              </v-list-item-content>
-            </v-list-item>
+          <v-row cols="12">
+            <v-col cols="1" class="d-flex align-center">
+              <v-icon
+                size="x-large"
+                :icon="user?.isCompany? 'mdi-map-marker-outline': 'mdi-home-outline'"
+                icon="mdi-map-marker-outline"
+              ></v-icon>
+            </v-col>
+            <v-col>
+              <span class="text-h6">{{ user?.address }}</span>
+            </v-col>
           </v-row>
         </v-col>
       </v-card-text>
 
-      <v-card-actions>
-        <TonalButton text="Editar información" color="blue" @click="openEditProfileInfo()"/>
-        <TonalButton text="Cambiar contraseña" color="grey" @click="changePassword" />
-        <TonalButton text="Cerrar sesión" color="red" @click="logOutModal = true" />
+      <v-card-actions class="mt-n3 mb-3 mr-2 d-flex justify-end ga-3">
+        <v-btn 
+          @click="openEditProfileInfo"
+          variant="tonal"
+          size="small"
+          icon="mdi-pencil" 
+        />
+        <TonalButton 
+          text="Borrar cuenta" 
+          prepend-icon="mdi-trash-can-outline"
+          color="red" 
+          @click="deleteProfile" 
+        />
+        <TonalButton 
+          text="Cerrar sesión" 
+          color="red" 
+          prepend-icon="mdi-logout"
+          @click="logOutModal = true" 
+        />
       </v-card-actions>
     </v-card>
 
-    <v-dialog v-model="logOutModal" max-width="450px">
-      <v-card>
-        <v-card-title class="ml-2 mt-3">
-          <span class="text-h4">¿Cerrar sesión?</span>
-        </v-card-title>
-
-        <v-card-text>
-            <v-row>
-              <span class="ml-3 text-h6" style="color: #EF0107;">¿Estás seguro de que quieres cerrar sesión?</span>
-            </v-row>
-        </v-card-text>
-
-        <v-card-actions>
-          <v-spacer></v-spacer>
-          <TonalButton color="grey" text="Cancelar" @click="logOutModal=false" />
-          <TonalButton color="red" text="Cerrar sesión" @click="logoutUser" />
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+    <AskModal
+      v-model="logOutModal"
+      :title="'¿Cerrar sesión?'"
+      :message="'¿Estás seguro de que quieres cerrar sesión?'"
+      :actionText="'Cerrar sesión'"
+      :closeModal="closeDialog"
+      :action="logOutUser"
+    />
 
   </v-container>
 </template>
@@ -107,6 +107,7 @@
 import { useUserStore } from "@/store/userStore";
 import { authService } from '@/services/authService';
 import TonalButton from '@/components/TonalButton.vue'
+import AskModal from "@/components/AskModal.vue";
 
 export default {
   name: "Profile",
@@ -118,7 +119,8 @@ export default {
     };
   },
   components: {
-    TonalButton
+    TonalButton,
+    AskModal
   },
   mounted() {
     this.getUser();
@@ -137,35 +139,15 @@ export default {
     openEditProfileInfo() {
       this.$router.push('/editProfileInfo');
     },
-    logoutUser() {
+    closeDialog() {
+      this.logOutModal = false;
+    },
+    logOutUser() {
       const userStore = useUserStore();
       userStore.clearUser();
+      this.logOutModal = false;
       this.$router.push("/login");
-    },
-    changePassword() {
-      //Abrir modal de cambio de contraseña
     },
   }
 };
 </script>
-
-<style scoped>
-.title {
-  margin-bottom: 20px;
-}
-
-.v-card-actions {
-  margin-top: 0em;
-  justify-content: flex-end;
-}
-
-.v-list-item-subtitle{
-  margin-bottom: 5px;
-  padding-bottom: 3px;
-}
-
-.container {
-  max-width: 700px;
-  margin: 0 auto;
-}
-</style>

@@ -1,74 +1,66 @@
-
 <template>
-  <v-card class="pa-10 container" outlined>
-    <v-form
-      ref="form"
-      @submit.prevent="handleSubmit"
-    >
-      <v-row>
-        <v-col cols="12">
-          <h2 class="title">Change Password</h2>
+  <v-container class="container">
+    <v-card class="mx-auto px-3" max-width="450">
+      <v-card-title class="my-3">
+        <span class="text-h4"><b>Cambia la contraseña</b></span>
+      </v-card-title>
+      <v-card-text>
+        <v-col>
+          <v-row>
+            <v-text-field
+              v-model="password"
+              variant="outlined"
+              label="Contraseña"
+              :type="show ? 'text' : 'password'"
+              prepend-icon="mdi-lock-outline"
+              :append-inner-icon="show ? 'mdi-eye' : 'mdi-eye-off'"  
+              @click:append-inner="show = !show"
+              required
+              class="my-1"
+              :rules="passwordRules"
+            />
+          </v-row>
+          <v-row >
+            <TonalButton 
+              v-if="this.saveButton"
+              class="cta-btn custom-disabled-btn"
+              text="Guardar"
+              color="blue"
+              @click="submit" 
+              :disabled="camposVacios()"
+              block
+            />
+            <TonalButton 
+              v-else
+              @click="toLogin" 
+              color="blue" 
+              text="Iniciar sesión"
+              block
+            />
+          </v-row>
         </v-col>
-      </v-row>
-
-      <v-row>
-        <v-col cols="12">
-          <v-text-field
-            v-model="password"
-            label="New Password"
-            type="password"
-            required
-            :rules="passwordRules"
-            autocomplete="new-password"
-            outlined
-          />
-        </v-col>
-      </v-row>
-
-      <v-row v-if="this.saveButton">
-        <v-col cols="12">
-          <TonalButton
-            class="cta-btn custom-disabled-btn"
-            text="Save"
-            color="blue"
-            type="submit"
-            :disabled="camposVacios()"
-            block
-          />
-          
-        </v-col>
-      </v-row>
-
-      <v-row v-if="this.loginForm">
-        <v-col cols="12" class="text-center">
-          <TonalButton @click="toLogin" color="blue" text="Iniciar sesión"/>
-        </v-col>
-      </v-row>
-
-      <v-row>
-        <v-col cols="12" class="text-center">
-          <p v-if="message">{{ message }}</p>
-        </v-col>
-      </v-row>
-    </v-form>
-  </v-card>
+      </v-card-text>
+    </v-card>
+  </v-container>
 </template>
 
 <script>
 import TonalButton from '@/components/TonalButton.vue';
 import { authService } from '@/services/authService';
-
+import { useToast } from 'vue-toastification';
 
 export default {
   data() {
     return {
-      loginForm: false,
       saveButton: true,
       password: "",
-      message: "",
+      show: false,
       passwordRules: [
-        v => !!v || 'Password is required',
-        v => v.length >= 6 || 'Password must be at least 6 characters',
+        v => !!v || 'La contraseña es requerida',
+        v => v.length >= 8 || 'La contraseña debe tener al menos 8 caracteres',
+        v => /[A-Z]/.test(v) || 'La contraseña debe incluir al menos una letra mayúscula',
+        v => /[a-z]/.test(v) || 'La contraseña debe incluir al menos una letra minúscula',
+        v => /\d/.test(v) || 'La contraseña debe incluir al menos un número',
       ],
     };
   },
@@ -79,25 +71,20 @@ export default {
     camposVacios(){
       // Verificar que los campos no estén vacíos y que cumplan las reglas de validación
       const passwordValid = this.passwordRules.every(rule => rule(this.password) === true);
-
       return !(this.password && passwordValid);
     },
-    async handleSubmit() {
-      if (this.$refs.form.validate()) {
-        authService.updatePassword(this.password, this.$route.query.token)
-          .then(res => {
-            console.log(res.data);
-            this.message = res.data.message;
-            this.loginForm = true;
-            this.saveButton = false;
-          })
-          .catch(error => {
-            console.log(error);
-          });
-      }
-    },
-    clear() {
-      this.$refs.form.reset();
+    async submit() {
+      const toast = useToast();
+      authService.updatePassword(this.password, this.$route.query.token)
+        .then(res => {
+          console.log(res.data);
+          toast.success(res.data.message);
+          this.password = null;
+          this.saveButton = false;
+        })
+        .catch(error => {
+          console.log(error);
+        });
     },
     toLogin() {
       this.$router.push("/login");
@@ -118,11 +105,6 @@ export default {
   text-transform: uppercase;
 }
 
-.container {
-  max-width: 400px;
-  margin: 0 auto;
-  margin-top: 2em;
-}
 .custom-disabled-btn:disabled {
   background-color: #bfbfbf; 
   color: white !important; 

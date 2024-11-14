@@ -1,5 +1,5 @@
 <template>
-    <v-container class="pa-5 container">
+    <v-container class="container">
         <v-card v-if="space" class="mx-auto" max-width="600">
             <v-img
                 :src="newSpace?.imageUrl"
@@ -30,83 +30,68 @@
                 />
             </v-img>
 
-            <v-card-text>
-                <v-form ref="form">
-                    <v-col>
-                        <v-row class="mb-n5">
-                            <v-col>
-                                <v-text-field
-                                    v-model="newSpace.name"
-                                    label="Nombre"
-                                    variant="outlined"
-                                    required
-                                    :rules="[v => !!v || 'El texto es requerido']"
-                                />
-                            </v-col>
-                        </v-row>
-                            
-                        <v-row class="my-n3">
-                            <v-col>
-                                <v-text-field
-                                    v-model="newSpace.description"
-                                    label="Descripción"
-                                    variant="outlined"
-                                    prepend-icon="mdi-text"
-                                    required
-                                    :rules="[v => !!v || 'El texto es requerido']"
-                                />
-                            </v-col>
-                        </v-row>
+            <v-card-text class="px-6">
+                <v-col>
+                    <v-row>
+                        <v-text-field
+                            v-model="newSpace.name"
+                            label="Nombre"
+                            variant="outlined"
+                            required
+                            :rules="[v => !!v || 'El texto es requerido']"
+                            class="my-1"
+                        />
+                    </v-row>
+                        
+                    <v-row>
+                        <v-text-field
+                            v-model="newSpace.description"
+                            label="Descripción"
+                            variant="outlined"
+                            prepend-icon="mdi-text"
+                            required
+                            :rules="[v => !!v || 'El texto es requerido']"
+                            class="my-1"
+                        />
+                    </v-row>
 
-                        <v-row class="my-n3">
-                            <v-col>
-                                <v-text-field
-                                    v-model.number="newSpace.seats"
-                                    label="Número de asientos"
-                                    prepend-icon="mdi-table-chair"
-                                    type="number"
-                                    variant="outlined"
-                                    required
-                                    :rules="[v => !!v || 'El campo es obligatorio']"
-                                    @input="newSpace.seats = Math.max(0, newSpace.seats)"
-                                />
-                            </v-col>
-                        </v-row>
+                    <v-row>
+                        <v-text-field
+                            v-model.number="newSpace.seats"
+                            label="Número de asientos"
+                            prepend-icon="mdi-table-chair"
+                            type="number"
+                            variant="outlined"
+                            required
+                            :rules="[v => !!v || 'El campo es obligatorio']"
+                            @input="newSpace.seats = Math.max(0, newSpace.seats)"
+                            class="my-1"
+                        />
+                    </v-row>
 
-                        <v-row class="my-n3">
-                            <v-col>
-                                <v-select
-                                    v-model="selectedTimeFrame"
-                                    :items="timeFrames"
-                                    item-title="label"
-                                    item-value="value"
-                                    label="Duración de las reservas"
-                                    prepend-icon="mdi-clock-outline"
-                                    :rules="[v => !!v || 'El campo es obligatorio']"
-                                    variant="outlined"
-                                ></v-select>
-                            </v-col>
-                        </v-row>
-                    </v-col>
-                </v-form>
-
-                <v-fade-transition>
-                    <v-alert v-if="success" type="success" border="left">
-                        ¡Espacio actualizado con éxito!
-                    </v-alert>
-                </v-fade-transition>
+                    <v-row>
+                        <v-select
+                            v-model="selectedTimeFrame"
+                            :items="timeFrames"
+                            item-title="label"
+                            item-value="value"
+                            label="Duración de las reservas"
+                            prepend-icon="mdi-clock-outline"
+                            :rules="[v => !!v || 'El campo es obligatorio']"
+                            variant="outlined"
+                            class="my-1"
+                        ></v-select>
+                    </v-row>
+                </v-col>
             </v-card-text>
 
-            <v-card-actions class="mt-n8 mb-4">
+            <v-card-actions class="mt-n9 mb-3 mr-4 d-flex justify-end ga-3">
                 <TonalButton 
-                    class="ml-5"
                     color="grey" 
                     text="Volver" 
                     @click="routerBack"
                 />
-                <v-spacer></v-spacer>
                 <TonalButton 
-                    class="mr-5"
                     color="blue" 
                     text="Guardar" 
                     @click="submit" 
@@ -115,16 +100,14 @@
             </v-card-actions>
         </v-card>
 
-        <InfoNotFound v-else max_width="600" text="Espacio" routeBack="/spaces"/>
-
     </v-container>
 </template>
 
 <script>
 import { useSpaceStore } from '@/store/spaceStore';
 import { spaceService } from '@/services/spaceService';
+import { useToast } from 'vue-toastification';
 import TonalButton from '@/components/TonalButton.vue'
-import InfoNotFound from '@/components/InfoNotFound.vue';
 
 export default {
     data() {
@@ -132,9 +115,9 @@ export default {
             spaceStore: null,
             space: null,
             newSpace: null,
-            success: false,
             newImageUrl: null,
             isNewImage: false,
+            successToastId: null,
             selectedTimeFrame: null,
             timeFrames: [
                 { label: '15 mins', value: 15 },
@@ -151,16 +134,26 @@ export default {
     },
     components: {
         TonalButton,
-        InfoNotFound
     },
     mounted() {
         this.spaceStore = useSpaceStore();
         this.space = this.spaceStore.getSelectedSpace;
+
+        if (!this.space) {
+            this.$router.push('/spaces'); // Redirigir al componente padre
+        }
+        
         this.newSpace = { ...this.space };    // Hacer una copia del objeto space
         this.selectedTimeFrame = this.space?.time;
     },
     methods: {
         routerBack() {
+            const toast = useToast();
+            if (this.successToastId) {
+                toast.dismiss(this.successToastId); // Cierra el toast específico usando el ID
+            } else {
+                toast.clear(); // Elimina todos los toasts como respaldo
+            }
             this.$router.push('/spaceInfo');
         },
         triggerFileInput() {
@@ -184,42 +177,34 @@ export default {
             return !this.newSpace.name || !this.newSpace.description || !this.newSpace.seats || !this.selectedTimeFrame;
         },
         async submit() {
-            if (this.$refs.form.validate()) {
-                const formData = new FormData();
-                formData.append('id', this.newSpace._id);
-                formData.append('name', this.newSpace.name);
-                formData.append('description', this.newSpace.description);
-                formData.append('seats', this.newSpace.seats);
+            const toast = useToast();
+            const formData = new FormData();
+            formData.append('id', this.newSpace._id);
+            formData.append('name', this.newSpace.name);
+            formData.append('description', this.newSpace.description);
+            formData.append('seats', this.newSpace.seats);
 
-                const numbersOnly = parseFloat(this.selectedTimeFrame);
-                this.newSpace.time = numbersOnly
+            const numbersOnly = parseFloat(this.selectedTimeFrame);
+            this.newSpace.time = numbersOnly
 
-                formData.append('time', this.newSpace.time);
+            formData.append('time', this.newSpace.time);
 
-
-                if (this.isNewImage && this.newImageUrl) {
-                    formData.append('image', this.newImageUrl); // Agrega la nueva imagen al FormData
-                }
-
-                console.log(this.selectedTimeFrame + ' es un ' + typeof this.selectedTimeFrame);
-
-                spaceService.updateSpace(formData)
-                    .then(res => {
-                        console.log(res.data);
-                        const newSpaceSelected = { ...this.newSpace };
-                        this.spaceStore.setSelectedSpace(newSpaceSelected);
-                        // Mostrar la alerta de éxito y ocultarla después de 3 segundos
-                        this.success = true;
-                        setTimeout(() => {
-                            this.success = false;
-                        }, 3000);
-                    })
-                    .catch(error => {
-                        console.log(error);
-                    });
-            }else {
-                console.log('Formulario inválido');
+            if (this.isNewImage && this.newImageUrl) {
+                formData.append('image', this.newImageUrl); // Agrega la nueva imagen al FormData
             }
+
+            spaceService.updateSpace(formData)
+                .then(res => {
+                    console.log(res.data);
+                    const newSpaceSelected = { ...this.newSpace };
+                    this.spaceStore.setSelectedSpace(newSpaceSelected);
+                    // Mostrar la alerta de éxito y ocultarla después de 3 segundos
+                    this.successToastId = toast.success('¡Espacio actualizado con éxito!');
+                })
+                .catch(error => {
+                    console.log(error);
+                });
+
         },
 
     },
@@ -227,11 +212,6 @@ export default {
 </script>
 
 <style scoped>
-.container {
-    max-width: 700px;
-    margin: 0 auto;
-}
-
 .img-container {
   position: relative;
   border: 1px solid gray;

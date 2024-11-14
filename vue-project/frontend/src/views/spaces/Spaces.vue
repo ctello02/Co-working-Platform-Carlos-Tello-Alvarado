@@ -1,5 +1,5 @@
 <template>
-    <v-container fluid v-if="spaces">
+    <v-container fluid>
         <v-col>
             <v-row>
                 <span class="text-h4">Espacios</span>
@@ -109,41 +109,14 @@
                 </v-container>
             </v-row>
 
-            <!-- Modal de eliminación -->
-            <v-dialog v-model="deleteModal" max-width="600px">
-                <v-card>
-                    <v-card-title class="mt-3 mb-n3">
-                        <span class="ml-2 text-h4">Borrar espacio</span>
-                    </v-card-title>
-
-                    <v-card-text class="">
-                        <v-col>
-                            <v-row>
-                                <h2>¿Estás seguro de que quieres borrar este espacio?</h2>
-                            </v-row>
-                            <v-row>
-                                <h3 style="color: #EF0107;">Esta acción no se puede deshacer.</h3>
-                            </v-row>
-                            <v-container id="info-container">
-                                <p>Nombre: <span class="text-h6">{{ selectedSpace?.name }}</span></p>
-                                <p>Descripción: <span class="text-h6">{{ selectedSpace?.description }}</span></p>
-                                <p>Imagen: <v-img
-                                    :src="selectedSpace?.imageUrl"
-                                    height="150px"
-                                    contain  
-                                    class="mb-2"
-                                ></v-img></p>
-                            </v-container>
-                        </v-col>
-                    </v-card-text>
-
-                    <v-card-actions>
-                        <v-spacer></v-spacer>
-                        <TonalButton color="grey" text="Cancelar" @click="deleteModal = false"/>
-                        <TonalButton color="red" text="Borrar" @click="deleteSpace(this.selectedSpace._id)"/>
-                    </v-card-actions>
-                </v-card>
-            </v-dialog>
+            <AskModal
+                v-model="deleteModal"
+                :title="'¿Borrar espacio?'"
+                :message="'¿Estás seguro de que quieres borrar este espacio?'"
+                :actionText="'Borrar espacio'"
+                :closeModal="closeDialog"
+                :action="deleteSpace"
+            />
         </v-col>
     </v-container>
 </template>
@@ -153,6 +126,7 @@ import { useUserStore } from '@/store/userStore';
 import { useSpaceStore } from '@/store/spaceStore';
 import { spaceService } from '@/services/spaceService';
 import TonalButton from '@/components/TonalButton.vue'
+import AskModal from '@/components/AskModal.vue';
 
 export default {
     data() {
@@ -166,7 +140,8 @@ export default {
         };
     },
     components: {
-        TonalButton
+        TonalButton,
+        AskModal
     },
     mounted() {
         this.getSpaces();
@@ -199,8 +174,11 @@ export default {
             this.selectedSpace = { ...space }; // Hacer una copia del usuario seleccionado
             this.deleteModal = true;
         },
-        deleteSpace(id){
-            spaceService.deleteSpace(id)
+        closeDialog() {
+            this.deleteModal = false;
+        },
+        deleteSpace(){
+            spaceService.deleteSpace(this.selectedSpace?._id)
             .then(res => {
                 this.getSpaces();
                 this.deleteModal = false;
@@ -208,7 +186,7 @@ export default {
             .catch(error => {
                 console.log(error);
             });
-        }
+        },
     },
 };
 </script>
