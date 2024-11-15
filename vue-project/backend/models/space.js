@@ -17,7 +17,16 @@ const SpaceSchema = new Schema({
     },
     time: {
         type: Number,
-        default: 30,
+    },
+    repetition: {
+        type: Boolean,
+        default: false,
+    },
+    opening: {
+        type: String,
+    },
+    closing: {
+        type: String,
     },
 });
 

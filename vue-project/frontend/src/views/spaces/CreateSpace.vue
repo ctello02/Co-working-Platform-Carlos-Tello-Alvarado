@@ -69,6 +69,41 @@
               class="my-1"
             />
           </v-row>
+
+          <v-row class="mt-1">
+            <v-radio-group 
+              inline 
+              prepend-icon="mdi-repeat"
+              v-model="spaceRepetition" 
+              label="¿Permite repetición de reservas?"
+            >
+              <v-radio label="Si" :value="true"/>
+              <v-radio label="No" :value="false"/>
+            </v-radio-group>
+          </v-row>
+
+          <v-row class="mt-n1">
+            <v-col cols="6">
+              <v-select
+                v-model="openingTime"
+                :items="availableTimes"
+                label="Hora de apertura"
+                prepend-icon="mdi-weather-sunny"
+              ></v-select>
+            </v-col>
+
+            <v-col cols="6">
+              <v-select
+                v-model="closingTime"
+                :items="filteredClosingTimes"
+                label="Hora de cierre"
+                prepend-icon="mdi-weather-night"
+                :disabled="!openingTime"
+              ></v-select>
+            </v-col>
+          </v-row>
+
+
         </v-col>
       </v-card-text>
 
@@ -102,6 +137,13 @@ export default {
       spaceImage: null, 
       spaceSeats: null,
       selectedTimeFrame: null,
+      spaceRepetition: false,
+
+      openingTime: null,
+      closingTime: null,
+      availableTimes: [],
+
+
       timeFrames: [
         { label: '15 mins', value: 15 },
         { label: '20 mins', value: 20 },
@@ -116,20 +158,45 @@ export default {
     };
   },
   components: {
-      TonalButton
+    TonalButton,
+  },
+  mounted() {
+    this.generateAvailableTimes();
+  },
+  computed: {
+    filteredClosingTimes() {
+      if (!this.openingTime) return this.availableTimes;
+      const openingIndex = this.availableTimes.indexOf(this.openingTime);
+      return this.availableTimes.slice(openingIndex + 1);
+    },
+  },
+  watch: {
+    openingTime(newVal) {
+      if (newVal && this.closingTime && newVal >= this.closingTime) {
+        this.closingTime = null;
+      }
+    },
   },
   methods: {
     routerBack() {
       const toast = useToast();
       if (this.successToastId) {
-          toast.dismiss(this.successToastId); // Cierra el toast específico usando el ID
+        toast.dismiss(this.successToastId); 
       } else {
-          toast.clear(); // Elimina todos los toasts como respaldo
+        toast.clear(); 
       }
       this.$router.push('/spaces');
     },
+    generateAvailableTimes() {
+      for (let hour = 0; hour < 24; hour++) {
+        for (let minute = 0; minute < 60; minute += 15) {
+          const formattedTime = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+          this.availableTimes.push(formattedTime);
+        }
+      }
+    },
     camposVacios() {
-      return !this.spaceName || !this.spaceDescription || !this.selectedTimeFrame || !this.spaceImage || !this.spaceSeats;
+      return !this.spaceName || !this.spaceDescription || !this.selectedTimeFrame || !this.spaceImage || !this.spaceSeats || !this.openingTime || !this.closingTime;
     },
     clearFields() {
       this.spaceName = null;
@@ -137,33 +204,36 @@ export default {
       this.spaceImage = null;
       this.spaceSeats = null;
       this.selectedTimeFrame = null;
+      this.spaceRepetition = false;
+      this.openingTime = null;
+      this.closingTime = null;
     },
     async submit() {
-        const toast = useToast();
-        if (this.camposVacios()) {
-          this.successToastId = toast.error('Formulario inválido');
-          return;
-        }
+      const toast = useToast();
+      if (this.camposVacios()) {
+        this.successToastId = toast.error('Formulario inválido');
+        return;
+      }
 
-        const formData = new FormData();
-        formData.append('name', this.spaceName);
-        formData.append('description', this.spaceDescription);
-        formData.append('image', this.spaceImage); 
-        formData.append('seats', this.spaceSeats);
-        formData.append('time', this.selectedTimeFrame);
+      const formData = new FormData();
+      formData.append('name', this.spaceName);
+      formData.append('description', this.spaceDescription);
+      formData.append('image', this.spaceImage); 
+      formData.append('seats', this.spaceSeats);
+      formData.append('time', this.selectedTimeFrame);
+      formData.append('repetition', this.spaceRepetition);
+      formData.append('opening', this.openingTime); 
+      formData.append('closing', this.closingTime); 
 
-        spaceService.createSpace(formData)
-            .then(res => {
-                console.log(res.data);
-                this.successToastId = toast.success('¡Espacio creado con éxito!');
-                this.clearFields();
-            })
-            .catch(error => {
-                console.log(error);
-            });
+      try {
+        const res = await spaceService.createSpace(formData);
+        console.log(res.data);
+        this.successToastId = toast.success('¡Espacio creado con éxito!');
+        this.clearFields();
+      } catch (error) {
+        console.error(error);
+      }
     }
   }
 };
-</script>
-
-  
+</script>  

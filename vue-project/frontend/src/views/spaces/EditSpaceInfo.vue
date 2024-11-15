@@ -82,6 +82,39 @@
                             class="my-1"
                         ></v-select>
                     </v-row>
+
+                    <v-row class="mt-1">
+                        <v-radio-group 
+                            inline 
+                            prepend-icon="mdi-repeat"
+                            v-model="newSpace.repetition" 
+                            label="¿Permite repetición de reservas?"
+                        >
+                            <v-radio label="Si" :value="true"/>
+                            <v-radio label="No" :value="false"/>
+                        </v-radio-group>
+                    </v-row>
+
+                    <v-row class="mt-n1">
+                        <v-col cols="6">
+                            <v-select
+                                v-model="openingTime"
+                                :items="availableTimes"
+                                label="Hora de apertura"
+                                prepend-icon="mdi-weather-sunny"
+                            ></v-select>
+                        </v-col>
+
+                        <v-col cols="6">
+                            <v-select
+                                v-model="closingTime"
+                                :items="filteredClosingTimes"
+                                label="Hora de cierre"
+                                prepend-icon="mdi-weather-night"
+                                :disabled="!openingTime"
+                            ></v-select>
+                        </v-col>
+                    </v-row>
                 </v-col>
             </v-card-text>
 
@@ -119,6 +152,9 @@ export default {
             isNewImage: false,
             successToastId: null,
             selectedTimeFrame: null,
+            openingTime: null,
+            closingTime: null,
+            availableTimes: [],
             timeFrames: [
                 { label: '15 mins', value: 15 },
                 { label: '20 mins', value: 20 },
@@ -135,7 +171,22 @@ export default {
     components: {
         TonalButton,
     },
+    computed: {
+        filteredClosingTimes() {
+            if (!this.openingTime) return this.availableTimes;
+            const openingIndex = this.availableTimes.indexOf(this.openingTime);
+            return this.availableTimes.slice(openingIndex + 1);
+        },
+    },
+    watch: {
+        openingTime(newVal) {
+            if (newVal && this.closingTime && newVal >= this.closingTime) {
+                this.closingTime = null;
+            }
+        },
+    },
     mounted() {
+        this.generateAvailableTimes();
         this.spaceStore = useSpaceStore();
         this.space = this.spaceStore.getSelectedSpace;
 
@@ -144,6 +195,8 @@ export default {
         }
         
         this.newSpace = { ...this.space };    // Hacer una copia del objeto space
+        this.openingTime = this.space?.opening;
+        this.closingTime = this.space?.closing;
         this.selectedTimeFrame = this.space?.time;
     },
     methods: {
@@ -155,6 +208,14 @@ export default {
                 toast.clear(); // Elimina todos los toasts como respaldo
             }
             this.$router.push('/spaceInfo');
+        },
+        generateAvailableTimes() {
+            for (let hour = 0; hour < 24; hour++) {
+                for (let minute = 0; minute < 60; minute += 15) {
+                    const formattedTime = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+                    this.availableTimes.push(formattedTime);
+                }
+            }
         },
         triggerFileInput() {
             this.$refs.fileInput.click();
@@ -174,24 +235,29 @@ export default {
             }
         },
         camposVacios() {
-            return !this.newSpace.name || !this.newSpace.description || !this.newSpace.seats || !this.selectedTimeFrame;
+            return !this.newSpace.name || !this.newSpace.description || !this.newSpace.seats || !this.selectedTimeFrame || !this.openingTime || !this.closingTime;
         },
         async submit() {
             const toast = useToast();
             const formData = new FormData();
+
             formData.append('id', this.newSpace._id);
             formData.append('name', this.newSpace.name);
             formData.append('description', this.newSpace.description);
             formData.append('seats', this.newSpace.seats);
-
+            formData.append('repetition', this.newSpace.repetition);
+            formData.append('opening', this.openingTime); 
+            formData.append('closing', this.closingTime);
             const numbersOnly = parseFloat(this.selectedTimeFrame);
-            this.newSpace.time = numbersOnly
-
-            formData.append('time', this.newSpace.time);
+            formData.append('time', numbersOnly);
 
             if (this.isNewImage && this.newImageUrl) {
                 formData.append('image', this.newImageUrl); // Agrega la nueva imagen al FormData
             }
+
+            this.newSpace.opening = this.openingTime;
+            this.newSpace.closing = this.closingTime;
+            this.newSpace.time = numbersOnly
 
             spaceService.updateSpace(formData)
                 .then(res => {

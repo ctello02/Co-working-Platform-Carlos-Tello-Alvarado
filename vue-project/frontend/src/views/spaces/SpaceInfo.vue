@@ -38,7 +38,7 @@
                             />
                         </v-col>
                         <v-col>
-                            <span class="pt-2 text-h6">{{ space?.description }}</span>
+                            <span class="text-h6">{{ space?.description }}</span>
                         </v-col>
                     </v-row>
 
@@ -50,19 +50,61 @@
                             />
                         </v-col>
                         <v-col>
-                            <span class="pt-2 text-h6">{{space?.seats}} asientos</span>
+                            <span class="text-h6">{{space?.seats}} asientos</span>
                         </v-col>
                     </v-row>
 
-                    <v-row class="mt-n3 mb-n5" cols="12">
-                        <v-col cols="1" class="d-flex align-center">
-                            <v-icon
-                                icon="mdi-clock-outline"
-                                size="small"
-                            />
+                    <v-row class="mt-n1">
+                        <v-col>
+                            <v-row class="d-flex align-center my-n2">
+                                <v-col cols="2">
+                                    <v-icon
+                                        size="small"
+                                        icon="mdi-weather-sunny"
+                                    ></v-icon>
+                                </v-col>
+                                <v-col><span class="pt-2 text-h6">Abre a las {{space?.opening}}</span></v-col>
+                            </v-row>
                         </v-col>
                         <v-col>
-                            <span class="pt-2 text-h6">Reservas de {{timeFrame}}</span>
+                            <v-row class="d-flex align-center my-n2">
+                                <v-col cols="2">
+                                    <v-icon
+                                        size="small"
+                                        icon="mdi-weather-night"
+                                    ></v-icon>
+                                </v-col>
+                                <v-col><span class="pt-2 text-h6">Cierra a las {{space?.closing}}</span></v-col>
+                            </v-row>
+                        </v-col>
+                    </v-row>
+
+                    <v-row class="mt-n3 mb-n5 d-flex justify-center align-center" cols="12">
+                        <v-col>
+                            <v-row>
+                                <v-col cols="2" class="d-flex align-center">
+                                    <v-icon
+                                        icon="mdi-clock-outline"
+                                        size="small"
+                                    />
+                                </v-col>
+                                <v-col>
+                                    <span class="pt-2 text-h6">Reservas de {{timeFrame}}</span>
+                                </v-col>
+                            </v-row>
+                        </v-col>
+                        <v-col>
+                            <v-row>
+                                <v-col cols="2" class="d-flex align-center">
+                                    <v-icon
+                                        icon="mdi-repeat"
+                                        size="small"
+                                    />
+                                </v-col>
+                                <v-col>
+                                    <span class="pt-2 text-h6"> {{space?.repetition ? 'Permite repetición' : 'No permite repetición'}}</span>
+                                </v-col>
+                            </v-row>
                         </v-col>
                     </v-row>
                 </v-col>
