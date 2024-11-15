@@ -125,6 +125,7 @@
 import { useUserStore } from '@/store/userStore';
 import { useSpaceStore } from '@/store/spaceStore';
 import { spaceService } from '@/services/spaceService';
+import { useToast } from 'vue-toastification';
 import TonalButton from '@/components/TonalButton.vue'
 import AskModal from '@/components/AskModal.vue';
 
@@ -132,7 +133,7 @@ export default {
     data() {
         return {
             user: null,
-            list: true,
+            list: false,
             spaces: null,
             spaceStore: null,
             selectedSpace: null,
@@ -170,22 +171,24 @@ export default {
         openCreateSpace() {
             this.$router.push('/createSpace');
         },
-        openDeleteModal(space){
+        openDeleteModal(space) {
             this.selectedSpace = { ...space }; // Hacer una copia del usuario seleccionado
             this.deleteModal = true;
         },
         closeDialog() {
             this.deleteModal = false;
         },
-        deleteSpace(){
+        deleteSpace() {
+            const toast = useToast();
             spaceService.deleteSpace(this.selectedSpace?._id)
-            .then(res => {
-                this.getSpaces();
-                this.deleteModal = false;
-            })
-            .catch(error => {
-                console.log(error);
-            });
+                .then(res => {
+                    this.getSpaces();
+                    this.deleteModal = false;
+                    toast.error('Espacio eliminado con éxito');
+                })
+                .catch(error => {
+                    console.log(error);
+                });
         },
     },
 };
