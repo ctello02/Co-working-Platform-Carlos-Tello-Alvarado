@@ -8,7 +8,7 @@
                 <v-col>
                     <v-row>
                         <v-select
-                            v-model="selectedSpace"
+                            v-model="selectedSpaceId"
                             :items="spaces"
                             item-title="name"
                             item-value="_id"
@@ -21,8 +21,8 @@
                         />
                     </v-row>
 
-                    <v-row>
-                        <v-col>
+                    <v-row v-if="selectedSpaceObject">
+                        <v-col cols="7">
                             <v-menu
                                 :close-on-content-click="false"
                                 location="bottom"
@@ -40,7 +40,7 @@
                                 <v-date-picker class="ml-10" v-model="date"></v-date-picker>
                             </v-menu>
                         </v-col>
-                        <v-col cols="5">
+                        <v-col v-if="selectedSpaceObject.repetition" cols="5">
                             <v-menu
                             location="bottom"
                             transition="slide-y-transition"
@@ -68,7 +68,7 @@
                         </v-col>
                     </v-row>
 
-                    <v-row style="margin-top: 3px;">
+                    <v-row v-if="selectedSpaceObject" style="margin-top: 3px;">
                         <v-col cols="3">
                             <v-menu
                             location="bottom"
@@ -79,6 +79,7 @@
                                         v-model="startTime"
                                         label="Inicio"
                                         prepend-icon="mdi-clock-outline"
+                                        :disabled="!selectedSpaceObject"
                                         variant="outlined"
                                         density="compact"
                                         class="ml-n3 mr-n3"
@@ -153,7 +154,8 @@ export default {
         return {
             date: new Date(),
             formattedDate: this.formatDate(new Date()),
-            selectedSpace: null,
+            selectedSpaceId: null,
+            selectedSpaceObject: null,
             seatsReserved: 1,
             spaces: [],
             startTime: null,
@@ -165,17 +167,25 @@ export default {
     },
     mounted() {
         this.fetchSpaces();
-        this.generateAvailableTimes();
     },
     computed: {
         filteredClosingTimes() {
-            if (!this.startTime) return this.availableTimes;
-                const openingIndex = this.availableTimes.indexOf(this.startTime);
-                return this.availableTimes.slice(openingIndex + 1);
+            if (!this.startTime) return [];
+            
+            const startIndex = this.availableTimes.indexOf(this.startTime);
+            // Incluye la hora de cierre en la lista de tiempos finales
+            const closingTime = this.selectedSpaceObject.closing;
+            return [...this.availableTimes.slice(startIndex + 1), closingTime];
         },
     },
     watch: {
-        selectedSpace(newValue) {
+        selectedSpaceId(newValue) {
+            this.selectedSpaceObject = this.spaces.find(space => space._id === newValue);
+            console.log(this.selectedSpaceObject);
+            console.log(this.selectedSpaceObject.name);
+            console.log(this.selectedSpaceObject.time + '' + typeof this.selectedSpaceObject.time);
+            
+            
             this.clearFields();
             this.generateAvailableTimes();
         },
@@ -199,29 +209,32 @@ export default {
                 });
         },
         generateAvailableTimes() {
-            // Reinicia la lista de tiempos disponibles
             this.availableTimes = [];
 
-            if (!this.selectedSpace || !this.selectedSpace.opening || !this.selectedSpace.closing) {
-                
-                this.availableTimes = ['1','2','3'];
+            if (!this.selectedSpaceObject || !this.selectedSpaceObject.opening || !this.selectedSpaceObject.closing) {
+                toast.error('Selecciona un espacio para generar los tiempos disponibles');
+                return;
             }
 
             // Convierte el tiempo de apertura y cierre a horas y minutos
-            const [openingHour, openingMinute] = this.selectedSpace.opening.split(':').map(Number);
-            const [closingHour, closingMinute] = this.selectedSpace.closing.split(':').map(Number);
+            const [openingHour, openingMinute] = this.selectedSpaceObject.opening.split(':').map(Number);
+            const [closingHour, closingMinute] = this.selectedSpaceObject.closing.split(':').map(Number);
 
             // Calcula el tiempo inicial y final en minutos
             const openingInMinutes = openingHour * 60 + openingMinute;
             const closingInMinutes = closingHour * 60 + closingMinute;
 
+            // Obtén el intervalo de tiempo del espacio seleccionado
+            const timeInterval = this.selectedSpaceObject.time;
+
             // Genera los tiempos disponibles dentro del rango
-            for (let time = openingInMinutes; time < closingInMinutes; time += 15) {
+            for (let time = openingInMinutes; time < closingInMinutes; time += timeInterval) {
                 const hours = Math.floor(time / 60).toString().padStart(2, '0');
                 const minutes = (time % 60).toString().padStart(2, '0');
                 this.availableTimes.push(`${hours}:${minutes}`);
             }
         },
+
         formatDate(date) {
             return new Intl.DateTimeFormat('es-ES', { weekday: 'long', day: 'numeric', month: 'long' }).format(date);
         },
