@@ -28,8 +28,6 @@ import TonalButton from '@/components/TonalButton.vue'
 const userStore = useUserStore();
 const user = ref(null);
 
-console.log(userStore.getId);
-
 onMounted(() => {
     getUser();
 })

@@ -120,7 +120,7 @@
                     class=""
                     color="blue"
                     text="Reservar"
-                    @click="this.$router.push('/createReservation')"
+                    @click="createReservation"
                 />
             </v-card-actions>
         </v-card>
@@ -141,9 +141,11 @@
 <script>
 import { useUserStore } from '@/store/userStore';
 import { useSpaceStore } from '@/store/spaceStore';
+import { useReservationStore } from '@/store/reservationStore';
 import { spaceService } from '@/services/spaceService';
 import TonalButton from '@/components/TonalButton.vue'
 import AskModal from '@/components/AskModal.vue';
+import CreateReservation from '../reservations/CreateReservation.vue';
 
 export default {
     data() {
@@ -165,6 +167,7 @@ export default {
     },
     mounted() {
         this.spaceStore = useSpaceStore();
+        this.reservationStore = useReservationStore()
         this.space = this.spaceStore.getSelectedSpace;
 
         if (!this.space) {
@@ -182,6 +185,9 @@ export default {
             }
         }
     },
+    unmounted() {
+        //this.spaceStore.clearSelectedSpace();
+    },
     methods: {
         routerBack() {
             this.$router.push('/spaces');
@@ -191,6 +197,10 @@ export default {
         },
         closeDialog() {
             this.deleteModal = false;
+        },
+        createReservation() {
+            this.reservationStore.setSelectedReservedSpace(this.space);
+            this.$router.push('/createReservation');
         },
         deleteSpace() {
             spaceService.deleteSpace(this.space._id)
