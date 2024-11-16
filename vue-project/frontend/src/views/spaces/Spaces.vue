@@ -68,7 +68,7 @@
                 <v-container class="pa-0" v-else style="width: 100%;">
                     <v-row>
                         <v-col cols="12" sm="6" md="4" lg="3" v-for="space in spaces" :key="space._id">
-                            <v-card v-if="userStore.getIsAdmin" class="pa-5" outlined>
+                            <v-card v-if="userStore.getIsAdmin" class="pa-5">
                                 <v-img
                                     :src="space.imageUrl"
                                     height="150px"
@@ -80,21 +80,21 @@
 
                                 <v-card-actions v-if="userStore.getIsAdmin" class="mt-n1 mb-n4">
                                     <v-btn 
-                                    icon="mdi-magnify" 
-                                    variant="text"
-                                    @click="openSpace(space)"
+                                        icon="mdi-magnify" 
+                                        variant="text"
+                                        @click="openSpace(space)"
                                     ></v-btn>
                                     <v-spacer></v-spacer>
                                     <v-btn 
-                                    v-if="userStore.getIsAdmin" 
-                                    color="error" 
-                                    icon="mdi-trash-can-outline" 
-                                    variant="text"
-                                    @click="openDeleteModal(space)"
+                                        v-if="userStore.getIsAdmin" 
+                                        color="error" 
+                                        icon="mdi-trash-can-outline" 
+                                        variant="text"
+                                        @click="openDeleteModal(space)"
                                     ></v-btn>
                                 </v-card-actions>
                             </v-card>
-                            <v-card v-else @click="openSpace(space)" class="pa-5" outlined>
+                            <v-card v-else @click="openSpace(space)" class="pa-5">
                                 <v-img
                                     :src="space.imageUrl"
                                     height="150px"

@@ -15,17 +15,17 @@ const SpaceSchema = new Schema({
         type: Number,
         default: 0,
     },
-    time: {
+    time: {             // Tiempo que duran las reservas
         type: Number,
     },
-    repetition: {
+    repetition: {       // Si permite repetición de reservas cada cierto tiempo (p.ej. cada día, cada semana, etc.)
         type: Boolean,
         default: false,
     },
-    opening: {
+    opening: {          // Hora de apertura
         type: String,
     },
-    closing: {
+    closing: {          // Hora de cierre
         type: String,
     },
 });

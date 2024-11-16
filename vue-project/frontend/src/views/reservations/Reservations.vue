@@ -2,12 +2,11 @@
   <v-container fluid class="d-flex gap-4">
     <v-row>
       <v-col cols="12" lg="3">
-        <span class="text-h4">Reservas</span>
+        <span class="text-h4">Reservas ({{ events.length }})</span>
         <v-card class="pa-2 mt-4">
-            <v-card-title>Eventos ({{ events.length }})</v-card-title>
-            <v-divider></v-divider>
             <v-list v-if="events.length > 0">
               <v-list-item
+                @click="infoEvent(event)"
                 v-for="event in events"
                 :key="event.id"
               >
@@ -26,20 +25,23 @@
               </v-list-item>
             </v-list>
             <span class="ml-4" v-else type="info">No hay eventos para mostrar</span>
-            <v-card-actions>
-              <v-btn 
-              variant="outlined"
-              color="primary"
-              @click="addEvent"
-              >Add Event</v-btn>
+            <v-card-actions class="d-flex justify-center">
+              <TonalButton 
+                color="blue"
+                @click="addEvent"
+                text="Añadir reserva"
+                block
+              />
             </v-card-actions>
         </v-card>
       </v-col>
+
       <v-col cols="12" lg="9">
         <ScheduleXCalendar
           :calendar-app="calendarApp"
         />
       </v-col>
+
     </v-row>
   </v-container>
 </template>
@@ -55,11 +57,14 @@ import {
   createViewWeek,
 } from '@schedule-x/calendar';
 import '@schedule-x/theme-default/dist/index.css';
+import { useRouter } from 'vue-router';
+
 
 import { reservationsService } from '@/services/reservationService';
+import TonalButton from '@/components/TonalButton.vue';
 
 const eventsServicePlugin = createEventsServicePlugin();
-
+const router = useRouter()
 var events = ref([]);
 
 async function getAllEvents() {
@@ -141,17 +146,18 @@ function addEventMonth(event) {
 }
 
 function addEvent() {
-  const data = {
-    title: 'Evento 1',
-    description: 'Descripción ejemplo',
-    start : '2024-11-07',
-    end: '2024-11-07',
-    calendarId: 'espacios'
-  }
-  reservationsService.createReservation(data).then(res => {
-    eventsServicePlugin.add(res.data)
-    events.value.push(res.data)
-  })
+  // const data = {
+  //   title: 'Evento 1',
+  //   description: 'Descripción ejemplo',
+  //   start : '2024-11-07',
+  //   end: '2024-11-07',
+  //   calendarId: 'espacios'
+  // }
+  // reservationsService.createReservation(data).then(res => {
+  //   eventsServicePlugin.add(res.data)
+  //   events.value.push(res.data)
+  // })
+  router.push({ path: '/createReservation' })
 }
 </script>
 

@@ -120,6 +120,7 @@
                     class=""
                     color="blue"
                     text="Reservar"
+                    @click="this.$router.push('/createReservation')"
                 />
             </v-card-actions>
         </v-card>

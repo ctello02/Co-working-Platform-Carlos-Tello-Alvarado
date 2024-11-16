@@ -11,6 +11,7 @@
                     color="blue"
                     text="Reservar"
                     size="x-large"
+                    @click="this.$router.push('/createReservation')"
                     />
                 </div>
             </v-row>

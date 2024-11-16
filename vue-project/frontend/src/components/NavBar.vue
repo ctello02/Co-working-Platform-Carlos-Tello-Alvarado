@@ -11,15 +11,15 @@
             <v-list-item prepend-icon="mdi-home-outline" @click="toHome">
                 Vista principal
             </v-list-item>
+            <v-list-item prepend-icon="mdi-calendar-outline" @click="toReservations">
+                Reservas
+            </v-list-item>
             <v-list-item prepend-icon="mdi-table-chair" @click="toSpaces">
                 Espacios
             </v-list-item>
             <!-- Mostramos el link a "Usuarios" solo si el usuario es admin -->
             <v-list-item v-if="userStore.getIsAdmin" prepend-icon="mdi-account-group-outline" @click="toUsers">
                 Usuarios
-            </v-list-item>
-            <v-list-item prepend-icon="mdi-calendar-outline" @click="toReservations">
-                Reservas
             </v-list-item>
             <v-list-item :prepend-icon="userStore.getIsAdmin? 'mdi-close': 'mdi-check'" @click="changeAdmin">
                 <span v-if="userStore.getIsAdmin">Quitar</span>

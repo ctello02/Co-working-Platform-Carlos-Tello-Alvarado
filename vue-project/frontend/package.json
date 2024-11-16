@@ -24,6 +24,7 @@
     "pinia": "^2.2.4",
     "preact": "^10.24.3",
     "qalendar": "^3.9.0",
+    "v-calendar": "^3.1.2",
     "vee-validate": "^4.13.2",
     "vue": "^3.4.29",
     "vue-router": "^4.4.5",
