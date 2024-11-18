@@ -32,15 +32,25 @@ exports.signup = async (req, res) => {
 
 exports.login = async (req, res) => {
     try {
+        // Busca al usuario por email
         const user = await User.findOne({ email: req.body.email });
-        if (user && user.comparePassword(req.body.password)) {
-            const token = jwt.sign(user.toJSON(), process.env.SECRET, { expiresIn: '1w' });
-            res.json({ token, user });
-        } else {
-            res.status(401).json({ message: 'Authentication failed' });
+
+        // Verifica si el usuario existe
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' }); // Error específico para usuario no encontrado
         }
+
+        // Verifica si la contraseña es correcta
+        const isPasswordValid = await user.comparePassword(req.body.password);
+        if (!isPasswordValid) {
+            return res.status(401).json({ message: 'Incorrect password' }); // Error específico para contraseña incorrecta
+        }
+
+        // Si ambos son correctos, genera el token
+        const token = jwt.sign(user.toJSON(), process.env.SECRET, { expiresIn: '1w' });
+        res.json({ token, user });
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        res.status(500).json({ message: error.message }); // Error general del servidor
     }
 };
 
@@ -97,5 +107,26 @@ exports.updatePassword = async (req, res) => {
         } else {
             res.status(500).json({ message: error.message });
         }
+    }
+};
+
+exports.changePassword = async (req, res) => {
+    try {
+        let user = await User.findOne({ _id: req.params.id });
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+        const { oldPassword, newPassword } = req.body;
+
+        const isOldPasswordValid = await user.comparePassword(oldPassword);
+        if (!isOldPasswordValid) {
+            return res.status(401).json({ message: 'Incorrect password' }); // Error específico para contraseña incorrecta
+        } else {
+            user.password = newPassword;
+            await user.save();
+            res.json({ message: 'Password updated' });
+        }
+    } catch (error) {
+        res.status(500).json({ message: error.message });
     }
 };

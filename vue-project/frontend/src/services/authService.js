@@ -24,4 +24,8 @@ export const authService = {
         return axiosInstance.post(`${API_URL}/updatePassword`, { password, token });
     },
 
+    changePassword(oldPassword, newPassword, id) {
+        return axiosInstance.post(`${API_URL}/changePassword/${id}`, { oldPassword, newPassword });
+    },
+
 };

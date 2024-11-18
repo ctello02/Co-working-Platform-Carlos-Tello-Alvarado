@@ -123,7 +123,7 @@
                                         <!-- Hora de fin -->
                                         <v-col cols="3">
                                             <v-menu
-                                            location="top"
+                                            location="bottom"
                                             transition="slide-y-transition"
                                             >
                                                 <template #activator="{ props }">

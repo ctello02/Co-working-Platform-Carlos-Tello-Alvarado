@@ -200,7 +200,7 @@ export default {
         },
         createReservation() {
             this.reservationStore.setSelectedReservedSpace(this.space);
-            this.$router.push('/createReservation');
+            this.$router.push('/spaceReservation');
         },
         deleteSpace() {
             spaceService.deleteSpace(this.space._id)

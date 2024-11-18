@@ -66,6 +66,7 @@
 <script>
 import { useUserStore } from '@/store/userStore'
 import { authService } from '@/services/authService';
+import { useToast } from 'vue-toastification';
 import TonalButton from '@/components/TonalButton.vue'
 
 export default {
@@ -115,7 +116,14 @@ export default {
           this.$router.push('/')
         })
         .catch(error => {
-            console.log(error);
+          const toast = useToast();
+          if (error.response && error.response.status === 401) {
+            toast.error("Contraseña incorrecta");
+          } else if(error.response && error.response.status === 404){
+            toast.error("Usuario no econtrado");
+          }
+          console.log(error);
+
         });
     },
     clear() {

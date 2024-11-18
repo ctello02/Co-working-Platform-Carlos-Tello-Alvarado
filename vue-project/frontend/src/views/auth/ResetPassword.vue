@@ -94,12 +94,6 @@ export default {
 </script>
 
 <style scoped>
-.title {
-  text-align: center;
-  font-weight: bold;
-  margin-bottom: 20px;
-}
-
 .cta-btn {
   font-weight: bold;
   text-transform: uppercase;

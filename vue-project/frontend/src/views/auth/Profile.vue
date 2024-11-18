@@ -80,7 +80,7 @@
           text="Borrar cuenta" 
           prepend-icon="mdi-trash-can-outline"
           color="red" 
-          @click="deleteProfile" 
+          @click="deleteModal = true" 
         />
         <TonalButton 
           text="Cerrar sesión" 
@@ -100,12 +100,23 @@
       :action="logOutUser"
     />
 
+    <AskModal
+      v-model="deleteModal"
+      :title="'¿Borrar cuenta?'"
+      :message="'¿Estás seguro de que quieres borrar tu cuenta de la plataforma?'"
+      :actionText="'Borrar cuenta'"
+      :closeModal="closeDialog"
+      :action="deleteUser"
+    />
+
   </v-container>
 </template>
 
 <script>
 import { useUserStore } from "@/store/userStore";
+import { userService } from '@/services/userService';
 import { authService } from '@/services/authService';
+import { useToast } from 'vue-toastification';
 import TonalButton from '@/components/TonalButton.vue'
 import AskModal from "@/components/AskModal.vue";
 
@@ -116,6 +127,7 @@ export default {
       user: null,
       payment_method: null, 
       logOutModal: false,
+      deleteModal: false,
     };
   },
   components: {
@@ -141,12 +153,27 @@ export default {
     },
     closeDialog() {
       this.logOutModal = false;
+      this.deleteModal = false;
     },
     logOutUser() {
       const userStore = useUserStore();
       userStore.clearUser();
       this.logOutModal = false;
       this.$router.push("/login");
+    },
+    deleteUser() {
+      const toast = useToast();
+      userService.deleteUser(this.user._id)
+        .then(res => {
+          const userStore = useUserStore();
+          userStore.clearUser();
+          this.deleteModal = false;
+          this.$router.push("/login");
+          toast.error('Cuenta eliminada con éxito');
+        })
+        .catch(error => {
+          console.log(error);
+        });
     },
   }
 };

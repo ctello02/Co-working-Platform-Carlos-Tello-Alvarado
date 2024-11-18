@@ -9,79 +9,31 @@
             </v-row>
             <v-row class="mt-8">
                 <v-col>
-                    <v-tooltip 
-                    :text="spaceReservationTooltip" 
-                    location="bottom"
-                    max-width="300"
-                    open-delay="250"
-                    >
-                        <template v-slot:activator="{ props }">
-                            <v-card 
-                                v-bind="props"
-                                @click="toSpaceReservation"
-                            >
-                                <v-card-title>
-                                    <span>Reserva de espacio</span>
-                                </v-card-title>
-                                <v-img
-                                    src=""
-                                    color="surface-variant"
-                                    height="250px"
-                                    cover  
-                                />
-                            </v-card>
-                        </template>
-                    </v-tooltip>
+                    <CreateReservationCard 
+                        :tooltipText="spaceReservationTooltip" 
+                        title="Reserva de espacio" 
+                        :imageSrc="spaceReservationImage" 
+                        :action="toSpaceReservation" 
+                        classStyle='mr-4 mt-2'
+                    />
                 </v-col>
                 <v-col>
-                    <v-tooltip
-                    :text="scheduleReservationTooltip"
-                    location="bottom"
-                    max-width="300"
-                    open-delay="250"
-                    >
-                        <template v-slot:activator="{ props }">
-                            <v-card 
-                                v-bind="props"
-                                @click="toScheduleReservation"
-                            >
-                                <v-card-title>
-                                    <span>Reserva por horario</span>
-                                </v-card-title>
-                                <v-img
-                                    src=""
-                                    color="surface-variant"
-                                    height="250px"
-                                    cover  
-                                />
-                            </v-card>
-                        </template>
-                    </v-tooltip>
+                    <CreateReservationCard 
+                        :tooltipText="scheduleReservationTooltip" 
+                        title="Reserva por horario" 
+                        :imageSrc="scheduleReservationImage" 
+                        :action="toScheduleReservation" 
+                        classStyle="mt-2" 
+                    />
                 </v-col>
                 <v-col>
-                    <v-tooltip
-                        :text="timeReservationTooltip"
-                        location="bottom"
-                        max-width="300"
-                        open-delay="250"
-                    >
-                        <template v-slot:activator="{ props }">
-                            <v-card 
-                                v-bind="props"
-                                @click="toTimeReservation"
-                            >
-                                <v-card-title>
-                                    <span>Reserva de horas</span>
-                                </v-card-title>
-                                <v-img
-                                    src=""
-                                    color="surface-variant"
-                                    height="250px"
-                                    cover  
-                                />
-                            </v-card>
-                        </template>
-                    </v-tooltip>
+                    <CreateReservationCard 
+                        :tooltipText="timeReservationTooltip" 
+                        title="Reserva de horas" 
+                        :imageSrc="timeReservationImage" 
+                        :action="toTimeReservation" 
+                        classStyle="mt-2" 
+                    />
                 </v-col>
             </v-row>
         </v-col>
@@ -89,6 +41,7 @@
 </template>
 
 <script>
+import CreateReservationCard from '@/components/CreateReservationCard.vue';
 
 export default {
     data() {
@@ -97,8 +50,13 @@ export default {
             scheduleReservationTooltip: 'Se mostrará una tabla con los espacios disponibles para la duración de la reserva seleccionada',
             timeReservationTooltip: 'Selecciona una hora de inicio y una hora de fin para visualizar los espacios disponibles a esas horas',
             
-            space: null,
+            spaceReservationImage: '/images/spaceReservation.png',
+            scheduleReservationImage: '/images/scheduleReservation.png',
+            timeReservationImage: '/images/timeReservation.png',
         };
+    },
+    components: {
+        CreateReservationCard
     },
     methods: {
         toSpaceReservation() {

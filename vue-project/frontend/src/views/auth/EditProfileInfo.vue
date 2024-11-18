@@ -81,6 +81,7 @@
           <TonalButton 
             text="Cambiar contraseña" 
             color="grey" 
+            @click="toChangePassword"
           />
           <TonalButton 
             color="blue" 
@@ -185,6 +186,10 @@ export default {
           .catch(error => {
               console.log(error);
           });
+    },
+    toChangePassword() {
+      this.userStore.setId(this.user._id);
+      this.$router.push('/changePassword');
     },
   },
 };

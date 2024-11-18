@@ -30,6 +30,11 @@ const routes = [
         component: () => import("../views/auth/EditProfileInfo.vue"),
     },
     {
+        path: '/changePassword',
+        name: 'changePassword',
+        component: () => import('../views/auth/ChangePassword.vue'),
+    },
+    {
         path: "/forgot_password",
         name: "forgot_password",
         component: () => import("../views/auth/ForgotPassword.vue"),

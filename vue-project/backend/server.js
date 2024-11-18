@@ -14,6 +14,7 @@ const authRoutes = require('./routes/authRoutes');
 const usersRoutes = require('./routes/usersRoutes');
 const spacesRoutes = require('./routes/spacesRoutes');
 const reservationsRoutes = require('./routes/reservationsRoutes');
+//const imagesRoutes = require('./routes/imagesRoutes');
 
 const app = express();
 
@@ -31,6 +32,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/users', usersRoutes);
 app.use('/api/spaces', spacesRoutes);
 app.use('/api/reservations', reservationsRoutes);
+//app.use('/api/images', imagesRoutes);
 
 // Ruta principal
 app.get('/', (req, res) => {
