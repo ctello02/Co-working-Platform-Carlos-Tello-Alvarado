@@ -8,7 +8,7 @@ const ReservationSchema = new Schema({
         required: true
     },
     date: {
-        type: Date,
+        type: String,
         required: true
     },
     startTime: {
@@ -29,7 +29,10 @@ const ReservationSchema = new Schema({
         enum: ['none', 'daily', 'weekly', 'monthly', 'weekdays'],
         default: 'none'
     },
-
+    calendarId: {
+        type: String,
+        required: true
+    }
 });
 
 const Reservation = mongoose.model("Reservation", ReservationSchema);

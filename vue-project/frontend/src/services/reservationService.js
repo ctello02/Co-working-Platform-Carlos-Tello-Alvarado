@@ -2,14 +2,18 @@ import axiosInstance from '@/plugins/axiosConfig'; // Importamos la configuraci√
 
 const API_URL = '/reservations';
 
-export const reservationsService = {
+export const reservationService = {
 
     getReservations() {
         return axiosInstance.get(`${API_URL}/getReservations`);
     },
 
-    createReservation(data) {
-        return axiosInstance.post(`${API_URL}/createReservation`, data);
+    createReservation(formData) {
+        return axiosInstance.post(`${API_URL}/createReservation`, formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data'
+            }
+        });
     },
 
     // updateReservation(formData) {
@@ -21,3 +25,4 @@ export const reservationsService = {
     // },
 
 };
+

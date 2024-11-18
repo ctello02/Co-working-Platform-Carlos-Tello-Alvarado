@@ -13,16 +13,31 @@ exports.getReservations = async (req, res) => {
 };
 
 exports.createReservation = async (req, res) => {
+    console.log(req.body); // Esto debe mostrar los datos enviados desde el frontend
     try {
-        const { title, description, start, end } = req.body;
+        const {
+            space,
+            date,
+            startTime,
+            endTime,
+            seatsReserved,
+            repetition,
+        } = req.body;
+
+        if (!space || !date || !startTime || !endTime || !seatsReserved) {
+            return res.status(400).json({ message: 'Todos los campos son obligatorios.' + req.body.space + req.body.date + req.body.startTime + req.body.endTime + req.body.seatsReserved });
+        }
+
         const calendarId = 'espacios';
 
         const newReservation = new Reservation({
-            title,
-            description,
-            start,
-            end,
-            calendarId
+            space,
+            date,
+            startTime,
+            endTime,
+            seatsReserved,
+            repetition,
+            calendarId,
         });
 
         const savedReservation = await newReservation.save();

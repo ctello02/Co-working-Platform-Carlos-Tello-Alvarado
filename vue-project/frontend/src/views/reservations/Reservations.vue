@@ -2,33 +2,30 @@
   <v-container fluid class="d-flex gap-4">
     <v-row>
       <v-col cols="12" lg="3">
-        <span class="text-h4">Reservas ({{ events.length }})</span>
+        <span class="text-h4">Reservas ({{ reservations.length }})</span>
         <v-card class="pa-2 mt-4">
-            <v-list v-if="events.length > 0">
+            <v-list v-if="reservations.length > 0">
               <v-list-item
-                @click="infoEvent(event)"
-                v-for="event in events"
-                :key="event.id"
+                @click="infoEvent(reservation)"
+                v-for="reservation in reservations"
+                :key="reservation._id"
               >
                 <v-list-item-content>
                   <v-list-item-title>
-                    <p>{{ event.title }}</p>
+                    <p>Reserva de espacio</p>
                   </v-list-item-title>
 
-                  <v-list-item-subtitle v-if="event.start === event.end">
-                    {{ event.start }}
-                  </v-list-item-subtitle>
-                  <v-list-item-subtitle v-else>
-                    {{ event.start }} - {{ event.end }}
+                  <v-list-item-subtitle>
+                    {{ reservation.start }} - {{ reservation.end }}
                   </v-list-item-subtitle>
                 </v-list-item-content>
               </v-list-item>
             </v-list>
-            <span class="ml-4" v-else type="info">No hay eventos para mostrar</span>
+            <span class="ml-4" v-else type="info">No hay reservas para mostrar</span>
             <v-card-actions class="d-flex justify-center">
               <TonalButton 
                 color="blue"
-                @click="addEvent"
+                @click="addReservation"
                 text="Añadir reserva"
                 block
               />
@@ -58,19 +55,38 @@ import {
 } from '@schedule-x/calendar';
 import '@schedule-x/theme-default/dist/index.css';
 import { useRouter } from 'vue-router';
+const router = useRouter()
 
-
-import { reservationsService } from '@/services/reservationService';
+import { reservationService } from '@/services/reservationService';
 import TonalButton from '@/components/TonalButton.vue';
 
 const eventsServicePlugin = createEventsServicePlugin();
-const router = useRouter()
-var events = ref([]);
+
+var reservations = ref([]);
 
 async function getAllEvents() {
-  const response = await reservationsService.getReservations();
-  events.value = response.data.reservations;
-  eventsServicePlugin.set(response.data.reservations)
+  try {
+    const response = await reservationService.getReservations();
+
+    // Mapea las reservas para ajustar los campos al formato del calendario
+    reservations.value = response.data.reservations.map(reservation => {
+      return {
+        id: reservation._id, // Usar el ID de la reserva como identificador único
+        // title: `Reserva en ${reservation.space}`, // Personaliza el título
+        title: `Reserva HOLA`, // Personaliza el título
+        start: `${reservation.date} ${reservation.startTime}`,
+        end: `${reservation.date} ${reservation.endTime}`,
+        calendarId: reservation.calendarId, // Identificador del calendario
+      };
+    });
+
+    console.log('Reservas procesadas:', reservations.value);
+
+    // Actualiza los eventos en el plugin del calendario
+    eventsServicePlugin.set(reservations.value);
+  } catch (error) {
+    console.error('Error al obtener reservas:', error);
+  }
 }
 
 const calendarApp = createCalendar({
@@ -139,24 +155,13 @@ const calendarApp = createCalendar({
 )
 
 function addEventMonth(event) {
-  reservationsService.createReservation(event).then(res => {
+  reservationService.createReservation(event).then(res => {
     eventsServicePlugin.add(res.data)
     events.value.push(res.data)
   })
 }
 
-function addEvent() {
-  // const data = {
-  //   title: 'Evento 1',
-  //   description: 'Descripción ejemplo',
-  //   start : '2024-11-07',
-  //   end: '2024-11-07',
-  //   calendarId: 'espacios'
-  // }
-  // reservationsService.createReservation(data).then(res => {
-  //   eventsServicePlugin.add(res.data)
-  //   events.value.push(res.data)
-  // })
+function addReservation() {
   router.push({ path: '/createReservation' })
 }
 </script>

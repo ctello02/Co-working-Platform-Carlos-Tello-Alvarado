@@ -148,6 +148,20 @@
                                                 </v-list>
                                             </v-menu>
                                         </v-col>
+                                        <v-col>
+                                            <v-text-field 
+                                                v-model.number="spaceSeats" 
+                                                label="Número de asientos"
+                                                prepend-icon="mdi-table-chair" 
+                                                type="number"
+                                                variant="outlined"
+                                                density="compact"
+                                                required
+                                                :rules="spaceSeatsRules"
+                                                @input="spaceSeats = Math.max(0, spaceSeats)"
+                                                class="mr-n3"
+                                            />
+                                        </v-col>
                                     </v-row>
                                 </v-col>
                             </v-row>
@@ -162,6 +176,8 @@
                         <TonalButton
                             text="Crear"
                             color="blue"
+                            @click="submit"
+                            :disabled="camposVacios()"
                         />
                     </v-card-actions>
                 </v-card>
@@ -276,6 +292,7 @@
 
 <script>
 import { spaceService } from '@/services/spaceService';
+import { reservationService } from '@/services/reservationService';
 import { useReservationStore } from '@/store/reservationStore';
 import { useToast } from 'vue-toastification';
 import TonalButton from '@/components/TonalButton.vue';
@@ -293,6 +310,7 @@ export default {
             spaces: [],
             selectedSpace: null,
             spaceRerservationTime: null,
+            spaceSeats: null,
             
             /*** Dates variables ***/
             date: new Date(),
@@ -308,6 +326,12 @@ export default {
             availableTimes: [],
             repetitionTime: null,
             availableRepetitionTimes: ['No', 'Diariamente', 'Semanalmente', 'Mensualmente', 'Dias laborales'], // Opciones de repetición
+        
+            /*** Rules ***/
+            spaceSeatsRules: [
+                v => !!v || 'El campo es obligatorio',
+                v => v <= this.selectedSpace.seats || 'El campo debe ser menor que el número de asientos disponibles',
+            ]
         };
     },
     unmounted() {
@@ -321,7 +345,6 @@ export default {
             this.selectedSpace = this.reservationStore.getSelectedReservedSpace;
             this.selectedSpaceVSelect = this.selectedSpace._id;  
         }
-        console.log(this.selectedSpace);
     },
     computed: {
         filteredClosingTimes() {
@@ -355,7 +378,7 @@ export default {
             this.generateAvailableTimes();
         },
         date(newValue) {
-            this.formattedDate = this.formatDate(newValue);
+            this.formattedDate = this.formatDate(newValue);            
         },
         startTime(newVal) {
             if (newVal && this.endTime && newVal >= this.endTime) {
@@ -412,6 +435,45 @@ export default {
                 this.availableTimes.push(`${hours}:${minutes}`);
             }
         },
+        formatDateToYYYYMMDD(date) {
+            if (!(date instanceof Date)) {
+                throw new Error('El argumento debe ser una instancia de Date');
+            }
+            
+            const year = date.getFullYear(); // Obtiene el año
+            const month = String(date.getMonth() + 1).padStart(2, '0'); // Mes (0-11) -> Agrega 1 y rellena con 0 si es necesario
+            const day = String(date.getDate()).padStart(2, '0'); // Día -> Rellena con 0 si es necesario
+
+            return `${year}-${month}-${day}`;
+        },
+        async submit() {
+            const toast = useToast();
+            if (this.camposVacios()) {
+                toast.error('Formulario inválido');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('space', this.selectedSpace._id);
+            const finalDate = this.formatDateToYYYYMMDD(this.date);
+            formData.append('date', finalDate);
+            formData.append('startTime', this.startTime);
+            formData.append('endTime', this.endTime);
+            formData.append('seatsReserved', this.spaceSeats);
+            formData.append('repetition', 'none');
+
+            try {
+                const res = await reservationService.createReservation(formData);
+                console.log(res.data);
+                
+                toast.success('Espacio creado con éxito');
+            } catch (error) {
+                console.error(error);
+            }
+        },
+        camposVacios() {
+            return !this.selectedSpace || !this.formattedDate || !this.startTime || !this.endTime || !this.spaceSeats;
+        },
         seeSpace() {
             this.selectedSpaceInfoModal = !this.selectedSpaceInfoModal;
         },
@@ -434,6 +496,7 @@ export default {
             this.startTime = null;
             this.endTime = null;
             this.repetitionTime = null;
+            this.spaceSeats = null; 
         }
     }
 };

@@ -186,7 +186,7 @@ export default {
         }
     },
     unmounted() {
-        //this.spaceStore.clearSelectedSpace();
+        this.spaceStore.clearSelectedSpace();
     },
     methods: {
         routerBack() {
