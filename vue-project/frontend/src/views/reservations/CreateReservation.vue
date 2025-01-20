@@ -6,9 +6,8 @@
                     <v-card-title class="my-3">
                         <span class="text-h4">Nueva Reserva</span>
                     </v-card-title>
-                    <v-card-text>
+                    <!-- <v-card-text>
                         <v-col>
-                            <!-- Seleccionar el espacio -->
                             <v-row>
                                 <v-col>
                                     <v-select
@@ -44,7 +43,6 @@
                                         <v-date-picker class="ml-10" v-model="date"></v-date-picker>
                                     </v-menu>
                                 </v-col>
-                                <!-- Hora de inicio -->
                                 <v-col cols="2">
                                     <v-menu
                                     location="top"
@@ -73,7 +71,6 @@
                                         </v-list>
                                     </v-menu>
                                 </v-col>
-                                <!-- Hora de fin -->
                                 <v-col cols="2">
                                     <v-menu
                                     location="bottom"
@@ -102,30 +99,9 @@
                                     </v-menu>
                                 </v-col>
                             </v-row>
-                            <!-- Detalles de la reserva -->
                             <v-row v-if="selectedSpace">
                                 <v-col>
                                     <v-row>
-                                        <!-- Seleccionar fecha -->
-                                        <v-col cols="7">
-                                            <v-menu
-                                                :close-on-content-click="false"
-                                                location="bottom"
-                                                transition="slide-y-transition"
-                                            >
-                                                <template v-slot:activator="{ props }">
-                                                <v-text-field
-                                                    density="compact"
-                                                    prepend-icon="mdi-calendar-month-outline"
-                                                    v-bind="props"
-                                                    variant="outlined"
-                                                    class="ml-n3"
-                                                >{{ formattedDate }}</v-text-field>
-                                                </template>
-                                                <v-date-picker class="ml-10" v-model="date"></v-date-picker>
-                                            </v-menu>
-                                        </v-col>
-                                        <!-- Repetición -->
                                         <v-col v-if="selectedSpace.repetition" cols="5">
                                             <v-menu
                                                 location="bottom"
@@ -153,7 +129,6 @@
                                                 </v-list>
                                             </v-menu>
                                         </v-col>
-                                        <!-- Sin repetición -->
                                         <v-col v-else cols="5">
                                             <v-tooltip text="No permite repetición" >
                                                 <template v-slot:activator="{ props }">
@@ -166,65 +141,6 @@
                                                     />
                                                 </template>
                                             </v-tooltip>
-                                        </v-col>
-                                    </v-row>
-                                    <v-row style="margin-top: 3px;">
-                                        <!-- Hora de inicio -->
-                                        <v-col cols="3">
-                                            <v-menu
-                                            location="top"
-                                            transition="slide-y-transition"
-                                            >
-                                                <template #activator="{ props }">
-                                                    <v-text-field
-                                                        v-model="startTime"
-                                                        label="Inicio"
-                                                        prepend-icon="mdi-clock-outline"
-                                                        :disabled="!selectedSpace"
-                                                        variant="outlined"
-                                                        density="compact"
-                                                        class="ml-n3 mr-n3"
-                                                        v-bind="props"
-                                                    ></v-text-field>
-                                                </template>
-                                                <v-list style="max-height: 300px; overflow-y: auto;">
-                                                    <v-list-item
-                                                        v-for="(time, index) in availableTimes"
-                                                        :key="index"
-                                                        @click="selectOpeningTime(time)"
-                                                    >
-                                                        <v-list-item-title>{{ time }}</v-list-item-title>
-                                                    </v-list-item>
-                                                </v-list>
-                                            </v-menu>
-                                        </v-col>
-                                        <!-- Hora de fin -->
-                                        <v-col cols="3">
-                                            <v-menu
-                                            location="bottom"
-                                            transition="slide-y-transition"
-                                            >
-                                                <template #activator="{ props }">
-                                                    <v-text-field
-                                                        v-model="endTime"
-                                                        label="Fin"
-                                                        :disabled="!startTime"
-                                                        variant="outlined"
-                                                        density="compact"
-                                                        class="mr-3"
-                                                        v-bind="props"
-                                                    ></v-text-field>
-                                                </template>
-                                                <v-list style="max-height: 300px;">
-                                                    <v-list-item
-                                                        v-for="(time, index) in filteredClosingTimes"
-                                                        :key="index"
-                                                        @click="selectClosingTime(time)"
-                                                    >
-                                                        <v-list-item-title>{{ time }}</v-list-item-title>
-                                                    </v-list-item>
-                                                </v-list>
-                                            </v-menu>
                                         </v-col>
                                         <v-col>
                                             <v-text-field 
@@ -244,6 +160,95 @@
                                 </v-col>
                             </v-row>
                         </v-col>
+                    </v-card-text> -->
+                    <v-card-text>
+                        <v-col>
+                            <v-row class="d-flex align-center justify-space-between">
+                                <v-col cols="4">
+                                    <v-row>
+                                        <span class="text-h6">Seleccione una fecha</span>
+                                    </v-row>
+                                    <v-row>
+                                        <v-col>
+                                            <v-menu
+                                                :close-on-content-click="false"
+                                                location="bottom"
+                                                transition="slide-y-transition"
+                                            >
+                                                <template v-slot:activator="{ props }">
+                                                <v-text-field
+                                                    density="compact"
+                                                    prepend-icon="mdi-calendar-month-outline"
+                                                    v-bind="props"
+                                                    variant="outlined"
+                                                    class="ml-n3"
+                                                >{{ formattedDate }}</v-text-field>
+                                                </template>
+                                                <v-date-picker class="ml-10"
+                                                :disabled-dates="disabledDates"
+                                                is-required
+                                                v-model="date"
+                                                ></v-date-picker>
+                                            </v-menu>
+                                        </v-col>
+                                    </v-row>
+                                </v-col>
+                                <v-col cols="3">
+                                    <v-row>
+                                        <span class="text-h6">¿Hora de inicio?</span>
+                                    </v-row>
+                                    <v-row>
+                                        <v-col>
+                                            <v-select
+                                                v-model="startTime"
+                                                :items="availableTimes"
+                                                label="Inicio"
+                                                prepend-icon="mdi-weather-sunny"
+                                                variant="outlined"
+                                                density="compact"
+                                                class="ml-n3"
+                                                clearable
+                                            />
+                                        </v-col>
+                                    </v-row>
+                                </v-col>
+                                <v-col cols="4">
+                                    <v-row>
+                                        <span class="text-h6">¿Duración?</span>
+                                    </v-row>
+                                    <v-row>
+                                        <v-col>
+                                            <v-select
+                                                v-model="selectedTimeFrame"
+                                                :items="timeFrames"
+                                                item-title="label"
+                                                item-value="value"
+                                                label="Duración"
+                                                prepend-icon="mdi-clock-outline"
+                                                variant="outlined"
+                                                density="compact"
+                                                class="ml-n3"
+                                                clearable
+                                                />
+                                        </v-col>
+                                    </v-row>
+                                </v-col>
+                            </v-row>
+                        </v-col>
+                        <hr style="border: 1px solid #EBEBEB;">
+                        <v-row class="mt-5">
+                            <v-col v-for="space in spaces" :key="space._id">
+                                <v-card max-width="600">
+                                    <v-img
+                                        :src="space?.imageUrl"
+                                        color="surface-variant"
+                                        height="200px"
+                                        cover 
+                                    ></v-img>
+                                    <v-card-title class="text-h5">{{ space.name }}</v-card-title>
+                                </v-card>
+                            </v-col>
+                        </v-row>
                     </v-card-text>
                     <v-card-actions class="mt-n2 mb-3 mr-2 d-flex justify-end ga-3">
                         <TonalButton
@@ -260,7 +265,7 @@
                     </v-card-actions>
                 </v-card>
             </v-col>
-            <v-col :cols="selectedSpaceInfoModal ? 6 : 12">
+            <!-- <v-col :cols="selectedSpaceInfoModal ? 6 : 12">
                 <v-card v-if="selectedSpace && selectedSpaceInfoModal" class="mx-auto">
                     <v-img
                         :src="selectedSpace?.imageUrl"
@@ -363,7 +368,7 @@
                         />
                     </v-card-actions>
                 </v-card>
-            </v-col>
+            </v-col> -->
         </v-row>
     </v-container>
 </template>
@@ -393,6 +398,13 @@ export default {
             /*** Dates variables ***/
             date: new Date(),
             formattedDate: this.formatDate(new Date()),
+            disabledDates: [
+                {
+                    repeat: {
+                        weekdays: [1],
+                    },
+                },
+            ],
 
             /*** Selected space info variable ***/
             selectedSpaceInfoModal: false,
@@ -403,7 +415,19 @@ export default {
             endTime: null,
             availableTimes: [],
             repetitionTime: null,
+            selectedTimeFrame: null,
             availableRepetitionTimes: ['No', 'Diariamente', 'Semanalmente', 'Mensualmente', 'Dias laborales'], // Opciones de repetición
+            timeFrames: [
+                { label: '15 mins', value: 15 },
+                { label: '20 mins', value: 20 },
+                { label: '30 mins', value: 30 },
+                { label: '1 hora', value: 60 },
+                { label: '1.5 horas', value: 90 },
+                { label: '2 horas', value: 120 },
+                { label: '3 horas', value: 180 },
+                { label: '4 horas', value: 240 },
+                { label: '5 horas', value: 300 },
+            ],
         
             /*** Rules ***/
             spaceSeatsRules: [
@@ -416,6 +440,8 @@ export default {
         this.reservationStore.clearSelectedReservedSpace();
     },
     mounted() {
+        this.generateStartingTime();
+
         this.getSpaces();
         this.reservationStore = useReservationStore();
 
@@ -425,14 +451,14 @@ export default {
         }
     },
     computed: {
-        filteredClosingTimes() {
-            if (!this.startTime) return [];
+        // filteredClosingTimes() {
+        //     if (!this.startTime) return [];
             
-            const startIndex = this.availableTimes.indexOf(this.startTime);
-            // Incluye la hora de cierre en la lista de tiempos finales
-            const closingTime = this.selectedSpace.closing;
-            return [...this.availableTimes.slice(startIndex + 1), closingTime];
-        },
+        //     const startIndex = this.availableTimes.indexOf(this.startTime);
+        //     // Incluye la hora de cierre en la lista de tiempos finales
+        //     const closingTime = this.selectedSpace.closing;
+        //     return [...this.availableTimes.slice(startIndex + 1), closingTime];
+        // },
         appendIcon() {
             if (!this.selectedSpace) {  // Sin icono cuando no hay espacio seleccionado
                 return ''; 
@@ -458,11 +484,11 @@ export default {
         date(newValue) {
             this.formattedDate = this.formatDate(newValue);            
         },
-        startTime(newVal) {
-            if (newVal && this.endTime && newVal >= this.endTime) {
-                this.endTime = null;
-            }
-        },
+        // startTime(newVal) {
+        //     if (newVal && this.endTime && newVal >= this.endTime) {
+        //         this.endTime = null;
+        //     }
+        // },
     },
     methods: {
         getSpaces() {
@@ -486,31 +512,39 @@ export default {
                 }
             }
         },
-        generateAvailableTimes() {
-            this.availableTimes = [];
-            const toast = useToast();
+        // generateAvailableTimes() {
+        //     this.availableTimes = [];
+        //     const toast = useToast();
 
-            if (!this.selectedSpace || !this.selectedSpace.opening || !this.selectedSpace.closing) {
-                toast.error('Selecciona un espacio para generar los tiempos disponibles');
-                return;
-            }
+        //     if (!this.selectedSpace || !this.selectedSpace.opening || !this.selectedSpace.closing) {
+        //         toast.error('Selecciona un espacio para generar los tiempos disponibles');
+        //         return;
+        //     }
 
-            // Convierte el tiempo de apertura y cierre a horas y minutos
-            const [openingHour, openingMinute] = this.selectedSpace.opening.split(':').map(Number);
-            const [closingHour, closingMinute] = this.selectedSpace.closing.split(':').map(Number);
+        //     // Convierte el tiempo de apertura y cierre a horas y minutos
+        //     const [openingHour, openingMinute] = this.selectedSpace.opening.split(':').map(Number);
+        //     const [closingHour, closingMinute] = this.selectedSpace.closing.split(':').map(Number);
 
-            // Calcula el tiempo inicial y final en minutos
-            const openingInMinutes = openingHour * 60 + openingMinute;
-            const closingInMinutes = closingHour * 60 + closingMinute;
+        //     // Calcula el tiempo inicial y final en minutos
+        //     const openingInMinutes = openingHour * 60 + openingMinute;
+        //     const closingInMinutes = closingHour * 60 + closingMinute;
 
-            // Obtén el intervalo de tiempo del espacio seleccionado
-            const timeInterval = this.selectedSpace.time;
+        //     // Obtén el intervalo de tiempo del espacio seleccionado
+        //     const timeInterval = this.selectedSpace.time;
 
-            // Genera los tiempos disponibles dentro del rango
-            for (let time = openingInMinutes; time < closingInMinutes; time += timeInterval) {
-                const hours = Math.floor(time / 60).toString().padStart(2, '0');
-                const minutes = (time % 60).toString().padStart(2, '0');
-                this.availableTimes.push(`${hours}:${minutes}`);
+        //     // Genera los tiempos disponibles dentro del rango
+        //     for (let time = openingInMinutes; time < closingInMinutes; time += timeInterval) {
+        //         const hours = Math.floor(time / 60).toString().padStart(2, '0');
+        //         const minutes = (time % 60).toString().padStart(2, '0');
+        //         this.availableTimes.push(`${hours}:${minutes}`);
+        //     }
+        // },
+        generateStartingTime() {
+            for (let hour = 0; hour < 24; hour++) {
+                for (let minute = 0; minute < 60; minute += 15) {
+                    const formattedTime = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+                    this.availableTimes.push(formattedTime);
+                }
             }
         },
         formatDateToYYYYMMDD(date) {

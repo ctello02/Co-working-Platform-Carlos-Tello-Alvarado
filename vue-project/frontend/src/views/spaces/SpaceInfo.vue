@@ -15,11 +15,11 @@
                         </v-col>
                         <v-col class="d-flex align-center justify-end ga-3">
                             <v-btn 
-                            v-if="userStore.getIsAdmin"
-                            @click="openEditSpaceInfo()"
+                                v-if="userStore.getIsAdmin"
+                                @click="openEditSpaceInfo()"
                                 variant="tonal"
                                 size="small"
-                                icon="mdi-pencil" 
+                                icon="mdi-pencil"           
                             />
                             <v-btn 
                             v-if="userStore.getIsAdmin"

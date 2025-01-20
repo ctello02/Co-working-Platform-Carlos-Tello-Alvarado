@@ -89,6 +89,7 @@
                 :items="availableTimes"
                 label="Hora de apertura"
                 prepend-icon="mdi-weather-sunny"
+                variant="outlined"
               ></v-select>
             </v-col>
 
@@ -99,6 +100,7 @@
                 label="Hora de cierre"
                 prepend-icon="mdi-weather-night"
                 :disabled="!openingTime"
+                variant="outlined"
               ></v-select>
             </v-col>
           </v-row>
