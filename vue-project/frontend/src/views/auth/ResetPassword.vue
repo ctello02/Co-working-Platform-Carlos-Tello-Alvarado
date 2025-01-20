@@ -75,7 +75,7 @@ export default {
     },
     async submit() {
       const toast = useToast();
-      authService.updatePassword(this.password, this.$route.query.token)
+      authService.resetPassword(this.password, this.$route.query.token)
         .then(res => {
           console.log(res.data);
           toast.success(res.data.message);

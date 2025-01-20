@@ -96,21 +96,6 @@ const routes = [
         name: "createReservation",
         component: () => import("../views/reservations/CreateReservation.vue"),
     },
-    {
-        path: "/spaceReservation",
-        name: "spaceReservation",
-        component: () => import("../views/reservations/ReservationRoutes/SpaceReservation.vue"),
-    },
-    {
-        path: "/scheduleReservation",
-        name: "scheduleReservation",
-        component: () => import("../views/reservations/ReservationRoutes/ScheduleReservation.vue"),
-    },
-    {
-        path: "/timeReservation",
-        name: "timeReservation",
-        component: () => import("../views/reservations/ReservationRoutes/TimeReservation.vue"),
-    },
 ];
 
 const router = createRouter({

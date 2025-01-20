@@ -20,8 +20,8 @@ export const authService = {
         return axiosInstance.post(`${API_URL}/forgotPassword`, { email });
     },
 
-    updatePassword(password, token) {
-        return axiosInstance.post(`${API_URL}/updatePassword`, { password, token });
+    resetPassword(password, token) {
+        return axiosInstance.post(`${API_URL}/resetPassword`, { password, token });
     },
 
     changePassword(oldPassword, newPassword, id) {
