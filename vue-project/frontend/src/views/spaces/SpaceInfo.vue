@@ -84,7 +84,7 @@
                             <v-row>
                                 <v-col cols="2" class="d-flex align-center">
                                     <v-icon
-                                        icon="mdi-clock-outline"
+                                        icon="mdi-timer-sand"
                                         size="small"
                                     />
                                 </v-col>

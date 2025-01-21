@@ -90,14 +90,14 @@ async function getAllEvents() {
 }
 
 const calendarApp = createCalendar({
-  selectedDate: '2024-11-03',
+  selectedDate: '2025-01-20',
   views: [
     createViewDay(),
     createViewWeek(),
     createViewMonthGrid(),
   ],
   firstDayOfWeek: 1,
-  defaultView: createViewMonthGrid().name,
+  defaultView: createViewWeek().name,
   events: getAllEvents().value,
   weekOptions: {
     gridHeight: 2500,
