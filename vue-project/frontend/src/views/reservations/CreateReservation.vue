@@ -149,9 +149,9 @@
                                                         />
                                                     </v-col>
                                                     <v-col>
-                                                        <span class="pt-2 text-h6" v-if="space.time < 60">Reservas de {{space.time}} minutos</span>
-                                                        <span class="pt-2 text-h6" v-if="space.time == 60">Reservas de {{space.time / 60}} hora</span>
-                                                        <span class="pt-2 text-h6" v-if="space.time > 60">Reservas de {{space.time / 60}} horas</span>
+                                                        <span class="pt-2 text-h6" v-if="space.duration < 60">Reservas de {{space.duration}} minutos</span>
+                                                        <span class="pt-2 text-h6" v-if="space.duration == 60">Reservas de {{space.duration / 60}} hora</span>
+                                                        <span class="pt-2 text-h6" v-if="space.duration > 60">Reservas de {{space.duration / 60}} horas</span>
                                                     </v-col>
                                                 </v-row>
                                             </v-col>
@@ -172,8 +172,8 @@
                                         <v-row>
                                             <v-col>
                                                 <v-select
-                                                    v-model="startTime"
-                                                    :items="this.allTimes"
+                                                    v-model="reservationStartTime"
+                                                    :items="calcStartTimeOfSpace(space)"
                                                     label="Inicio"
                                                     prepend-icon="mdi-clock-outline"
                                                     variant="outlined"
@@ -236,6 +236,9 @@ export default {
             spaceRerservationTime: null,
             spaceSeats: null,
             reservationSeats: 1,
+
+            /*** Reservation variables ***/
+            reservationStartTime: null,
             
             /*** Dates variables ***/
             date: new Date(),
@@ -322,7 +325,7 @@ export default {
         filterSpaces(){
             this.filteredSpaces = this.spaces.filter(space => {
                 const matchesStartTime = this.startTime == null || (space.opening <= this.startTime && space.closing > this.startTime);
-                const matchesDuration = this.duration == null || space.time <= this.duration;
+                const matchesDuration = this.duration == null || space.duration <= this.duration;
                 const matchesSeats = this.reservationSeats == null || space.seats >= this.reservationSeats;
 
                 // Retorna true solo si cumple todas las condiciones
@@ -349,22 +352,26 @@ export default {
             return `${year}-${month}-${day}`;
         },
         calcStartTimeOfSpace(space) {
-                const openingHour = space.opening.split(':')[0];
-                const openingMinute = space.opening.split(':')[1];
-                const closingHour = space.closing.split(':')[0];
-                const closingMinute = space.closing.split(':')[1];
+            const hours = [];            
 
-                const openingInMinutes = openingHour * 60 + openingMinute;
-                const closingInMinutes = closingHour * 60 + closingMinute;
+            // Descomposición de las horas y minutos de apertura y cierre
+            const [openingHour, openingMinute] = space.opening.split(':').map(Number);
+            const [closingHour, closingMinute] = space.closing.split(':').map(Number);
 
-                for (let time = openingInMinutes; time < closingInMinutes; time += space.duration) {
-                    const hours = Math.floor(time / 60).toString().padStart(2, '0');
-                    const minutes = (time % 60).toString().padStart(2, '0');
-                    this.startTimeOfSpace.push(`${hours}:${minutes}`);
-                }
+            // Convertir horas y minutos a minutos totales
+            const openingInMinutes = openingHour * 60 + openingMinute;
+            const closingInMinutes = closingHour * 60 + closingMinute;
 
-                return this.startTimeOfSpace;
+            // Bucle para calcular los intervalos según la duración
+            for (let time = openingInMinutes; time < closingInMinutes; time += space.duration) {
+                const hoursPart = Math.floor(time / 60).toString().padStart(2, '0');
+                const minutesPart = (time % 60).toString().padStart(2, '0');
+                hours.push(`${hoursPart}:${minutesPart}`);
+            }
+
+            return hours;
         },
+
         calcDurationOfSpace() {
 
         },

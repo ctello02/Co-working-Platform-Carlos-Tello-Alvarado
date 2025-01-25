@@ -222,7 +222,7 @@ export default {
       formData.append('description', this.spaceDescription);
       formData.append('image', this.spaceImage); 
       formData.append('seats', this.spaceSeats);
-      formData.append('time', this.selectedTimeFrame);
+      formData.append('duration', this.selectedTimeFrame);
       formData.append('repetition', this.spaceRepetition);
       formData.append('opening', this.openingTime); 
       formData.append('closing', this.closingTime); 

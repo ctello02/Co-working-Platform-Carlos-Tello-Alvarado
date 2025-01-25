@@ -46,17 +46,17 @@
                                 <td>
                                     <v-form class="d-flex">
                                         <v-btn 
-                                        icon="mdi-magnify" 
-                                        variant="text"
-                                        @click="openSpace(space)"
-                                        ></v-btn> 
+                                            icon="mdi-magnify" 
+                                            variant="text"
+                                            @click="openSpace(space)"
+                                        />
                                         <v-btn 
-                                        v-if="userStore.getIsAdmin" 
-                                        color="error" 
-                                        icon="mdi-trash-can-outline" 
-                                        variant="text"
-                                        @click="openDeleteModal(space)"
-                                        ></v-btn>
+                                            v-if="userStore.getIsAdmin" 
+                                            color="error" 
+                                            icon="mdi-trash-can-outline" 
+                                            variant="text"
+                                            @click="openDeleteModal(space)"
+                                        />
                                     </v-form>
                                 </td>
                             </tr>
@@ -74,7 +74,7 @@
                                     height="150px"
                                     contain  
                                     class="mb-2"
-                                ></v-img>
+                                />
                                 <v-card-title class="ml-n3 text-h5">{{ space.name }}</v-card-title>
                                 <v-card-subtitle class="ml-n3">{{ space.description }}</v-card-subtitle>
 
@@ -83,15 +83,15 @@
                                         icon="mdi-magnify" 
                                         variant="text"
                                         @click="openSpace(space)"
-                                    ></v-btn>
-                                    <v-spacer></v-spacer>
+                                    />
+                                    <v-spacer/>
                                     <v-btn 
                                         v-if="userStore.getIsAdmin" 
                                         color="error" 
                                         icon="mdi-trash-can-outline" 
                                         variant="text"
                                         @click="openDeleteModal(space)"
-                                    ></v-btn>
+                                    />
                                 </v-card-actions>
                             </v-card>
                             <v-card v-else @click="openSpace(space)" class="pa-5">
@@ -100,7 +100,7 @@
                                     height="150px"
                                     contain  
                                     class="mb-2"
-                                ></v-img>
+                                />
                                 <v-card-title class="ml-n3 text-h5">{{ space.name }}</v-card-title>
                                 <v-card-subtitle class="ml-n3">{{ space.description }}</v-card-subtitle>
                             </v-card>

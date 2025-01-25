@@ -197,7 +197,7 @@ export default {
         this.newSpace = { ...this.space };    // Hacer una copia del objeto space
         this.openingTime = this.space?.opening;
         this.closingTime = this.space?.closing;
-        this.selectedTimeFrame = this.space?.time;
+        this.selectedTimeFrame = this.space?.duration;
     },
     methods: {
         routerBack() {
@@ -249,7 +249,7 @@ export default {
             formData.append('opening', this.openingTime); 
             formData.append('closing', this.closingTime);
             const numbersOnly = parseFloat(this.selectedTimeFrame);
-            formData.append('time', numbersOnly);
+            formData.append('duration', numbersOnly);
 
             if (this.isNewImage && this.newImageUrl) {
                 formData.append('image', this.newImageUrl); // Agrega la nueva imagen al FormData
@@ -257,7 +257,7 @@ export default {
 
             this.newSpace.opening = this.openingTime;
             this.newSpace.closing = this.closingTime;
-            this.newSpace.time = numbersOnly
+            this.newSpace.duration = numbersOnly
 
             spaceService.updateSpace(formData)
                 .then(res => {

@@ -15,7 +15,7 @@ const SpaceSchema = new Schema({
         type: Number,
         default: 0,
     },
-    time: {             // Tiempo que duran las reservas
+    duration: {             // Tiempo que duran las reservas
         type: Number,
     },
     repetition: {       // Si permite repetición de reservas cada cierto tiempo (p.ej. cada día, cada semana, etc.)

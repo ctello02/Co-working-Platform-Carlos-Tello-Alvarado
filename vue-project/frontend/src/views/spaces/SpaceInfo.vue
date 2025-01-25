@@ -7,7 +7,7 @@
                 height="300px"
                 cover  
             />                            
-            <v-card-text v-if="this.timeFrame">
+            <v-card-text v-if="space">
                 <v-col>
                     <v-row class="mt-n5 mb-n3" cols="12">
                         <v-col cols="9">
@@ -22,8 +22,8 @@
                                 icon="mdi-pencil"           
                             />
                             <v-btn 
-                            v-if="userStore.getIsAdmin"
-                            @click="this.deleteModal = true"
+                                v-if="userStore.getIsAdmin"
+                                @click="this.deleteModal = true"
                                 variant="tonal"
                                 size="small"
                                 icon="mdi-trash-can-outline" 
@@ -89,7 +89,9 @@
                                     />
                                 </v-col>
                                 <v-col>
-                                    <span class="pt-2 text-h6">Reservas de {{timeFrame}}</span>
+                                    <span class="pt-2 text-h6" v-if="space.duration < 60">Reservas de {{space.duration}} minutos</span>
+                                    <span class="pt-2 text-h6" v-if="space.duration == 60">Reservas de {{space.duration / 60}} hora</span>
+                                    <span class="pt-2 text-h6" v-if="space.duration > 60">Reservas de {{space.duration / 60}} horas</span>
                                 </v-col>
                             </v-row>
                         </v-col>
@@ -153,7 +155,6 @@ export default {
             spaceStore: null,
             space: null,
             deleteModal: false,
-            timeFrame: null,
         };
     },
     components: {
@@ -174,19 +175,6 @@ export default {
             this.$router.push('/spaces'); // Redirigir al componente padre
         }
 
-        if (this.space?.time) {
-            const timeInMinutes = parseFloat(this.space.time);
-
-            if (timeInMinutes >= 60) {
-                const timeInHours = timeInMinutes / 60;
-                this.timeFrame = timeInHours === 1 ? '1 hora' : `${timeInHours} horas`;
-            } else {
-                this.timeFrame = `${timeInMinutes} minutos`;
-            }
-        }
-    },
-    unmounted() {
-        this.spaceStore.clearSelectedSpace();
     },
     methods: {
         routerBack() {

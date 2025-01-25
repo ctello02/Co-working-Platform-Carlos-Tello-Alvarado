@@ -16,14 +16,14 @@ exports.getSpaces = async (req, res) => {
 
 exports.createSpace = async (req, res) => {
     try {
-        const { name, description, time, seats, repetition, opening, closing } = req.body;
+        const { name, description, duration, seats, repetition, opening, closing } = req.body;
         const imageUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;  // Generar la URL de la imagen
 
         const newSpace = new Space({
             name,
             description,
             imageUrl,  // Almacena la URL de la imagen en la base de datos
-            time,
+            duration,
             seats,
             repetition,
             opening,
@@ -65,7 +65,7 @@ exports.updateSpace = async (req, res) => {
         space.name = req.body.name;
         space.description = req.body.description;
         space.seats = req.body.seats;
-        space.time = req.body.time;
+        space.duration = req.body.duration;
         space.repetition = req.body.repetition;
         space.opening = req.body.opening;
         space.closing = req.body.closing;
