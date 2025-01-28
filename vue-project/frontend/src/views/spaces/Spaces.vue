@@ -136,6 +136,7 @@ export default {
             list: false,
             spaces: null,
             spaceStore: null,
+            userStore: null,
             selectedSpace: null,
             deleteModal: false,
         };
@@ -147,6 +148,7 @@ export default {
     mounted() {
         this.getSpaces();
         this.spaceStore = useSpaceStore();
+        
     },
     computed: {
         userStore() {

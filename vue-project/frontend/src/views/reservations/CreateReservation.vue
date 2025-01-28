@@ -172,7 +172,8 @@
                                         <v-row>
                                             <v-col>
                                                 <v-select
-                                                    v-model="reservationStartTime"
+                                                    :model-value="reservations[space._id]?.reservationStartTime || null"
+                                                    @update:model-value="val => updateReservation(space._id, 'reservationStartTime', val)"
                                                     :items="calcStartTimeOfSpace(space)"
                                                     label="Inicio"
                                                     prepend-icon="mdi-clock-outline"
@@ -182,15 +183,16 @@
                                             </v-col>
                                             <v-col>
                                                 <v-select
-                                                    v-model="duration"
-                                                    :items="this.timeFrames"
+                                                    :model-value="reservations[space._id]?.duration || null"
+                                                    @update:model-value="val => updateReservation(space._id, 'duration', val)"
+                                                    :items="calcDurationOfSpace(space)"
                                                     item-title="label"
                                                     item-value="value"
                                                     label="Duración"
                                                     prepend-icon="mdi-timer-sand"
                                                     variant="outlined"
                                                     density="compact"
-                                                    />
+                                                />
                                             </v-col>
                                         </v-row>
                                     </v-card-text>
@@ -200,7 +202,8 @@
                                             class=""
                                             color="blue"
                                             text="Reservar"
-                                            @click="createReservation"
+                                            :disabled="!reservations[space._id]?.reservationStartTime || !reservations[space._id]?.duration"
+                                            @click="createReservation(space)"
                                         />
                                     </v-card-actions>
                                 </v-card>
@@ -233,9 +236,12 @@ export default {
             spaces: [],
             filteredSpaces: [],
             selectedSpace: null,
+            selectedSpaceId: null,
             spaceRerservationTime: null,
             spaceSeats: null,
             reservationSeats: 1,
+
+            reservations: {},
 
             /*** Reservation variables ***/
             reservationStartTime: null,
@@ -270,11 +276,6 @@ export default {
             ],
             startTimeOfSpace: [],
         
-            /*** Rules ***/
-            spaceSeatsRules: [
-                v => !!v || 'El campo es obligatorio',
-                v => v <= this.selectedSpace.seats || 'El campo debe ser menor que el número de asientos disponibles',
-            ]
         };
     },
     unmounted() {
@@ -303,6 +304,7 @@ export default {
         },
         startTime(newVal) {
             this.filterSpaces();
+            this.reservations = {};
         },
         duration(newVal) {
             this.filterSpaces();
@@ -310,8 +312,25 @@ export default {
         reservationSeats(newVal) {
             this.filterSpaces();
         },
+        reservations(newVal) {
+            
+        }
     },
     methods: {
+        updateReservation(spaceId, key, value) {
+            if (!this.reservations[spaceId]) {
+                this.reservations[spaceId] = { reservationStartTime: null, duration: null };
+            }
+            this.reservations[spaceId][key] = value;
+        },
+        createReservation(space){
+            console.log("Espacio seleccionado nombre: " + space.name);
+            console.log("Reservación seleccionada hora inicio: " + this.reservations[space._id].reservationStartTime);
+            console.log("Reservación seleccionada duracion: " + this.reservations[space._id].duration);
+
+            console.log("Longitud de la variable reservations: " + Object.keys(this.reservations).length);
+
+        },
         getSpaces() {
             spaceService.getSpaces()
                 .then(res => {
@@ -363,7 +382,9 @@ export default {
             const closingInMinutes = closingHour * 60 + closingMinute;
 
             // Bucle para calcular los intervalos según la duración
-            for (let time = openingInMinutes; time < closingInMinutes; time += space.duration) {
+            for (let time = openingInMinutes; time < closingInMinutes; time += 15) {
+                if(time + space.duration > closingInMinutes) break;
+                
                 const hoursPart = Math.floor(time / 60).toString().padStart(2, '0');
                 const minutesPart = (time % 60).toString().padStart(2, '0');
                 hours.push(`${hoursPart}:${minutesPart}`);
@@ -371,9 +392,10 @@ export default {
 
             return hours;
         },
+        calcDurationOfSpace(space) {
+            const durations = this.timeFrames.filter(timeFrame => timeFrame.value >= space.duration);           
 
-        calcDurationOfSpace() {
-
+            return durations;
         },
         async submit() {
             const toast = useToast();
