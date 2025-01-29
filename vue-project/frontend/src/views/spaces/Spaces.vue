@@ -70,7 +70,7 @@
                         <v-col cols="12" sm="6" md="4" lg="3" v-for="space in spaces" :key="space._id">
                             <v-card v-if="userStore.getIsAdmin" class="pa-5">
                                 <v-img
-                                    :src="space.imageUrl"
+                                    :src="space.image"
                                     height="150px"
                                     contain  
                                     class="mb-2"
@@ -96,7 +96,7 @@
                             </v-card>
                             <v-card v-else @click="openSpace(space)" class="pa-5">
                                 <v-img
-                                    :src="space.imageUrl"
+                                    :src="space.image"
                                     height="150px"
                                     contain  
                                     class="mb-2"

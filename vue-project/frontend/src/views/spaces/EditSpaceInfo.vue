@@ -2,7 +2,7 @@
     <v-container class="container">
         <v-card v-if="space" class="mx-auto" max-width="600">
             <v-img
-                :src="newSpace?.imageUrl"
+                :src="newSpace?.image"
                 color="surface-variant"
                 height="300px"
                 cover 
@@ -229,7 +229,7 @@ export default {
                 // Previsualizar la imagen seleccionada
                 const reader = new FileReader();
                 reader.onload = (e) => {
-                    this.newSpace.imageUrl = e.target.result; // Asigna la URL de la imagen previsualizada
+                    this.newSpace.image = e.target.result; // Asigna la URL de la imagen previsualizada
                 };
                 reader.readAsDataURL(file);
             }

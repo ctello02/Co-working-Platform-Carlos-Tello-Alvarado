@@ -63,7 +63,7 @@
               item-title="label"
               item-value="value"
               label="Duración de las reservas"
-              prepend-icon="mdi-clock-outline"
+              prepend-icon="mdi-timer-outline"
               :rules="[v => !!v || 'El campo es obligatorio']"
               variant="outlined"
               class="my-1"
@@ -145,17 +145,13 @@ export default {
       closingTime: null,
       availableTimes: [],
 
-
       timeFrames: [
         { label: '15 mins', value: 15 },
         { label: '20 mins', value: 20 },
         { label: '30 mins', value: 30 },
         { label: '1 hora', value: 60 },
-        { label: '1.5 horas', value: 90 },
         { label: '2 horas', value: 120 },
         { label: '3 horas', value: 180 },
-        { label: '4 horas', value: 240 },
-        { label: '5 horas', value: 300 },
       ],
     };
   },

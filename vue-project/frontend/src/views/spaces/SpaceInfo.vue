@@ -2,7 +2,7 @@
     <v-container class="pa-5 container">
         <v-card v-if="space" class="mx-auto" max-width="600" >
             <v-img
-                :src="space?.imageUrl"
+                :src="space?.image"
                 color="surface-variant"
                 height="300px"
                 cover  
@@ -84,7 +84,7 @@
                             <v-row>
                                 <v-col cols="2" class="d-flex align-center">
                                     <v-icon
-                                        icon="mdi-timer-sand"
+                                        icon="mdi-timer-outline"
                                         size="small"
                                     />
                                 </v-col>
