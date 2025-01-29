@@ -62,7 +62,7 @@
                             <v-row>
                                 <v-col>
                                     <v-select
-                                        v-model="duration"
+                                        v-model="durationSearched"
                                         :items="timeFrames"
                                         item-title="label"
                                         item-value="value"
@@ -124,7 +124,7 @@
                                                             icon="mdi-weather-sunny"
                                                         ></v-icon>
                                                     </v-col>
-                                                    <v-col><span class="text-h6">Abre: {{space?.opening}}</span></v-col>
+                                                    <v-col><span class="text-h6">Abre: {{this.makeHoursAndMinutes(space?.opening)}}</span></v-col>
                                                 </v-row>
                                             </v-col>
                                             <v-col>
@@ -135,7 +135,7 @@
                                                             icon="mdi-weather-night"
                                                         ></v-icon>
                                                     </v-col>
-                                                    <v-col><span class="text-h6">Cierra: {{space?.closing}}</span></v-col>
+                                                    <v-col><span class="text-h6">Cierra: {{this.makeHoursAndMinutes(space?.closing)}}</span></v-col>
                                                 </v-row>
                                             </v-col>
                                         </v-row>
@@ -172,7 +172,7 @@
                                         <v-row>
                                             <v-col>
                                                 <v-select
-                                                    :model-value="reservations[space._id]?.reservationStartTime || null"
+                                                    :model-value="reservationTimes[space._id]?.reservationStartTime || null"
                                                     @update:model-value="val => updateReservation(space._id, 'reservationStartTime', val)"
                                                     :items="calcStartTimeOfSpace(space)"
                                                     label="Inicio"
@@ -184,7 +184,7 @@
                                             </v-col>
                                             <v-col>
                                                 <v-select
-                                                    :model-value="reservations[space._id]?.reservationEndTime || null"
+                                                    :model-value="reservationTimes[space._id]?.reservationEndTime || null"
                                                     @update:model-value="val => updateReservation(space._id, 'reservationEndTime', val)"
                                                     :items="calcEndTimeOfSpace(space)"
                                                     item-title="label"
@@ -194,7 +194,7 @@
                                                     variant="outlined"
                                                     density="compact"
                                                     clearable
-                                                    :disabled="!reservations[space._id]?.reservationStartTime"
+                                                    :disabled="!reservationTimes[space._id]?.reservationStartTime"
                                                 />
                                             </v-col>
                                         </v-row>
@@ -205,7 +205,7 @@
                                             class=""
                                             color="blue"
                                             text="Reservar"
-                                            :disabled="!reservations[space._id]?.reservationStartTime || !reservations[space._id]?.reservationEndTime"
+                                            :disabled="!reservationTimes[space._id]?.reservationStartTime || !reservationTimes[space._id]?.reservationEndTime"
                                             @click="createReservation(space)"
                                         />
                                     </v-card-actions>
@@ -222,7 +222,7 @@
 <script>
 import { spaceService } from '@/services/spaceService';
 import { reservationService } from '@/services/reservationService';
-import { useReservationStore } from '@/store/reservationStore';
+import { useUserStore } from '@/store/userStore';
 import { useToast } from 'vue-toastification';
 import TonalButton from '@/components/TonalButton.vue';
 
@@ -232,22 +232,16 @@ export default {
     },
     data() {
         return {
-            /*** Stores ***/
-            reservationStore: null,
+            /*** Store variables ***/
+            userStore: null,
 
             /*** Spaces variables ***/
             spaces: [],
             filteredSpaces: [],
-            selectedSpace: null,
-            selectedSpaceId: null,
-            spaceRerservationTime: null,
-            spaceSeats: null,
-            reservationSeats: 1,
-
-            reservations: {},
-
+            
             /*** Reservation variables ***/
-            reservationStartTime: null,
+            reservationTimes: {},
+            reservationSeats: 1,
             
             /*** Dates variables ***/
             date: new Date(),
@@ -263,9 +257,7 @@ export default {
             /*** Time variables ***/
             startTime: null,
             allTimes: [],
-            availableTimesInSpace: [],
-            duration: null,
-            durationOfSpace: null,
+            durationSearched: null,
             timeFrames: [
                 { label: '15 mins', value: 15 },
                 { label: '20 mins', value: 20 },
@@ -274,29 +266,12 @@ export default {
                 { label: '2 horas', value: 120 },
                 { label: '3 horas', value: 180 },
             ],
-            startTimeOfSpace: [],
-        
         };
     },
-    unmounted() {
-        this.reservationStore.clearSelectedReservedSpace();
-    },
     mounted() {
-        this.startTimeOfSpace = this.allTimes;
-        this.durationOfSpace = this.timeFrames;
-
+        this.userStore = useUserStore();
         this.generateAllTimes();
-
-        this.getSpaces();
-        this.reservationStore = useReservationStore();
-
-        if (this.reservationStore.getSelectedReservedSpace) {
-            this.selectedSpace = this.reservationStore.getSelectedReservedSpace;
-        }
-
-    },
-    computed: {
-
+        this.getSpaces();        
     },
     watch: {
         date(newVal) {
@@ -304,17 +279,14 @@ export default {
         },
         startTime(newVal) {
             this.filterSpaces();
-            this.reservations = {};
+            this.reservationTimes = {};
         },
-        duration(newVal) {
+        durationSearched(newVal) {
             this.filterSpaces();
         },
         reservationSeats(newVal) {
             this.filterSpaces();
         },
-        reservations(newVal) {
-            
-        }
     },
     methods: {
         getSpaces() {
@@ -328,20 +300,19 @@ export default {
                 });
         },
         updateReservation(spaceId, key, value) {
-            if (!this.reservations[spaceId]) {
-                this.reservations[spaceId] = { reservationStartTime: null, reservationEndTime: null };
+            if (!this.reservationTimes[spaceId]) {
+                this.reservationTimes[spaceId] = { reservationStartTime: null, reservationEndTime: null };
             }
-            this.reservations[spaceId][key] = value;
+            this.reservationTimes[spaceId][key] = value;
 
             if (key === 'reservationStartTime') {              
-                this.reservations[spaceId].reservationEndTime = null;
+                this.reservationTimes[spaceId].reservationEndTime = null;
             }
-            
         },
         filterSpaces(){
             this.filteredSpaces = this.spaces.filter(space => {
-                const matchesStartTime = this.startTime == null || (space.opening <= this.startTime && space.closing > this.startTime);
-                const matchesDuration = this.duration == null || space.duration <= this.duration;
+                const matchesStartTime = this.startTime == null || (this.makeHoursAndMinutes(space.opening) <= this.startTime && this.makeHoursAndMinutes(space.closing) > this.startTime);
+                const matchesDuration = this.durationSearched == null || space.duration <= this.durationSearched;
                 const matchesSeats = this.reservationSeats == null || space.seats >= this.reservationSeats;
 
                 // Retorna true solo si cumple todas las condiciones
@@ -360,25 +331,18 @@ export default {
             return this.calcFrameTimesOfSpace(space.opening, space.closing, 0, 15, space.duration, true);
         },
         calcEndTimeOfSpace(space) { 
-            if (this.reservations[space._id] != null && this.reservations[space._id].reservationStartTime != undefined) 
-                return this.calcFrameTimesOfSpace(this.reservations[space._id].reservationStartTime, space.closing, space.duration, space.duration, space.duration, false);
-
+            if (this.reservationTimes[space._id] != null && this.reservationTimes[space._id].reservationStartTime != undefined) {
+                const start = this.decomposeHoursAndMinutes(this.reservationTimes[space._id].reservationStartTime);
+                return this.calcFrameTimesOfSpace(start, space.closing, space.duration, space.duration, space.duration, false);
+            }
             return this.calcFrameTimesOfSpace(space.opening, space.closing, space.duration, space.duration, space.duration, false);
         },
         calcFrameTimesOfSpace(startingTime, endingTime, temp, interval, duration, needsVerification) {
             const hours = [];
 
-            // Descomposición de las horas y minutos de apertura y cierre
-            const [openingHour, openingMinute] = startingTime.split(':').map(Number);
-            const [closingHour, closingMinute] = endingTime.split(':').map(Number);
-
-            // Convertir horas y minutos a minutos totales
-            const openingInMinutes = openingHour * 60 + openingMinute;
-            const closingInMinutes = closingHour * 60 + closingMinute;
-
             // Bucle para calcular los intervalos según la duración
-            for (let time = openingInMinutes + temp; time <= closingInMinutes; time += interval) {
-                if(needsVerification && time + duration > closingInMinutes) break;
+            for (let time = startingTime + temp; time <= endingTime; time += interval) {
+                if(needsVerification && time + duration > endingTime) break;
                 
                 const hoursPart = Math.floor(time / 60).toString().padStart(2, '0');
                 const minutesPart = (time % 60).toString().padStart(2, '0');
@@ -387,50 +351,20 @@ export default {
 
             return hours;
         },
-        createReservation(space){
-            console.log("Espacio seleccionado nombre: " + space.name);
-            console.log("Reservación seleccionada hora inicio: " + this.reservations[space._id].reservationStartTime);
-            console.log("Reservación seleccionada duracion: " + this.reservations[space._id].reservationEndTime);
-
-            console.log("Longitud de la variable reservations: " + Object.keys(this.reservations).length);
+        decomposeHoursAndMinutes(time) {
+            const [hour, minute] = time.split(':').map(Number);
+            const hourInMinutes = hour * 60 + minute;
+            return hourInMinutes;
         },
-        async submit() {
-            const toast = useToast();
-            if (this.camposVacios()) {
-                toast.error('Formulario inválido');
-                return;
-            }
+        makeHoursAndMinutes(minutes) {
+            const hours = Math.floor(minutes / 60);
+            const mins = minutes % 60;
 
-            const formData = new FormData();
-            formData.append('space', this.selectedSpace._id);
-            const finalDate = this.formatDateToYYYYMMDD(this.date);
-            formData.append('date', finalDate);
-            formData.append('startTime', this.startTime);
-            formData.append('seatsReserved', this.spaceSeats);
-            formData.append('repetition', 'none');
+            // Formatea con ceros a la izquierda
+            const formattedHours = String(hours).padStart(2, '0');
+            const formattedMinutes = String(mins).padStart(2, '0');
 
-            try {
-                const res = await reservationService.createReservation(formData);
-                console.log(res.data);
-                
-                toast.success('Espacio creado con éxito');
-            } catch (error) {
-                console.error(error);
-            }
-        },
-        camposVacios() {
-            return !this.selectedSpace || !this.formattedDate || !this.startTime || !this.spaceSeats;
-        },
-        formatDateToYYYYMMDD(date) {
-            if (!(date instanceof Date)) {
-                throw new Error('El argumento debe ser una instancia de Date');
-            }
-            
-            const year = date.getFullYear(); // Obtiene el año
-            const month = String(date.getMonth() + 1).padStart(2, '0'); // Mes (0-11) -> Agrega 1 y rellena con 0 si es necesario
-            const day = String(date.getDate()).padStart(2, '0'); // Día -> Rellena con 0 si es necesario
-
-            return `${year}-${month}-${day}`;
+            return `${formattedHours}:${formattedMinutes}`;
         },
         formatDate(date) {
             return new Intl.DateTimeFormat('es-ES', { weekday: 'long', day: 'numeric', month: 'long' }).format(date);
@@ -438,10 +372,27 @@ export default {
         routerBack() {
             this.$router.go(-1);
         },
-        clearFields() {
-            this.startTime = null;
-            this.spaceSeats = null; 
-        }
+        async createReservation(space){
+            const startTime = this.decomposeHoursAndMinutes(this.reservationTimes[space._id].reservationStartTime);
+            const endTime = this.decomposeHoursAndMinutes(this.reservationTimes[space._id].reservationEndTime);
+
+            const formData = new FormData();
+            formData.append('spaceId', space._id);
+            formData.append('userId', this.userStore.getId);
+            formData.append('date', this.formattedDate);
+            formData.append('startTime', startTime);
+            formData.append('endTime', endTime);
+            formData.append('seatsReserved', this.reservationSeats);
+            formData.append('repetition', 'none');
+
+            try {
+                const res = await reservationService.createReservation(formData);
+                console.log(res.data);
+            } catch (error) {
+                console.error(error);
+            }
+
+        },
     }
 };
 </script>

@@ -87,6 +87,11 @@ const routes = [
         meta: { adminOnly: true }, // Solo accesible para usuarios administradores
     },
     {
+        path: "/calendar",
+        name: "calendar",
+        component: () => import("../views/calendar/Calendar.vue"),
+    },
+    {
         path: "/reservations",
         name: "reservations",
         component: () => import("../views/reservations/Reservations.vue"),

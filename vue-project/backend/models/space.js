@@ -2,32 +2,14 @@ const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 
 const SpaceSchema = new Schema({
-    name: {
-        type: String,
-    },
-    description: {
-        type: String,
-    },
-    imageUrl: {
-        type: String,
-    },
-    seats: {
-        type: Number,
-        default: 0,
-    },
-    duration: {             // Tiempo que duran las reservas
-        type: Number,
-    },
-    repetition: {       // Si permite repetición de reservas cada cierto tiempo (p.ej. cada día, cada semana, etc.)
-        type: Boolean,
-        default: false,
-    },
-    opening: {          // Hora de apertura
-        type: String,
-    },
-    closing: {          // Hora de cierre
-        type: String,
-    },
+    name: { type: String, required: true },
+    description: { type: String },
+    image: { type: String, required: true },
+    seats: { type: Number, default: 0 },
+    duration: { type: Number },
+    repetition: { type: Boolean, default: false },
+    opening: { type: Number, required: true }, // Ejemplo: 540 (09:00)
+    closing: { type: Number, required: true }  // Ejemplo: 1200 (20:00)
 });
 
 const Space = mongoose.model("Space", SpaceSchema);

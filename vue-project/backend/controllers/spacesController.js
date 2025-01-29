@@ -17,12 +17,12 @@ exports.getSpaces = async (req, res) => {
 exports.createSpace = async (req, res) => {
     try {
         const { name, description, duration, seats, repetition, opening, closing } = req.body;
-        const imageUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;  // Generar la URL de la imagen
+        const image = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;  // Generar la URL de la imagen
 
         const newSpace = new Space({
             name,
             description,
-            imageUrl,  // Almacena la URL de la imagen en la base de datos
+            image,  // Almacena la URL de la imagen en la base de datos
             duration,
             seats,
             repetition,
@@ -46,7 +46,7 @@ exports.updateSpace = async (req, res) => {
 
         // Si se subió una nueva imagen, eliminamos la anterior
         if (req.file) {
-            const imagePath = path.join(__dirname, '..', 'uploads', path.basename(space.imageUrl));
+            const imagePath = path.join(__dirname, '..', 'uploads', path.basename(space.image));
 
             // Eliminar la imagen anterior del sistema de archivos
             fs.unlink(imagePath, (err) => {
@@ -58,7 +58,7 @@ exports.updateSpace = async (req, res) => {
             });
 
             // Actualizar la URL de la imagen con la nueva
-            space.imageUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
+            space.image = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
         }
 
         // Actualizar otros campos
@@ -87,7 +87,7 @@ exports.deleteSpace = async (req, res) => {
         }
 
         // Obtener la ruta completa de la imagen del servidor
-        const imagePath = path.join(__dirname, '..', 'uploads', path.basename(space.imageUrl));
+        const imagePath = path.join(__dirname, '..', 'uploads', path.basename(space.image));
 
         // Eliminar la imagen del sistema de archivos
         fs.unlink(imagePath, (err) => {

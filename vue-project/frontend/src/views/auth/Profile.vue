@@ -124,6 +124,7 @@ export default {
   name: "Profile",
   data() {
     return {
+      userStore: null,
       user: null,
       payment_method: null, 
       logOutModal: false,
@@ -136,12 +137,13 @@ export default {
   },
   mounted() {
     this.getUser();
+    this.userStore = useUserStore();
   },
   methods: {
     getUser() {
       authService.getUser()
         .then(res => {
-          this.user = res.data.user;
+          this.user = res.data.user;          
         })
         .catch(error => {
           console.log(error);
@@ -156,8 +158,7 @@ export default {
       this.deleteModal = false;
     },
     logOutUser() {
-      const userStore = useUserStore();
-      userStore.clearUser();
+      this.userStore.clearUser();
       this.logOutModal = false;
       this.$router.push("/login");
     },
@@ -165,8 +166,7 @@ export default {
       const toast = useToast();
       userService.deleteUser(this.user._id)
         .then(res => {
-          const userStore = useUserStore();
-          userStore.clearUser();
+          this.userStore.clearUser();
           this.deleteModal = false;
           this.$router.push("/login");
           toast.error('Cuenta eliminada con éxito');

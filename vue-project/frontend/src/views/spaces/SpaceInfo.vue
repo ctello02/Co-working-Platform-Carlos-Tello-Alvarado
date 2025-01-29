@@ -7,7 +7,7 @@
                 height="300px"
                 cover  
             />                            
-            <v-card-text v-if="space">
+            <v-card-text v-if="space && this.openingTime && this.closingTime">
                 <v-col>
                     <v-row class="mt-n5 mb-n3" cols="12">
                         <v-col cols="9">
@@ -63,7 +63,7 @@
                                         icon="mdi-weather-sunny"
                                     ></v-icon>
                                 </v-col>
-                                <v-col><span class="pt-2 text-h6">Abre a las {{space?.opening}}</span></v-col>
+                                <v-col><span class="pt-2 text-h6">Abre a las {{this.openingTime}}</span></v-col>
                             </v-row>
                         </v-col>
                         <v-col>
@@ -74,7 +74,7 @@
                                         icon="mdi-weather-night"
                                     ></v-icon>
                                 </v-col>
-                                <v-col><span class="pt-2 text-h6">Cierra a las {{space?.closing}}</span></v-col>
+                                <v-col><span class="pt-2 text-h6">Cierra a las {{this.closingTime}}</span></v-col>
                             </v-row>
                         </v-col>
                     </v-row>
@@ -155,6 +155,9 @@ export default {
             spaceStore: null,
             space: null,
             deleteModal: false,
+
+            openingTime: null,
+            closingTime: null,
         };
     },
     components: {
@@ -175,6 +178,9 @@ export default {
             this.$router.push('/spaces'); // Redirigir al componente padre
         }
 
+        this.openingTime = this.makeHoursAndMinutes(this.space?.opening);
+        this.closingTime = this.makeHoursAndMinutes(this.space?.closing);
+
     },
     methods: {
         routerBack() {
@@ -185,6 +191,16 @@ export default {
         },
         closeDialog() {
             this.deleteModal = false;
+        },
+        makeHoursAndMinutes(minutes) {
+            const hours = Math.floor(minutes / 60);
+            const mins = minutes % 60;
+
+            // Formatea con ceros a la izquierda
+            const formattedHours = String(hours).padStart(2, '0');
+            const formattedMinutes = String(mins).padStart(2, '0');
+
+            return `${formattedHours}:${formattedMinutes}`;
         },
         createReservation() {
             this.reservationStore.setSelectedReservedSpace(this.space);

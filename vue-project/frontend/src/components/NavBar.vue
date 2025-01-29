@@ -11,7 +11,10 @@
             <v-list-item prepend-icon="mdi-home-outline" @click="toHome">
                 Vista principal
             </v-list-item>
-            <v-list-item prepend-icon="mdi-calendar-outline" @click="toReservations">
+            <v-list-item prepend-icon="mdi-calendar-outline" @click="toCalendar">
+                Calendario
+            </v-list-item>
+            <v-list-item prepend-icon="mdi-newspaper-variant-outline" @click="toReservations">
                 Reservas
             </v-list-item>
             <v-list-item prepend-icon="mdi-table-chair" @click="toSpaces">
@@ -60,10 +63,12 @@ export default {
         toProfile() {
             this.$router.push('/profile')
         },
+        toCalendar() {
+            this.$router.push('/calendar')
+        },
         toReservations() {
             this.$router.push('/reservations')
         },
-
         changeAdmin() {
             this.userStore.setIsAdmin(!this.userStore.getIsAdmin);
             localStorage.setItem('isAdmin', this.userStore.getIsAdmin);

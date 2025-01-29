@@ -86,7 +86,7 @@
             <v-col cols="6">
               <v-select
                 v-model="openingTime"
-                :items="availableTimes"
+                :items="allTimes"
                 label="Hora de apertura"
                 prepend-icon="mdi-weather-sunny"
                 variant="outlined"
@@ -143,7 +143,7 @@ export default {
 
       openingTime: null,
       closingTime: null,
-      availableTimes: [],
+      allTimes: [],
 
       timeFrames: [
         { label: '15 mins', value: 15 },
@@ -159,13 +159,13 @@ export default {
     TonalButton,
   },
   mounted() {
-    this.generateAvailableTimes();
+    this.generateAllTimes();
   },
   computed: {
     filteredClosingTimes() {
-      if (!this.openingTime) return this.availableTimes;
-      const openingIndex = this.availableTimes.indexOf(this.openingTime);
-      return this.availableTimes.slice(openingIndex + 1);
+      if (!this.openingTime) return this.allTimes;
+      const openingIndex = this.allTimes.indexOf(this.openingTime);
+      return this.allTimes.slice(openingIndex + 1);
     },
   },
   watch: {
@@ -185,11 +185,11 @@ export default {
       }
       this.$router.push('/spaces');
     },
-    generateAvailableTimes() {
+    generateAllTimes() {
       for (let hour = 0; hour < 24; hour++) {
         for (let minute = 0; minute < 60; minute += 15) {
           const formattedTime = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
-          this.availableTimes.push(formattedTime);
+          this.allTimes.push(formattedTime);
         }
       }
     },
@@ -206,12 +206,21 @@ export default {
       this.openingTime = null;
       this.closingTime = null;
     },
+    decomposeHoursAndMinutes(time) {
+      const [hour, minute] = time.split(':').map(Number);
+      const hourInMinutes = hour * 60 + minute;
+      return hourInMinutes;
+    },
     async submit() {
       const toast = useToast();
       if (this.camposVacios()) {
         this.successToastId = toast.error('Formulario inválido');
         return;
       }
+
+      // Descomposición de las horas y minutos de apertura y cierre
+      const openingTimeInMinutes = this.decomposeHoursAndMinutes(this.openingTime);
+      const closingTimeInMinutes = this.decomposeHoursAndMinutes(this.closingTime);
 
       const formData = new FormData();
       formData.append('name', this.spaceName);
@@ -220,8 +229,8 @@ export default {
       formData.append('seats', this.spaceSeats);
       formData.append('duration', this.selectedTimeFrame);
       formData.append('repetition', this.spaceRepetition);
-      formData.append('opening', this.openingTime); 
-      formData.append('closing', this.closingTime); 
+      formData.append('opening', openingTimeInMinutes); 
+      formData.append('closing', closingTimeInMinutes); 
 
       try {
         const res = await spaceService.createSpace(formData);

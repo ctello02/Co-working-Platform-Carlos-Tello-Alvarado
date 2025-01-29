@@ -99,7 +99,7 @@
                         <v-col cols="6">
                             <v-select
                                 v-model="openingTime"
-                                :items="availableTimes"
+                                :items="allTimes"
                                 label="Hora de apertura"
                                 prepend-icon="mdi-weather-sunny"
                             ></v-select>
@@ -154,7 +154,7 @@ export default {
             selectedTimeFrame: null,
             openingTime: null,
             closingTime: null,
-            availableTimes: [],
+            allTimes: [],
             timeFrames: [
                 { label: '15 mins', value: 15 },
                 { label: '20 mins', value: 20 },
@@ -173,9 +173,9 @@ export default {
     },
     computed: {
         filteredClosingTimes() {
-            if (!this.openingTime) return this.availableTimes;
-            const openingIndex = this.availableTimes.indexOf(this.openingTime);
-            return this.availableTimes.slice(openingIndex + 1);
+            if (!this.openingTime) return this.allTimes;
+            const openingIndex = this.allTimes.indexOf(this.openingTime);
+            return this.allTimes.slice(openingIndex + 1);
         },
     },
     watch: {
@@ -186,7 +186,7 @@ export default {
         },
     },
     mounted() {
-        this.generateAvailableTimes();
+        this.generateAllTimes();
         this.spaceStore = useSpaceStore();
         this.space = this.spaceStore.getSelectedSpace;
 
@@ -195,8 +195,8 @@ export default {
         }
         
         this.newSpace = { ...this.space };    // Hacer una copia del objeto space
-        this.openingTime = this.space?.opening;
-        this.closingTime = this.space?.closing;
+        this.openingTime = this.makeHoursAndMinutes(this.space?.opening);
+        this.closingTime = this.makeHoursAndMinutes(this.space?.closing);
         this.selectedTimeFrame = this.space?.duration;
     },
     methods: {
@@ -209,11 +209,11 @@ export default {
             }
             this.$router.push('/spaceInfo');
         },
-        generateAvailableTimes() {
+        generateAllTimes() {
             for (let hour = 0; hour < 24; hour++) {
                 for (let minute = 0; minute < 60; minute += 15) {
                     const formattedTime = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
-                    this.availableTimes.push(formattedTime);
+                    this.allTimes.push(formattedTime);
                 }
             }
         },
@@ -237,17 +237,36 @@ export default {
         camposVacios() {
             return !this.newSpace.name || !this.newSpace.description || !this.newSpace.seats || !this.selectedTimeFrame || !this.openingTime || !this.closingTime;
         },
+        decomposeHoursAndMinutes(time) {
+            const [hour, minute] = time.split(':').map(Number);
+            const hourInMinutes = hour * 60 + minute;
+            return hourInMinutes;
+        },
+        makeHoursAndMinutes(minutes) {
+            const hours = Math.floor(minutes / 60);
+            const mins = minutes % 60;
+
+            // Formatea con ceros a la izquierda
+            const formattedHours = String(hours).padStart(2, '0');
+            const formattedMinutes = String(mins).padStart(2, '0');
+
+            return `${formattedHours}:${formattedMinutes}`;
+        },
         async submit() {
             const toast = useToast();
             const formData = new FormData();
+
+            // Descomposición de las horas y minutos de apertura y cierre
+            const openingTimeInMinutes = this.decomposeHoursAndMinutes(this.openingTime);
+            const closingTimeInMinutes = this.decomposeHoursAndMinutes(this.closingTime);
 
             formData.append('id', this.newSpace._id);
             formData.append('name', this.newSpace.name);
             formData.append('description', this.newSpace.description);
             formData.append('seats', this.newSpace.seats);
             formData.append('repetition', this.newSpace.repetition);
-            formData.append('opening', this.openingTime); 
-            formData.append('closing', this.closingTime);
+            formData.append('opening', openingTimeInMinutes); 
+            formData.append('closing', closingTimeInMinutes);
             const numbersOnly = parseFloat(this.selectedTimeFrame);
             formData.append('duration', numbersOnly);
 
@@ -255,8 +274,8 @@ export default {
                 formData.append('image', this.newImageUrl); // Agrega la nueva imagen al FormData
             }
 
-            this.newSpace.opening = this.openingTime;
-            this.newSpace.closing = this.closingTime;
+            this.newSpace.opening = openingTimeInMinutes;
+            this.newSpace.closing = closingTimeInMinutes;
             this.newSpace.duration = numbersOnly
 
             spaceService.updateSpace(formData)
