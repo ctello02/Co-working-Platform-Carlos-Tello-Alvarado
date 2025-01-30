@@ -221,9 +221,8 @@
 
 <script>
 import { spaceService } from '@/services/spaceService';
-import { reservationService } from '@/services/reservationService';
 import { useUserStore } from '@/store/userStore';
-import { useToast } from 'vue-toastification';
+import { useReservationStore } from '@/store/reservationStore';
 import TonalButton from '@/components/TonalButton.vue';
 
 export default {
@@ -234,6 +233,7 @@ export default {
         return {
             /*** Store variables ***/
             userStore: null,
+            reservationStore: null,
 
             /*** Spaces variables ***/
             spaces: [],
@@ -270,12 +270,16 @@ export default {
     },
     mounted() {
         this.userStore = useUserStore();
+        this.reservationStore = useReservationStore();
         this.generateAllTimes();
         this.getSpaces();        
     },
     watch: {
         date(newVal) {
-             this.formattedDate = this.formatDate(newVal);            
+            console.log("Fecha sin formato: " + newVal);
+             this.formattedDate = this.formatDate(newVal);  
+             console.log("Fecha con formato: " + this.formattedDate);
+             console.log("Fecha parseada: " + this.parseDate(this.formattedDate));
         },
         startTime(newVal) {
             this.filterSpaces();
@@ -369,28 +373,66 @@ export default {
         formatDate(date) {
             return new Intl.DateTimeFormat('es-ES', { weekday: 'long', day: 'numeric', month: 'long' }).format(date);
         },
+        parseDate(spanishDate) {
+            // Mapear nombres de meses en español a números
+            const months = {
+                "enero": "01", "febrero": "02", "marzo": "03", "abril": "04",
+                "mayo": "05", "junio": "06", "julio": "07", "agosto": "08",
+                "septiembre": "09", "octubre": "10", "noviembre": "11", "diciembre": "12"
+            };
+
+            // Extraer la información de la fecha
+            const parts = spanishDate.split(",")[1].trim().split(" "); // ["30", "de", "enero"]
+            const day = parts[0].padStart(2, "0"); // Asegurar formato 2 dígitos
+            const month = months[parts[2]]; // Obtener el número del mes
+            const year = new Date().getFullYear(); // Año actual (2025 en este caso)
+
+            return `${year}-${month}-${day}`;
+        },
         routerBack() {
             this.$router.go(-1);
         },
         async createReservation(space){
-            const startTime = this.decomposeHoursAndMinutes(this.reservationTimes[space._id].reservationStartTime);
-            const endTime = this.decomposeHoursAndMinutes(this.reservationTimes[space._id].reservationEndTime);
+            // Convertimos la fecha seleccionada a un formato válido (YYYY-MM-DD)
+            const selectedDate = this.parseDate(this.formattedDate);
 
-            const formData = new FormData();
-            formData.append('spaceId', space._id);
-            formData.append('userId', this.userStore.getId);
-            formData.append('date', this.formattedDate);
-            formData.append('startTime', startTime);
-            formData.append('endTime', endTime);
-            formData.append('seatsReserved', this.reservationSeats);
-            formData.append('repetition', 'none');
+            // Obtener la hora de inicio y fin en formato HH:MM directamente
+            const startTimeString = this.reservationTimes[space._id].reservationStartTime; // Ejemplo: "09:30"
+            const endTimeString = this.reservationTimes[space._id].reservationEndTime; // Ejemplo: "11:00"
 
-            try {
-                const res = await reservationService.createReservation(formData);
-                console.log(res.data);
-            } catch (error) {
-                console.error(error);
+            // Crear objetos Date combinando la fecha seleccionada con la hora de inicio y fin
+            const startTime = new Date(`${selectedDate}T${startTimeString}:00Z`);
+            const endTime = new Date(`${selectedDate}T${endTimeString}:00Z`);
+
+            console.log("Fecha de inicio:", startTime);
+            console.log("Fecha de fin:", endTime);
+
+            const reservation = {
+                spaceId: space._id,
+                userId: this.userStore.getId,
+                startTime: startTime.toISOString(),
+                endTime: endTime.toISOString(),
+                seatsReserved: this.reservationSeats,
+                repetition: "none",
             }
+            this.reservationStore.setReservation(reservation);
+
+            this.$router.push("/confirmReservation");
+
+            // const formData = new FormData();
+            // formData.append('spaceId', space._id);
+            // formData.append('userId', this.userStore.getId);
+            // formData.append('startTime', startTime.toISOString());
+            // formData.append('endTime', endTime.toISOString());
+            // formData.append('seatsReserved', this.reservationSeats);
+            // formData.append('repetition', 'none');
+
+            // try {
+            //     const res = await reservationService.createReservation(formData);
+            //     console.log(res.data);
+            // } catch (error) {
+            //     console.error(error);
+            // }
 
         },
     }

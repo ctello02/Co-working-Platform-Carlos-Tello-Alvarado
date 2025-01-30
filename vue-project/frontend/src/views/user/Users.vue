@@ -1,11 +1,11 @@
 <template>
-  <v-container fluid v-if="users">
+  <v-container fluid>
     <v-col>
       <v-row cols="12">
         <span class="text-h4">Usuarios</span>
       </v-row>
 
-      <v-row v-if="!users">
+      <v-row v-if="this.users.length === 0" class="mt-8">
           <span class="text-h5">Aún no hay más usuarios en la plataforma</span>
       </v-row>
 
@@ -66,7 +66,7 @@ export default {
   data() {
     return {
       userStore: null,
-      users: null,
+      users: [],
       token: null,
       deleteModal: false,
       selectedUser: null,
@@ -82,7 +82,10 @@ export default {
   mounted() {
     this.userStore = useUserStore();
     this.currentUserId = this.userStore.getId;
-    this.getUsers();
+    this.getUsers();    
+
+    console.log(this.users);
+    
   },
   methods: {
     openUserInfo(user) {
@@ -100,7 +103,7 @@ export default {
       userService.getUsers()
         .then(res => {
           //console.log(res.data);
-          this.users = res.data.users.filter(user => user._id !== this.currentUserId);
+          this.users = res.data.users.filter(user => user._id !== this.currentUserId) || [];
         })
         .catch(error => {
           console.log(error);

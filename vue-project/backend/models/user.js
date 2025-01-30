@@ -8,7 +8,7 @@ const UserSchema = new Schema({
     password: { type: String, required: true },
     phone: { type: String, default: null },
     address: { type: String, default: null },
-    resetLink: { type: String, default: '' },
+    resetLink: { type: String, default: null },
     isAdmin: { type: Boolean, default: false },
     isCompany: { type: Boolean, default: false },
     cif: { type: String, default: null }

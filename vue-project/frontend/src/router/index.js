@@ -101,6 +101,11 @@ const routes = [
         name: "createReservation",
         component: () => import("../views/reservations/CreateReservation.vue"),
     },
+    {
+        path: "/confirmReservation",
+        name: "confirmReservation",
+        component: () => import("../views/reservations/ConfirmReservation.vue"),
+    },
 ];
 
 const router = createRouter({
@@ -109,35 +114,33 @@ const router = createRouter({
 });
 
 // Guard global para manejar autenticación y permisos
-router.beforeEach((to, from, next) => {
-    const userStore = useUserStore(); // Accede al store de Pinia
-    const token = userStore.getToken; // Obtén el token desde el store
-    const isAdmin = userStore.getIsAdmin; // Obtén el estado de admin desde el store
+router.beforeEach(async (to, from, next) => {
+    const userStore = useUserStore();
 
-    // Verificar si la ruta es solo para invitados
-    if (to.matched.some(record => record.meta.notLoggedUsers)) {
-        if (token) {
-            // Si el usuario está autenticado, redirige a la página de inicio
-            next({ name: "home" });
-        } else {
-            next();
-        }
-    } else if (to.matched.some(record => record.meta.adminOnly)) {
-        // Verificar si la ruta es solo para administradores
-        if (token && isAdmin) {
-            next(); // Si el usuario es admin, permite el acceso
-        } else {
-            next({ name: "home" }); // Si no es admin, redirige a la página de inicio
-        }
-    } else {
-        // Para todas las demás rutas, verificar autenticación
-        if (!token) {
-            // Si no está autenticado, redirige al login
-            next({ name: "login" });
-        } else {
-            next();
-        }
+    // Cargar datos antes de validar sesión
+    if (!userStore.isAuthenticated) {
+        userStore.loadFromStorage();
     }
+
+    const isValidSession = await userStore.validateSession();
+
+    if (!isValidSession && !to.meta.notLoggedUsers) {
+        return next({ name: "login" });
+    }
+
+    const token = userStore.getToken;
+    const isAdmin = userStore.getIsAdmin;
+
+    if (to.matched.some(record => record.meta.notLoggedUsers) && token) {
+        return next({ name: "home" });
+    }
+
+    if (to.matched.some(record => record.meta.adminOnly) && (!token || !isAdmin)) {
+        return next({ name: "home" });
+    }
+
+    return next();
 });
+
 
 export default router;

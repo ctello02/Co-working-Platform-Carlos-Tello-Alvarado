@@ -6,14 +6,13 @@ exports.createReservation = async (req, res) => {
         const {
             spaceId,
             userId,
-            date,
             startTime,
             endTime,
             seatsReserved,
             repetition,
         } = req.body;
 
-        if (!spaceId || !userId || !date || !startTime || !endTime || !seatsReserved) {
+        if (!spaceId || !userId || !startTime || !endTime || !seatsReserved) {
             return res.status(400).json({ message: 'Todos los campos son obligatorios.' });
         }
 
@@ -22,7 +21,6 @@ exports.createReservation = async (req, res) => {
         const newReservation = new Reservation({
             spaceId,
             userId,
-            date,
             startTime,
             endTime,
             seatsReserved,

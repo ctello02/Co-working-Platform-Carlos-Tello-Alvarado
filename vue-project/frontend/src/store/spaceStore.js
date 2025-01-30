@@ -3,21 +3,17 @@ import { defineStore } from "pinia";
 export const useSpaceStore = defineStore({
     id: "space",
     state: () => ({
-        _id: localStorage.getItem("space_id") || null,
+        _id: null,
         selectedSpace: null, // Estado para el espacio seleccionado
     }),
     getters: {
-        getId() {
-            return this._id;
-        },
-        getSelectedSpace() {
-            return this.selectedSpace;
-        }
+        getId: (state) => state._id,
+        getSelectedSpace: (state) => state.selectedSpace
     },
     actions: {
         setId(id) {
             this._id = id;
-            localStorage.setItem('space_id', id); // Sincronizar con localStorage
+            localStorage.setItem('space_id', id);
         },
         setSelectedSpace(space) {
             this.selectedSpace = space;
@@ -27,7 +23,8 @@ export const useSpaceStore = defineStore({
         },
         clearSpace() {
             this.selectedSpace = null;
-            localStorage.clear();
+            this._id = null;
+            localStorage.removeItem("space_id");
         },
     },
 });

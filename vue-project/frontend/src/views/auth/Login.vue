@@ -104,14 +104,9 @@ export default {
         .then(res => {
           const userStore = useUserStore();
 
-          const _id = res.data.user._id;
-          userStore.setId(_id);
-          
-          const token = res.data.token;
-          userStore.setToken(token); 
-
-          const isAdmin = res.data.user.isAdmin;
-          userStore.setIsAdmin(isAdmin);         
+          userStore.setId(res.data.user._id);
+          userStore.setToken(res.data.token); 
+          userStore.setIsAdmin(res.data.user.isAdmin);         
 
           this.$router.push('/')
         })

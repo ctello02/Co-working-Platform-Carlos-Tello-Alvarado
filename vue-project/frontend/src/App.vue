@@ -12,16 +12,26 @@
 <script>
 import { RouterView } from 'vue-router'
 import NavBar from './components/NavBar.vue'
-
+import { useUserStore } from './store/userStore';
 export default {
   data(){
     return {
+      userStore: null,
       gradient_color: 'color: white; background: rgb(0,45,98); background: linear-gradient(61deg, rgba(0,45,98,1) 75%, rgba(16,86,189,1) 75%);',
     }
   },
   components: {
     NavBar,
     RouterView
+  },
+  async beforeMount() {
+    this.userStore = useUserStore();
+
+    //this.userStore.loadFromStorage();
+    const isValidSession = await this.userStore.validateSession();
+    if (!isValidSession) {
+      this.$router.push("/login"); // Redirigir al login si la sesión es inválida
+    }
   },
   computed: {
     isLogged() {

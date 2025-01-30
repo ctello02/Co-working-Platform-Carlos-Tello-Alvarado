@@ -67,6 +67,13 @@ exports.getUser = async (req, res) => {
     }
 };
 
+exports.validateToken = async (req, res) => {
+    res.json({
+        success: true,
+        valid: true,
+    });
+};
+
 exports.forgotPassword = async (req, res) => {
     if (process.env.GOOGLE_APP_EMAIL && process.env.GOOGLE_APP_PW) {
         try {
