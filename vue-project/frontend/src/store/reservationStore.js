@@ -6,9 +6,7 @@ export const useReservationStore = defineStore({
         reservation: null,
     }),
     getters: {
-        getReservation() {
-            return this.reservation;
-        }
+        getReservation: (state) => state.reservation
     },
     actions: {
         setReservation(newReservation) {

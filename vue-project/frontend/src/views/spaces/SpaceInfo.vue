@@ -119,7 +119,6 @@
                     @click="routerBack" 
                 />
                 <TonalButton
-                    class=""
                     color="blue"
                     text="Reservar"
                     @click="createReservation"

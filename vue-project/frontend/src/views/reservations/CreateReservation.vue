@@ -222,6 +222,7 @@
 <script>
 import { spaceService } from '@/services/spaceService';
 import { useUserStore } from '@/store/userStore';
+import { useSpaceStore } from '@/store/spaceStore';
 import { useReservationStore } from '@/store/reservationStore';
 import TonalButton from '@/components/TonalButton.vue';
 
@@ -233,6 +234,7 @@ export default {
         return {
             /*** Store variables ***/
             userStore: null,
+            spaceStore: null,
             reservationStore: null,
 
             /*** Spaces variables ***/
@@ -270,6 +272,7 @@ export default {
     },
     mounted() {
         this.userStore = useUserStore();
+        this.spaceStore = useSpaceStore();
         this.reservationStore = useReservationStore();
         this.generateAllTimes();
         this.getSpaces();        
@@ -415,7 +418,10 @@ export default {
                 seatsReserved: this.reservationSeats,
                 repetition: "none",
             }
+            console.log("reservation creada: "+reservation);
+            
             this.reservationStore.setReservation(reservation);
+            this.spaceStore.setSelectedSpace(space);
 
             this.$router.push("/confirmReservation");
 
