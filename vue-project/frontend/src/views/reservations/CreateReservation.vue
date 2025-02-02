@@ -279,10 +279,7 @@ export default {
     },
     watch: {
         date(newVal) {
-            console.log("Fecha sin formato: " + newVal);
              this.formattedDate = this.formatDate(newVal);  
-             console.log("Fecha con formato: " + this.formattedDate);
-             console.log("Fecha parseada: " + this.parseDate(this.formattedDate));
         },
         startTime(newVal) {
             this.filterSpaces();
@@ -374,7 +371,7 @@ export default {
             return `${formattedHours}:${formattedMinutes}`;
         },
         formatDate(date) {
-            return new Intl.DateTimeFormat('es-ES', { weekday: 'long', day: 'numeric', month: 'long' }).format(date);
+            return new Intl.DateTimeFormat('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(date);
         },
         parseDate(spanishDate) {
             // Mapear nombres de meses en español a números
@@ -407,8 +404,8 @@ export default {
             const startTime = new Date(`${selectedDate}T${startTimeString}:00Z`);
             const endTime = new Date(`${selectedDate}T${endTimeString}:00Z`);
 
-            console.log("Fecha de inicio:", startTime);
-            console.log("Fecha de fin:", endTime);
+            console.log("Fecha de inicio.toIsoString():", startTime.toISOString());
+            console.log("Fecha de fin.toISOString():", endTime.toISOString());
 
             const reservation = {
                 spaceId: space._id,
