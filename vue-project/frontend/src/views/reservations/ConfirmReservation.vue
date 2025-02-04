@@ -21,11 +21,11 @@
                             <v-row class="d-flex align-center justify-center mt-6" cols="12">
                                     <span class="text-h4">{{ this.space.name }}</span>
                                     <v-btn
-                                    icon="mdi-information-outline"
-                                    variant="text"
-                                    density="compact"
-                                    :ripple="false"
-                                    @click="this.showSpaceInfo = !this.showSpaceInfo"
+                                        icon="mdi-information-outline"
+                                        variant="text"
+                                        density="compact"
+                                        :ripple="false"
+                                        @click="this.showSpaceInfo = !this.showSpaceInfo"
                                     />
                             </v-row>
                             <v-row>
@@ -34,7 +34,7 @@
                                         <v-col style="color: grey" class="text-center"><span class="text-h6">Fecha: </span></v-col>
                                     </v-row>
                                     <v-row>
-                                        <v-col class="text-center mt-n7"><span class="text-h4 font-weight-medium">{{this.formatDate(new Date(this.reservation.startTime))}}</span></v-col>
+                                        <v-col class="text-center mt-n7"><span class="text-h4">{{this.formatDate(new Date(this.reservation.startTime))}}</span></v-col>
                                     </v-row>
                                 </v-col>
                             </v-row>
@@ -60,8 +60,8 @@
                                 </v-col>
                             </v-row>
                             <v-divider/>
-                            <v-row>
-                                <v-col cols="6" class="mt-6">
+                            <v-row class="mt-5 mb-n8">
+                                <v-col cols="5">
                                     <v-text-field
                                         v-model.number="reservationSeats"
                                         label="Número de asientos"
@@ -70,25 +70,56 @@
                                         variant="outlined"
                                         density="compact"
                                         required
-                                        @input="reservationSeats = Math.max(1, this.space.seats)"
+                                        @input="reservationSeats = Math.max(1, reservationSeats)"
+                                        :rules="[rules.max]"
                                     />
+                                </v-col>
+                                <v-col v-if="this.space.repetition">
+                                    <v-select
+                                        v-model="repetition"
+                                        :items="repetitionOptions"
+                                        item-title="label"
+                                        item-value="value"
+                                        label="Repetición"
+                                        prepend-icon="mdi-repeat"
+                                        variant="outlined"
+                                        density="compact"
+                                    />
+                                </v-col>
+                                <v-col v-else>
+                                    <v-row>
+                                        <v-col cols="1" class="d-flex align-center">
+                                            <v-icon
+                                                size="small"
+                                                icon="mdi-repeat-off"
+                                            ></v-icon>
+                                        </v-col>
+                                        <v-col>
+                                            <span class="text-h6">Repetición no disponible</span>
+                                        </v-col>
+                                    </v-row>
                                 </v-col>
                             </v-row>
                         </v-col>
                     </v-card-text>
                     <v-card-actions>
-                        <v-row class="d-flex justify-center align-center mb-2 ga-3">
+                        <v-row class="mt-n3 mb-3 mr-2 d-flex justify-end ga-3">
                             <TonalButton
                                 color="grey"
                                 text="Volver"
                                 @click="routerBack"
+                            />
+                            <TonalButton
+                                color="blue"
+                                text="Reservar"
+                                @click="confirmReservation"
                             />
                         </v-row>
                     </v-card-actions>
                 </v-card>
             </v-col>
             <v-col v-if="space && this.showSpaceInfo">
-                <v-card class="mx-auto" max-width="600" >
+                <v-card class="mx-auto" max-width="600">
                     <v-img
                         :src="space?.image"
                         color="surface-variant"
@@ -190,7 +221,9 @@
 <script>
 import { useReservationStore } from '@/store/reservationStore';
 import { useSpaceStore } from '@/store/spaceStore';
+import { reservationService } from '@/services/reservationService';
 import TonalButton from '@/components/TonalButton.vue'
+import { useToast } from 'vue-toastification';
 
 export default{
     components: {
@@ -207,6 +240,24 @@ export default{
             openingTime: null,
             closingTime: null,
             reservationSeats: 1,
+            repetition: 'no_repeat', 
+            repetitionOptions: [
+                { label: 'No repetir', value: 'no_repeat' },
+                { label: 'Cada día', value: 'daily' },
+                { label: 'Todos los días laborales (de lunes a viernes)', value: 'workdays' },
+                { label: 'Cada semana este día', value: 'weekly' },
+            ],
+
+            rules: {
+                max: value => value <= this.space.seats || 'Se ha superado el número máximo de asientos',
+            }
+        }
+    },
+    watch: {
+        reservationSeats(newValue) {
+            if(newValue > this.space.seats) {
+                this.reservationSeats = this.reservationSeats-1;
+            }
         }
     },
     mounted() {
@@ -225,8 +276,25 @@ export default{
                 
     },
     methods: {
-        createReservation() {
-            
+        async confirmReservation() {
+            const formData = new FormData();
+            const toast = useToast();
+
+            formData.append('spaceId', this.reservation.spaceId);
+            formData.append('userId', this.reservation.userId);
+            formData.append('startTime', this.reservation.startTime);
+            formData.append('endTime', this.reservation.endTime);
+            formData.append('seatsReserved', this.reservationSeats);
+            formData.append('repetition', this.repetition);
+
+            try {
+                const res = await reservationService.createReservation(formData);
+                console.log(res.data);
+                toast.success('Reserva creada con éxito');
+                this.$router.push('/reservations');
+            } catch (error) {
+                console.error(error);
+            }
         },
         makeHoursAndMinutes(minutes) {
             const hours = Math.floor(minutes / 60);

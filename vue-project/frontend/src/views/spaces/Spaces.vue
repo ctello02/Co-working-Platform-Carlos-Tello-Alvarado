@@ -17,7 +17,7 @@
                         :ripple="false"
                         :icon="list ? 'mdi-view-grid-outline' : 'mdi-format-list-bulleted'"
                         @click="list = !list"
-                    ></v-btn>
+                    />
                 </div>
             </v-row>
 

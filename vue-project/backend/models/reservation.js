@@ -7,11 +7,7 @@ const ReservationSchema = new Schema({
     startTime: { type: Date, required: true },
     endTime: { type: Date, required: true },
     seatsReserved: { type: Number, required: true, min: 1 },
-    repetition: { type: String, enum: ['none', 'daily', 'weekly', 'monthly'], default: 'none' },
-    // calendarId: {
-    //     type: String,
-    //     default: null
-    // }
+    repetition: { type: String, enum: ['no_repeat', 'daily', 'workdays', 'weekly'], default: 'no_repeat' }
 });
 
 const Reservation = mongoose.model("Reservation", ReservationSchema);

@@ -376,9 +376,18 @@ export default {
         parseDate(spanishDate) {
             // Mapear nombres de meses en español a números
             const months = {
-                "enero": "01", "febrero": "02", "marzo": "03", "abril": "04",
-                "mayo": "05", "junio": "06", "julio": "07", "agosto": "08",
-                "septiembre": "09", "octubre": "10", "noviembre": "11", "diciembre": "12"
+                "enero": "01", 
+                "febrero": "02", 
+                "marzo": "03", 
+                "abril": "04",
+                "mayo": "05", 
+                "junio": "06", 
+                "julio": "07", 
+                "agosto": "08",
+                "septiembre": "09", 
+                "octubre": "10", 
+                "noviembre": "11", 
+                "diciembre": "12"
             };
 
             // Extraer la información de la fecha
@@ -404,9 +413,6 @@ export default {
             const startTime = new Date(`${selectedDate}T${startTimeString}:00Z`);
             const endTime = new Date(`${selectedDate}T${endTimeString}:00Z`);
 
-            console.log("Fecha de inicio.toIsoString():", startTime.toISOString());
-            console.log("Fecha de fin.toISOString():", endTime.toISOString());
-
             const reservation = {
                 spaceId: space._id,
                 userId: this.userStore.getId,
@@ -415,28 +421,11 @@ export default {
                 seatsReserved: this.reservationSeats,
                 repetition: "none",
             }
-            console.log("reservation creada: "+reservation);
             
             this.reservationStore.setReservation(reservation);
             this.spaceStore.setSelectedSpace(space);
 
             this.$router.push("/confirmReservation");
-
-            // const formData = new FormData();
-            // formData.append('spaceId', space._id);
-            // formData.append('userId', this.userStore.getId);
-            // formData.append('startTime', startTime.toISOString());
-            // formData.append('endTime', endTime.toISOString());
-            // formData.append('seatsReserved', this.reservationSeats);
-            // formData.append('repetition', 'none');
-
-            // try {
-            //     const res = await reservationService.createReservation(formData);
-            //     console.log(res.data);
-            // } catch (error) {
-            //     console.error(error);
-            // }
-
         },
     }
 };
