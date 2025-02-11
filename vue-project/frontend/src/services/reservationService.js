@@ -20,6 +20,10 @@ export const reservationService = {
         return axiosInstance.get(`${API_URL}/getUserReservations/${id}`);
     },
 
+    getReservationsByDate(date) {
+        return axiosInstance.get(`${API_URL}/getReservationsByDate/${date}`);
+    },
+
     // updateReservation(formData) {
     //     return axiosInstance.put(`${API_URL}/updateReservation`, formData);
     // },

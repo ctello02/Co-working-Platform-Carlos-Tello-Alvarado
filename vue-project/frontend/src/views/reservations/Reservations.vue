@@ -26,6 +26,7 @@
                 <v-col
                     v-for="reservation in reservations"
                     :key="reservation._id"
+                    lg="3" md="4" sm="12" xs="12"
                 >
                         <v-card @click="infoEvent(reservation)" class="text-center" max-width="400">
                             <v-card-title>
@@ -48,7 +49,7 @@
                                                 <v-col style="color: grey"><span class="text-h6">Horas: </span></v-col>
                                             </v-row>
                                             <v-row>
-                                                <v-col class="mt-n7"><span class="text-h6">{{parseHoursAndMinutes(reservation.startTime)}}h - {{parseHoursAndMinutes(reservation.endTime)}}h</span></v-col>
+                                                <v-col class="mt-n7"><span class="text-h6">{{parseHoursAndMinutes(reservation.startTime)}}h-{{parseHoursAndMinutes(reservation.endTime)}}h</span></v-col>
                                             </v-row>
                                         </v-col>
                                     </v-row>

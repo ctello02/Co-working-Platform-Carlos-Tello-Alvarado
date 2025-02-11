@@ -221,6 +221,7 @@
 
 <script>
 import { spaceService } from '@/services/spaceService';
+import { reservationService } from '@/services/reservationService';
 import { useUserStore } from '@/store/userStore';
 import { useSpaceStore } from '@/store/spaceStore';
 import { useReservationStore } from '@/store/reservationStore';
@@ -268,6 +269,8 @@ export default {
                 { label: '2 horas', value: 120 },
                 { label: '3 horas', value: 180 },
             ],
+
+            reservationsByDate: [],
         };
     },
     mounted() {
@@ -276,10 +279,16 @@ export default {
         this.reservationStore = useReservationStore();
         this.generateAllTimes();
         this.getSpaces();        
+
+        if (this.formattedDate) {
+            this.getReservationsByDate(this.formattedDate);
+        }
+        
     },
     watch: {
         date(newVal) {
-             this.formattedDate = this.formatDate(newVal);  
+             this.formattedDate = this.formatDate(newVal); 
+             this.getReservationsByDate(this.formattedDate);
         },
         startTime(newVal) {
             this.filterSpaces();
@@ -302,6 +311,19 @@ export default {
                 .catch(error => {
                     console.error(error);
                 });
+        },
+        async getReservationsByDate(date) {
+            const parsedDate = this.parseDate(date);
+
+            try{
+                const response = await reservationService.getReservationsByDate(parsedDate);
+                this.reservationsByDate = response.data.reservations;
+                this.reservationsByDate.map(reservation => {
+                    console.log(reservation);                   //Ya tengo las reservas ese día, falta filtrar los espacios y deshabilitar las horas que ya están reservadas
+                });
+            }catch(error){
+                console.error(error);
+            }
         },
         updateReservation(spaceId, key, value) {
             if (!this.reservationTimes[spaceId]) {
@@ -373,7 +395,7 @@ export default {
         formatDate(date) {
             return new Intl.DateTimeFormat('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(date);
         },
-        parseDate(spanishDate) {
+        parseDate(spanishDate) {            
             // Mapear nombres de meses en español a números
             const months = {
                 "enero": "01", 
@@ -389,7 +411,7 @@ export default {
                 "noviembre": "11", 
                 "diciembre": "12"
             };
-
+            console.log(spanishDate);
             // Extraer la información de la fecha
             const parts = spanishDate.split(",")[1].trim().split(" "); // ["30", "de", "enero"]
             const day = parts[0].padStart(2, "0"); // Asegurar formato 2 dígitos
