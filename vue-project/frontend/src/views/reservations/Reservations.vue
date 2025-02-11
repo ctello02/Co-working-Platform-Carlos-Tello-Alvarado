@@ -83,10 +83,10 @@ export default {
     mounted() {
         this.userStore = useUserStore();
         this.reservationStore = useReservationStore();
-        this.getReservations();
+        this.getUserReservations();
     },
     methods: {
-        getReservations() {             //Cambiar metodo por getUserReservations
+        getUserReservations() {            
             try{
                 reservationService.getUserReservations(this.userStore.getId)
                 .then(res => {
