@@ -38,9 +38,23 @@ exports.createReservation = async (req, res) => {
 exports.getReservations = async (req, res) => {
     try {
         const reservations = await Reservation.find();
-        if (reservations.length === 0) {
+        if (!reservations || reservations.length === 0) {
             return res.status(404).json({ message: 'No reservations found' });
         }
+        res.json({ reservations });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+exports.getUserReservations = async (req, res) => {
+    try {
+        let reservations = await Reservation.find({ userId: req.params.id }).populate('spaceId');
+
+        if (!reservations || reservations.length === 0) {
+            return res.status(404).json({ message: 'No reservations found' });
+        }
+
         res.json({ reservations });
     } catch (error) {
         res.status(500).json({ message: error.message });

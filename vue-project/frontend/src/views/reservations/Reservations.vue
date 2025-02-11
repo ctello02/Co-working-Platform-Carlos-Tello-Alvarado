@@ -29,7 +29,7 @@
                 >
                         <v-card @click="infoEvent(reservation)" class="text-center" max-width="400">
                             <v-card-title>
-                                <span class="text-h5">Reserva de {{reservation.spaceId}}</span>
+                                <span class="text-h5">Reserva de {{reservation.spaceId.name}}</span>
                                 <v-divider class="mt-1"/>
                             </v-card-title>
                             <v-card-text>
@@ -62,6 +62,8 @@
 </template>
 
 <script>
+import { useUserStore } from '@/store/userStore';
+import { useReservationStore } from '@/store/reservationStore';
 import TonalButton from '@/components/TonalButton.vue';
 import { reservationService } from '@/services/reservationService';
 
@@ -71,19 +73,24 @@ export default {
     },
     data() {
         return {
+            userStore: null,
+            reservationStore: null,
             reservations: [],
 
             list: false,
         }
     },
     mounted() {
+        this.userStore = useUserStore();
+        this.reservationStore = useReservationStore();
         this.getReservations();
     },
     methods: {
         getReservations() {             //Cambiar metodo por getUserReservations
             try{
-                reservationService.getReservations()
+                reservationService.getUserReservations(this.userStore.getId)
                 .then(res => {
+                    console.log(res.data.reservations);
                     this.reservations = res.data.reservations;
                 })
                 .catch(error => {
@@ -95,6 +102,8 @@ export default {
         },
         infoEvent(reservation) {
             console.log(reservation);
+            this.reservationStore.setReservation(reservation);
+            this.$router.push('/reservationInfo');
         },
         formatDate(date) {
             return new Intl.DateTimeFormat('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(date);

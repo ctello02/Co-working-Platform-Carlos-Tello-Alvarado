@@ -106,6 +106,11 @@ const routes = [
         name: "confirmReservation",
         component: () => import("../views/reservations/ConfirmReservation.vue"),
     },
+    {
+        path: "/reservationInfo",
+        name: "reservationInfo",
+        component: () => import("../views/reservations/ReservationInfo.vue"),
+    },
 ];
 
 const router = createRouter({

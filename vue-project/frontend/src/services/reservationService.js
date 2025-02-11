@@ -4,16 +4,20 @@ const API_URL = '/reservations';
 
 export const reservationService = {
 
-    getReservations() {
-        return axiosInstance.get(`${API_URL}/getReservations`);
-    },
-
     createReservation(formData) {
         return axiosInstance.post(`${API_URL}/createReservation`, formData, {
             headers: {
                 'Content-Type': 'multipart/form-data'
             }
         });
+    },
+
+    getReservations() {
+        return axiosInstance.get(`${API_URL}/getReservations`);
+    },
+
+    getUserReservations(id) {
+        return axiosInstance.get(`${API_URL}/getUserReservations/${id}`);
     },
 
     // updateReservation(formData) {

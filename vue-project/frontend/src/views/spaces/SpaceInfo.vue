@@ -146,7 +146,6 @@ import { useReservationStore } from '@/store/reservationStore';
 import { spaceService } from '@/services/spaceService';
 import TonalButton from '@/components/TonalButton.vue'
 import AskModal from '@/components/AskModal.vue';
-import CreateReservation from '../reservations/CreateReservation.vue';
 
 export default {
     data() {
