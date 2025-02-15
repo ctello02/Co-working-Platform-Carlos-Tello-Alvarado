@@ -319,7 +319,7 @@ export default {
                 const response = await reservationService.getReservationsByDate(parsedDate);
                 this.reservationsByDate = response.data.reservations;
                 this.reservationsByDate.map(reservation => {
-                    console.log(reservation);                   //Ya tengo las reservas ese día, falta filtrar los espacios y deshabilitar las horas que ya están reservadas
+                    console.log(reservation);                  
                 });
             }catch(error){
                 console.error(error);
@@ -354,25 +354,66 @@ export default {
             }
         },
         calcStartTimeOfSpace(space) {
-            return this.calcFrameTimesOfSpace(space.opening, space.closing, 0, 15, space.duration, true);
+            return this.calcFrameTimesOfSpace(space._id, space.opening, space.closing, 15, space.duration, true);
         },
         calcEndTimeOfSpace(space) { 
             if (this.reservationTimes[space._id] != null && this.reservationTimes[space._id].reservationStartTime != undefined) {
                 const start = this.decomposeHoursAndMinutes(this.reservationTimes[space._id].reservationStartTime);
-                return this.calcFrameTimesOfSpace(start, space.closing, space.duration, space.duration, space.duration, false);
+                return this.calcFrameTimesOfSpace(space._id, start + space.duration, space.closing, space.duration, space.duration, false);
             }
-            return this.calcFrameTimesOfSpace(space.opening, space.closing, space.duration, space.duration, space.duration, false);
         },
-        calcFrameTimesOfSpace(startingTime, endingTime, temp, interval, duration, needsVerification) {
+        calcFrameTimesOfSpace(spaceId, startingTime, endingTime, interval, duration, needsVerification) {
             const hours = [];
+            const hoursReserved = [];
+
+            if (this.reservationsByDate.length > 0) {
+                this.reservationsByDate.map(reservation => {
+                    if (reservation.spaceId === spaceId) {
+                        hoursReserved.push({
+                            start: this.parseHoursAndMinutes(reservation.startTime),
+                            end: this.parseHoursAndMinutes(reservation.endTime)
+                        });
+                    }
+                });
+
+                if (hoursReserved.length > 0) {
+                    console.log("Horas reservadas para el espacio " + spaceId + ":", hoursReserved);
+                }
+            }
+
 
             // Bucle para calcular los intervalos según la duración
-            for (let time = startingTime + temp; time <= endingTime; time += interval) {
-                if(needsVerification && time + duration > endingTime) break;
-                
+            for (let time = startingTime; time <= endingTime; time += interval) {
+                if (needsVerification && time + duration > endingTime) break;
+
                 const hoursPart = Math.floor(time / 60).toString().padStart(2, '0');
                 const minutesPart = (time % 60).toString().padStart(2, '0');
-                hours.push(`${hoursPart}:${minutesPart}`);
+                const currentTime = `${hoursPart}:${minutesPart}`;
+
+                // Verificar si la hora está en un intervalo reservado
+                let isReserved = false;
+                for (const reservation of hoursReserved) {
+                    const startMinutes = parseInt(reservation.start.split(":")[0]) * 60 + parseInt(reservation.start.split(":")[1]);
+                    const endMinutes = parseInt(reservation.end.split(":")[0]) * 60 + parseInt(reservation.end.split(":")[1]);
+
+                    if(time + duration > startMinutes && time + duration < endMinutes){
+                        // Si time + duration está dentro del intervalo reservado, no agregar a la lista
+                        isReserved = true
+                        break;
+                    }
+
+                    if (time >= startMinutes && time < endMinutes) {
+                        isReserved = true;
+                        break; // No es necesario seguir buscando
+                    }
+                }
+
+                if (isReserved) {
+                    continue; // Saltar esta iteración si está dentro de un intervalo reservado
+                }
+
+                // Si no está en un rango reservado, agregar a la lista
+                hours.push(currentTime);
             }
 
             return hours;
@@ -391,6 +432,12 @@ export default {
             const formattedMinutes = String(mins).padStart(2, '0');
 
             return `${formattedHours}:${formattedMinutes}`;
+        },
+        parseHoursAndMinutes(date) {            
+            const dateObj = new Date(date);
+            const hours = String(dateObj.getUTCHours()).padStart(2, '0'); 
+            const mins = String(dateObj.getUTCMinutes()).padStart(2, '0');
+            return `${hours}:${mins}`;
         },
         formatDate(date) {
             return new Intl.DateTimeFormat('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(date);
@@ -411,7 +458,7 @@ export default {
                 "noviembre": "11", 
                 "diciembre": "12"
             };
-            console.log(spanishDate);
+            
             // Extraer la información de la fecha
             const parts = spanishDate.split(",")[1].trim().split(" "); // ["30", "de", "enero"]
             const day = parts[0].padStart(2, "0"); // Asegurar formato 2 dígitos
