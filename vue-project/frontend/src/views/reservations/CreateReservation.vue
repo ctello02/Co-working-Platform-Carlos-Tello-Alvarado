@@ -44,7 +44,7 @@
                                 <v-col>
                                     <v-select
                                         v-model="startTime"
-                                        :items="allTimes"
+                                        :items="generateAllTimes()"
                                         label="Inicio"
                                         prepend-icon="mdi-timer-sand"
                                         variant="outlined"
@@ -245,10 +245,11 @@ export default {
             /*** Reservation variables ***/
             reservationTimes: {},
             reservationSeats: 1,
+            reservationsByDate: [],
             
             /*** Dates variables ***/
             date: new Date(),
-            formattedDate: this.formatDate(new Date()),
+            formattedDate: this.parseToStringDate(new Date()),
             disabledDates: [
                 {
                     repeat: {
@@ -259,7 +260,6 @@ export default {
             
             /*** Time variables ***/
             startTime: null,
-            allTimes: [],
             durationSearched: null,
             timeFrames: [
                 { label: '15 mins', value: 15 },
@@ -268,15 +268,14 @@ export default {
                 { label: '1 hora', value: 60 },
                 { label: '2 horas', value: 120 },
                 { label: '3 horas', value: 180 },
-            ],
-
-            reservationsByDate: [],
+            ],            
         };
     },
     mounted() {
         this.userStore = useUserStore();
         this.spaceStore = useSpaceStore();
         this.reservationStore = useReservationStore();
+
         this.generateAllTimes();
         this.getSpaces();        
 
@@ -287,7 +286,7 @@ export default {
     },
     watch: {
         date(newVal) {
-             this.formattedDate = this.formatDate(newVal); 
+             this.formattedDate = this.parseToStringDate(newVal); 
              this.getReservationsByDate(this.formattedDate);
         },
         startTime(newVal) {
@@ -307,20 +306,17 @@ export default {
                 .then(res => {
                     this.spaces = res.data.spaces;
                     this.filteredSpaces = res.data.spaces;
+                    this.filterSpaces();
                 })
                 .catch(error => {
                     console.error(error);
                 });
         },
         async getReservationsByDate(date) {
-            const parsedDate = this.parseDate(date);
-
+            const parsedDate = this.parseToYYYYMMDD(date);
             try{
                 const response = await reservationService.getReservationsByDate(parsedDate);
                 this.reservationsByDate = response.data.reservations;
-                this.reservationsByDate.map(reservation => {
-                    console.log(reservation);                  
-                });
             }catch(error){
                 console.error(error);
             }
@@ -340,25 +336,27 @@ export default {
                 const matchesStartTime = this.startTime == null || (this.makeHoursAndMinutes(space.opening) <= this.startTime && this.makeHoursAndMinutes(space.closing) > this.startTime);
                 const matchesDuration = this.durationSearched == null || space.duration <= this.durationSearched;
                 const matchesSeats = this.reservationSeats == null || space.seats >= this.reservationSeats;
-
+                                
                 // Retorna true solo si cumple todas las condiciones
                 return matchesStartTime && matchesDuration && matchesSeats;
             });
         },
         generateAllTimes() {
+            const times = [];
             for (let hour = 0; hour < 24; hour++) {
                 for (let minute = 0; minute < 60; minute += 15) {
                     const formattedTime = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
-                    this.allTimes.push(formattedTime);
+                    times.push(formattedTime);
                 }
             }
+            return times;
         },
         calcStartTimeOfSpace(space) {
             return this.calcFrameTimesOfSpace(space._id, space.opening, space.closing, 15, space.duration, true);
         },
         calcEndTimeOfSpace(space) { 
             if (this.reservationTimes[space._id] != null && this.reservationTimes[space._id].reservationStartTime != undefined) {
-                const start = this.decomposeHoursAndMinutes(this.reservationTimes[space._id].reservationStartTime);
+                const start = this.makeMinutes(this.reservationTimes[space._id].reservationStartTime);
                 return this.calcFrameTimesOfSpace(space._id, start + space.duration, space.closing, space.duration, space.duration, false);
             }
         },
@@ -366,21 +364,16 @@ export default {
             const hours = [];
             const hoursReserved = [];
 
-            if (this.reservationsByDate.length > 0) {
+            if (this.reservationsByDate.length > 0 ) {
                 this.reservationsByDate.map(reservation => {
                     if (reservation.spaceId === spaceId) {
                         hoursReserved.push({
-                            start: this.parseHoursAndMinutes(reservation.startTime),
-                            end: this.parseHoursAndMinutes(reservation.endTime)
+                            start: this.getHoursAndMinsFromDate(reservation.startTime),
+                            end: this.getHoursAndMinsFromDate(reservation.endTime)
                         });
                     }
                 });
-
-                if (hoursReserved.length > 0) {
-                    console.log("Horas reservadas para el espacio " + spaceId + ":", hoursReserved);
-                }
             }
-
 
             // Bucle para calcular los intervalos según la duración
             for (let time = startingTime; time <= endingTime; time += interval) {
@@ -392,12 +385,19 @@ export default {
 
                 // Verificar si la hora está en un intervalo reservado
                 let isReserved = false;
+                let isEnd = false;
                 for (const reservation of hoursReserved) {
                     const startMinutes = parseInt(reservation.start.split(":")[0]) * 60 + parseInt(reservation.start.split(":")[1]);
                     const endMinutes = parseInt(reservation.end.split(":")[0]) * 60 + parseInt(reservation.end.split(":")[1]);
 
+                    if (time === startMinutes && needsVerification == false) {     //Si needsVerification es false, entonces está calculando las horas del final
+                        isEnd = true;                                              // y por lo tanto, si encuentra una hora que coincide con el inicio de otra reserva, no debe agregar más horas
+                        break; // No es necesario seguir buscando
+                    }
+
                     if(time + duration > startMinutes && time + duration < endMinutes){
                         // Si time + duration está dentro del intervalo reservado, no agregar a la lista
+                        // serán las horas previas a una reserva que coincida con el inicio de otra reserva
                         isReserved = true
                         break;
                     }
@@ -414,14 +414,17 @@ export default {
 
                 // Si no está en un rango reservado, agregar a la lista
                 hours.push(currentTime);
+
+                if (isEnd) {                  
+                    break; 
+                }
             }
 
             return hours;
         },
-        decomposeHoursAndMinutes(time) {
-            const [hour, minute] = time.split(':').map(Number);
-            const hourInMinutes = hour * 60 + minute;
-            return hourInMinutes;
+        makeMinutes(time) {
+            const [hour, minutes] = time.split(':').map(Number);
+            return hour * 60 + minutes;
         },
         makeHoursAndMinutes(minutes) {
             const hours = Math.floor(minutes / 60);
@@ -433,16 +436,16 @@ export default {
 
             return `${formattedHours}:${formattedMinutes}`;
         },
-        parseHoursAndMinutes(date) {            
+        getHoursAndMinsFromDate(date) {            
             const dateObj = new Date(date);
             const hours = String(dateObj.getUTCHours()).padStart(2, '0'); 
             const mins = String(dateObj.getUTCMinutes()).padStart(2, '0');
             return `${hours}:${mins}`;
         },
-        formatDate(date) {
+        parseToStringDate(date) {
             return new Intl.DateTimeFormat('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(date);
         },
-        parseDate(spanishDate) {            
+        parseToYYYYMMDD(date) {            
             // Mapear nombres de meses en español a números
             const months = {
                 "enero": "01", 
@@ -460,7 +463,7 @@ export default {
             };
             
             // Extraer la información de la fecha
-            const parts = spanishDate.split(",")[1].trim().split(" "); // ["30", "de", "enero"]
+            const parts = date.split(",")[1].trim().split(" "); // ["30", "de", "enero"]
             const day = parts[0].padStart(2, "0"); // Asegurar formato 2 dígitos
             const month = months[parts[2]]; // Obtener el número del mes
             const year = new Date().getFullYear(); // Año actual (2025 en este caso)
@@ -472,7 +475,7 @@ export default {
         },
         async createReservation(space){
             // Convertimos la fecha seleccionada a un formato válido (YYYY-MM-DD)
-            const selectedDate = this.parseDate(this.formattedDate);
+            const selectedDate = this.parseToYYYYMMDD(this.formattedDate);
 
             // Obtener la hora de inicio y fin en formato HH:MM directamente
             const startTimeString = this.reservationTimes[space._id].reservationStartTime; // Ejemplo: "09:30"
@@ -499,7 +502,3 @@ export default {
     }
 };
 </script>
-
-<style scoped>
-
-</style>
