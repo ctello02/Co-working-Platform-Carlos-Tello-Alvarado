@@ -1,8 +1,8 @@
 <template>
   <v-app>
     <NavBar v-if="isLogged"/>
-    <v-main>
-      <v-container>
+    <v-main :class="{'main-gradient': showGradient, 'main-background': !showGradient}">
+      <v-container fluid class="px-10" >
         <RouterView />
       </v-container>
     </v-main>
@@ -12,20 +12,47 @@
 <script>
 import { RouterView } from 'vue-router'
 import NavBar from './components/NavBar.vue'
-
+import { useUserStore } from './store/userStore';
 export default {
+  data(){
+    return {
+      userStore: null,
+      gradient_color: 'color: white; background: rgb(0,45,98); background: linear-gradient(61deg, rgba(0,45,98,1) 75%, rgba(16,86,189,1) 75%);',
+    }
+  },
   components: {
     NavBar,
     RouterView
   },
+  async beforeMount() {
+    this.userStore = useUserStore();
+
+    //this.userStore.loadFromStorage();
+    const isValidSession = await this.userStore.validateSession();
+    if (!isValidSession) {
+      this.$router.push("/login"); // Redirigir al login si la sesión es inválida
+    }
+  },
   computed: {
     isLogged() {
-        if (this.$route.name === 'login' || this.$route.name === 'register' || this.$route.name === 'forgot_password' || this.$route.name === 'reset') {
-          return false;
-        } else {
-          return true;
-        }
-    } 
+        return !['login', 'register', 'forgot_password', 'reset'].includes(this.$route.name);
+    },
+    showGradient() {
+      return this.$route.meta.gradient;
+    }
   }
 }
 </script>
+
+<style scoped>
+.main-background {
+  background-color: #f8f9f9; 
+  min-height: 100vh; 
+}
+
+.main-gradient {
+  background: rgb(0,45,98);
+  background: linear-gradient(61deg, rgba(0,45,98,1) 75%, rgba(16,86,189,1) 75%);
+  min-height: 100vh;
+}
+</style>

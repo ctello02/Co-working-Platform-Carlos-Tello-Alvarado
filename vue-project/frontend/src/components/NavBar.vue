@@ -1,19 +1,33 @@
 <template>
-    <v-app-bar prominent app>
+    <v-app-bar app :style="color_nav">
         <v-app-bar-nav-icon @click.stop="rail = !rail"></v-app-bar-nav-icon>
         <v-toolbar-title>Co-Working Platform</v-toolbar-title>
         <v-spacer></v-spacer>
         <v-btn class="ma-2" icon="mdi-account" @click="toProfile()"></v-btn>
     </v-app-bar>
 
-    <v-navigation-drawer permanent :rail="rail" v-model="drawer" app>
+    <v-navigation-drawer :color="color_sidebar" permanent :rail="rail" v-model="drawer" app>
         <v-list>
-            <v-list-item prepend-icon="mdi-home-outline" @click="toHome()">
-                Home
+            <v-list-item prepend-icon="mdi-home-outline" @click="toHome">
+                Vista principal
+            </v-list-item>
+            <v-list-item prepend-icon="mdi-calendar-outline" @click="toCalendar">
+                Calendario
+            </v-list-item>
+            <v-list-item prepend-icon="mdi-newspaper-variant-outline" @click="toReservations">
+                Reservas
+            </v-list-item>
+            <v-list-item prepend-icon="mdi-table-chair" @click="toSpaces">
+                Espacios
             </v-list-item>
             <!-- Mostramos el link a "Usuarios" solo si el usuario es admin -->
             <v-list-item v-if="userStore.getIsAdmin" prepend-icon="mdi-account-group-outline" @click="toUsers">
                 Usuarios
+            </v-list-item>
+            <v-list-item :prepend-icon="userStore.getIsAdmin? 'mdi-close': 'mdi-check'" @click="changeAdmin">
+                <span v-if="userStore.getIsAdmin">Quitar</span>
+                <span v-else>Hacer</span>
+                Admin
             </v-list-item>
         </v-list>
     </v-navigation-drawer>
@@ -27,6 +41,8 @@ export default {
         return {
             drawer: true,
             rail: false,
+            color_nav: 'color:white; background: rgb(0,45,98); background: linear-gradient(61deg, rgba(0,45,98,1) 75%, rgba(16,86,189,1) 75%);',
+            color_sidebar: '#002D62'            
         }
     },
     computed: {
@@ -38,17 +54,30 @@ export default {
         toHome() {
             this.$router.push('/')
         },
+        toSpaces() {
+            this.$router.push('/spaces')
+        },
         toUsers() {
             this.$router.push('/users')
         },
         toProfile() {
             this.$router.push('/profile')
+        },
+        toCalendar() {
+            this.$router.push('/calendar')
+        },
+        toReservations() {
+            this.$router.push('/reservations')
+        },
+        changeAdmin() {
+            this.userStore.setIsAdmin(!this.userStore.getIsAdmin);
+            localStorage.setItem('isAdmin', this.userStore.getIsAdmin);
         }
     }
 }
 </script>
 
-<style scooped>
+<style scoped>
 .hamburger {
     font-size: 24px;
     cursor: pointer;
@@ -96,22 +125,5 @@ export default {
 
 .side-menu.open {
     left: 0;
-}
-
-.overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.5);
-    z-index: 500;
-}
-
-.link {
-    margin: 15px;
-    border-radius: 10px;
-    border: 1px solid #585858;
-
 }
 </style>

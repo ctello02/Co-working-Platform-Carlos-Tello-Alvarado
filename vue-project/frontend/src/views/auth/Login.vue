@@ -1,88 +1,125 @@
 <template>
-  <v-card class="pa-10 container" outlined>
-    <v-form ref="form" v-model="valid" @submit.prevent="submit">
-      <v-row>
-        <v-col cols="12">
-          <h2 class="title">Iniciar sesión</h2>
-        </v-col>
-      </v-row>
-
-      <v-row>
-        <v-col cols="12">
-          <v-text-field v-model="email" label="Email" type="email" required :rules="emailRules" autocomplete="off"
-            outlined />
-        </v-col>
-
-        <v-col style="display: flex; flex-direction: column; justify-content: flex-start;" cols="12">
-          
-          <v-text-field v-model="password" label="Contraseña" type="password" required :rules="passwordRules"
-            autocomplete="new-password" outlined />
+  <v-container class="container">
+    <v-card class="mx-auto px-3" max-width="450">
+      <v-card-title class="my-3">
+        <span class="text-h4"><b>Iniciar sesión</b></span>
+      </v-card-title>
+      <v-card-text>
+        <v-col>
+          <v-row>
+            <v-text-field
+              v-model="email"
+              label="Email"
+              type="email"
+              variant="outlined"
+              prepend-icon="mdi-email-outline"
+              required
+              :rules="emailRules"
+              autocomplete="off"
+              class="my-1"
+            />
+          </v-row>
+          <v-row class="d-flex flex-column justify-start">
+            <v-text-field
+              v-model="password"
+              variant="outlined"
+              label="Contraseña"
+              :type="show ? 'text' : 'password'"
+              prepend-icon="mdi-lock-outline"
+              :append-inner-icon="show ? 'mdi-eye' : 'mdi-eye-off'"  
+              @click:append-inner="show = !show"
+              required
+              class="my-1"
+              :rules="passwordRules"
+            />
             <router-link
-              style="align-self: flex-end; margin-top: -10px;"
+              class="align-self-end mt-n1 mb-3 routerLink"
               to="/forgot_password">
               Recuperar contraseña
             </router-link>
-        </v-col>
-      </v-row>
+          </v-row>
+          <v-row>
+            <TonalButton
+              color="blue"
+              text="Iniciar sesión"
+              class="cta-btn custom-disabled-btn"
+              @click="submit" 
+              :disabled="camposVacios()"
+              block
+            />
+          </v-row>
+          <v-row>
+            <v-col class="text-center">
+              <p class="subtitle">
+                ¿No tienes una cuenta?
+                <router-link class="routerLink" to="/register">Regístrate</router-link>
+              </p>
+            </v-col>
+          </v-row>
 
-      <v-row>
-        <v-col cols="12">
-          <v-btn class="cta-btn" color="primary" type="submit" :disabled="!valid" block>
-            Iniciar sesión
-          </v-btn>
         </v-col>
-      </v-row>
-
-      <v-row>
-        <v-col cols="12" class="text-center">
-          <p class="subtitle">
-            ¿No tienes una cuenta? 
-            <router-link to="/register">Regístrate</router-link>
-          </p>
-        </v-col>
-      </v-row>
-    </v-form>
-  </v-card>
+      </v-card-text>
+    </v-card>
+  </v-container>
 </template>
 
 <script>
 import { useUserStore } from '@/store/userStore'
 import { authService } from '@/services/authService';
-
+import { useToast } from 'vue-toastification';
+import TonalButton from '@/components/TonalButton.vue'
 
 export default {
-  data: () => ({
-    valid: true,
-    email: '',
-    password: '',
-    emailRules: [
-      v => !!v || 'Email is required',
-      v => /.+@.+\..+/.test(v) || 'E-mail must be valid',
-    ],
-    passwordRules: [
-      v => !!v || 'Password is required',
-      v => v.length >= 6 || 'Password must be at least 6 characters',
-    ],
-  }),
+  data () {
+    return {
+      email: '',
+      password: '',
+      show: false,
+      emailRules : [
+          v => !!v || 'El email es obligatorio',
+          v => /^[\w.-]+@[a-zA-Z\d.-]+\.[a-zA-Z]{2,}$/i.test(v) || 'El email debe ser válido',
+      ],
+      passwordRules: [
+        v => !!v || 'La contraseña es requerida',
+        v => v.length >= 8 || 'La contraseña debe tener al menos 8 caracteres',
+        v => /[A-Z]/.test(v) || 'La contraseña debe incluir al menos una letra mayúscula',
+        v => /[a-z]/.test(v) || 'La contraseña debe incluir al menos una letra minúscula',
+        v => /\d/.test(v) || 'La contraseña debe incluir al menos un número',
+      ],
+    }
+  },
+  components: {
+    TonalButton
+  },
   methods: {
+    camposVacios() {
+      // Verificar que los campos no estén vacíos y que cumplan las reglas de validación
+      const emailValido = this.emailRules.every(rule => rule(this.email) === true);
+      const passwordValido = this.passwordRules.every(rule => rule(this.password) === true);
+
+      return !(this.email && this.password && emailValido && passwordValido);
+    },
     async submit() {
-      if (this.$refs.form.validate()) {
-          authService.login(this.email, this.password)              
-            .then(res => {
-              console.log(res.data);
-              const _id = res.data._id
-              const token = res.data.token
-              const isAdmin = res.data.isAdmin          
-              const userStore = useUserStore();
-              userStore.setId(_id);   
-              userStore.setToken(token);   
-              userStore.setIsAdmin(isAdmin);
-              this.$router.push('/')
-            })
-            .catch(error => {
-                console.log(error);
-            });
-      }
+      authService.login(this.email, this.password)              
+        .then(res => {
+          const userStore = useUserStore();
+
+          userStore.setId(res.data.user._id);
+          userStore.setToken(res.data.token); 
+          userStore.setIsAdmin(res.data.user.isAdmin);         
+
+          this.$router.push('/')
+        })
+        .catch(error => {
+          const toast = useToast();
+          if (error.response && error.response.status === 401) {
+            toast.error("Contraseña incorrecta");
+          } else if(error.response && error.response.status === 404){
+            toast.error("Usuario no econtrado");
+          }
+          console.log(error);
+
+        });
     },
     clear() {
       this.$refs.form.reset()
@@ -92,12 +129,6 @@ export default {
 </script>
 
 <style scoped>
-.title {
-  text-align: center;
-  font-weight: bold;
-  margin-bottom: 20px;
-}
-
 .subtitle {
   margin-top: 10px;
 }
@@ -107,9 +138,27 @@ export default {
   text-transform: uppercase;
 }
 
-.container {
-  max-width: 500px;
-  margin: 0 auto;
-  margin-top: 2em;
+.custom-disabled-btn:disabled {
+  background-color: #bfbfbf; 
+  color: white !important; 
+  cursor: not-allowed; 
+  opacity: 1; 
+  border: 1px solid #bbb; 
+}
+
+.routerLink {
+  text-decoration: none; 
+  font-weight: bold;
+  cursor: pointer;
+  color: rgb(16, 86, 189);
+  font-size: medium;
+}
+
+.routerLink:hover {
+  text-decoration: underline; 
+}
+
+.routerLink:visited {
+  color: rgb(16, 86, 189);
 }
 </style>

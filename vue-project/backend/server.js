@@ -1,5 +1,6 @@
 require('dotenv').config();
 const express = require('express');
+const path = require('path');
 const bodyParser = require('body-parser');
 const cookieParser = require('cookie-parser');
 const cors = require('cors');
@@ -10,7 +11,10 @@ connectDB();
 
 // Rutas
 const authRoutes = require('./routes/authRoutes');
-const userRoutes = require('./routes/usersRoutes');
+const usersRoutes = require('./routes/usersRoutes');
+const spacesRoutes = require('./routes/spacesRoutes');
+const reservationsRoutes = require('./routes/reservationsRoutes');
+//const imagesRoutes = require('./routes/imagesRoutes');
 
 const app = express();
 
@@ -19,10 +23,16 @@ app.use(cors());
 app.use(bodyParser.json());
 app.use(cookieParser());
 app.use(bodyParser.urlencoded({ extended: false }));
+// Configurar 'uploads' como carpeta estática para servir imágenes
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
 
 // Rutas base
 app.use('/api/auth', authRoutes);
-app.use('/api/users', userRoutes);
+app.use('/api/users', usersRoutes);
+app.use('/api/spaces', spacesRoutes);
+app.use('/api/reservations', reservationsRoutes);
+//app.use('/api/images', imagesRoutes);
 
 // Ruta principal
 app.get('/', (req, res) => {

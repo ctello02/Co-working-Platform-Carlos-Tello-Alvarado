@@ -9,12 +9,10 @@ const axiosInstance = axios.create({
 // Interceptor para las peticiones
 axiosInstance.interceptors.request.use(
     (config) => {
-        if (config.requiresToken) {         // Si se pasa `requiresToken`, agregar el token
-            const token = useUserStore().getToken;
-            if (token) {
-                config.headers['Authorization'] = `Bearer ${token}`;
-                config.headers['x-access-token'] = token;
-            }
+        const token = useUserStore().getToken;
+        if (token) {
+            config.headers['Authorization'] = `Bearer ${token}`;
+            config.headers['x-access-token'] = token;
         }
         return config;
     },

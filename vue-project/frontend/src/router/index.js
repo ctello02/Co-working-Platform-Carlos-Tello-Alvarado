@@ -11,13 +11,13 @@ const routes = [
         path: "/login",
         name: "login",
         component: () => import("../views/auth/Login.vue"),
-        meta: { guestOnly: true } // Solo accesible para usuarios no autenticados
+        meta: { notLoggedUsers: true, gradient: true } // Solo accesible para usuarios no autenticados
     },
     {
         path: "/register",
         name: "register",
         component: () => import("../views/auth/Register.vue"),
-        meta: { guestOnly: true } // Solo accesible para usuarios no autenticados
+        meta: { notLoggedUsers: true, gradient: true } // Solo accesible para usuarios no autenticados
     },
     {
         path: "/profile",
@@ -28,20 +28,23 @@ const routes = [
         path: "/editProfileInfo",
         name: "editProfileInfo",
         component: () => import("../views/auth/EditProfileInfo.vue"),
-        meta: { adminOnly: true }, // Solo accesible para usuarios administradores
-        props: true
+    },
+    {
+        path: '/changePassword',
+        name: 'changePassword',
+        component: () => import('../views/auth/ChangePassword.vue'),
     },
     {
         path: "/forgot_password",
         name: "forgot_password",
         component: () => import("../views/auth/ForgotPassword.vue"),
-        meta: { guestOnly: true } // Solo accesible para usuarios no autenticados
+        meta: { notLoggedUsers: true, gradient: true } // Solo accesible para usuarios no autenticados
     },
     {
         path: "/reset",
         name: "reset",
         component: () => import("../views/auth/ResetPassword.vue"),
-        meta: { guestOnly: true } // Solo accesible para usuarios no autenticados
+        meta: { notLoggedUsers: true, gradient: true } // Solo accesible para usuarios no autenticados
     },
     {
         path: "/users",
@@ -59,7 +62,55 @@ const routes = [
         path: "/editUserInfo",
         name: "editUserInfo",
         component: () => import("../views/user/EditUserInfo.vue"),
-    }
+        meta: { adminOnly: true }, // Solo accesible para usuarios administradores
+    },
+    {
+        path: "/spaces",
+        name: "spaces",
+        component: () => import("../views/spaces/Spaces.vue"),
+    },
+    {
+        path: "/createSpace",
+        name: "createSpace",
+        component: () => import("../views/spaces/CreateSpace.vue"),
+        meta: { adminOnly: true }, // Solo accesible para usuarios administradores
+    },
+    {
+        path: "/spaceInfo",
+        name: "spaceInfo",
+        component: () => import("../views/spaces/SpaceInfo.vue"),
+    },
+    {
+        path: "/editSpaceInfo",
+        name: "editSpaceInfo",
+        component: () => import("../views/spaces/EditSpaceInfo.vue"),
+        meta: { adminOnly: true }, // Solo accesible para usuarios administradores
+    },
+    {
+        path: "/calendar",
+        name: "calendar",
+        component: () => import("../views/calendar/Calendar.vue"),
+    },
+    {
+        path: "/reservations",
+        name: "reservations",
+        component: () => import("../views/reservations/Reservations.vue"),
+    },
+    {
+        path: "/createReservation",
+        name: "createReservation",
+        component: () => import("../views/reservations/CreateReservation.vue"),
+    },
+    {
+        path: "/confirmReservation",
+        name: "confirmReservation",
+        component: () => import("../views/reservations/ConfirmReservation.vue"),
+    },
+    {
+        path: "/reservationInfo",
+        name: "reservationInfo",
+        component: () => import("../views/reservations/ReservationInfo.vue"),
+    },
 ];
 
 const router = createRouter({
@@ -68,35 +119,33 @@ const router = createRouter({
 });
 
 // Guard global para manejar autenticación y permisos
-router.beforeEach((to, from, next) => {
-    const userStore = useUserStore(); // Accede al store de Pinia
-    const token = userStore.getToken; // Obtén el token desde el store
-    const isAdmin = userStore.getIsAdmin; // Obtén el estado de admin desde el store
+router.beforeEach(async (to, from, next) => {
+    const userStore = useUserStore();
 
-    // Verificar si la ruta es solo para invitados
-    if (to.matched.some(record => record.meta.guestOnly)) {
-        if (token) {
-            // Si el usuario está autenticado, redirige a la página de inicio
-            next({ name: "home" });
-        } else {
-            next();
-        }
-    } else if (to.matched.some(record => record.meta.adminOnly)) {
-        // Verificar si la ruta es solo para administradores
-        if (token && isAdmin) {
-            next(); // Si el usuario es admin, permite el acceso
-        } else {
-            next({ name: "home" }); // Si no es admin, redirige a la página de inicio
-        }
-    } else {
-        // Para todas las demás rutas, verificar autenticación
-        if (!token) {
-            // Si no está autenticado, redirige al login
-            next({ name: "login" });
-        } else {
-            next();
-        }
+    // Cargar datos antes de validar sesión
+    if (!userStore.isAuthenticated) {
+        userStore.loadFromStorage();
     }
+
+    const isValidSession = await userStore.validateSession();
+
+    if (!isValidSession && !to.meta.notLoggedUsers) {
+        return next({ name: "login" });
+    }
+
+    const token = userStore.getToken;
+    const isAdmin = userStore.getIsAdmin;
+
+    if (to.matched.some(record => record.meta.notLoggedUsers) && token) {
+        return next({ name: "home" });
+    }
+
+    if (to.matched.some(record => record.meta.adminOnly) && (!token || !isAdmin)) {
+        return next({ name: "home" });
+    }
+
+    return next();
 });
+
 
 export default router;

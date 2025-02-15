@@ -5,15 +5,15 @@ const API_URL = '/users';
 export const userService = {
 
     getUsers() {
-        return axiosInstance.get(`${API_URL}/getUsers`, { requiresToken: true });
+        return axiosInstance.get(`${API_URL}/getUsers`);
     },
 
     updateUser(user) {
-        return axiosInstance.put(`${API_URL}/updateUser`, user, { requiresToken: true });
+        return axiosInstance.put(`${API_URL}/updateUser`, user);
     },
 
     deleteUser(id) {
-        return axiosInstance.delete(`${API_URL}/deleteUser/${id}`, { requiresToken: true });
+        return axiosInstance.delete(`${API_URL}/deleteUser/${id}`);
     },
 
 };

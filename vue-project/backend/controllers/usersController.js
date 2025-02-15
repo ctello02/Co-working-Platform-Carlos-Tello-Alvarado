@@ -39,10 +39,10 @@ exports.deleteUser = async (req, res) => {
         let user = await User.findOne({ _id: req.params.id });
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
+        } else {
+            await User.deleteOne({ _id: req.params.id });
+            res.json({ message: 'User deleted successfully' });
         }
-
-        await user.remove();
-        res.json({ message: 'User deleted successfully' });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
