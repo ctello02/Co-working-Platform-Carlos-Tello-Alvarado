@@ -25,7 +25,7 @@
                 <span class="text-h5">Aún no hay espacios creados</span>
             </v-row>
 
-            <v-row v-else class="py-3 mx-n5">
+            <v-row v-else class="py-3 mx-n11">
                 <!-- Vista de lista -->
                 <v-col v-if="list">
                     <v-card style="width: 100%;">
@@ -70,63 +70,26 @@
                     <v-container fluid>
                         <v-row>
                             <v-col cols="12" sm="6" md="4" lg="3" v-for="space in spaces" :key="space._id">
-                                <!-- <v-card v-if="userStore.getIsAdmin" class="pa-5">
-                                    <v-img
-                                        :src="space.image"
-                                        height="150px"
-                                        contain
-                                        class="mb-2"
-                                    />
-                                    <v-card-title class="ml-n3 text-h5">{{ space.name }}</v-card-title>
-                                    <v-card-subtitle class="ml-n3">{{ space.description }}</v-card-subtitle>
-                                    <v-card-actions v-if="userStore.getIsAdmin" class="mt-n1 mb-n4">
-                                        <v-btn
-                                            icon="mdi-magnify"
-                                            variant="text"
-                                            @click="openSpace(space)"
-                                        />
-                                        <v-spacer/>
-                                        <v-btn
-                                            v-if="userStore.getIsAdmin"
-                                            color="error"
-                                            icon="mdi-trash-can-outline"
-                                            variant="text"
-                                            @click="openDeleteModal(space)"
-                                        />
-                                    </v-card-actions>
-                                </v-card> -->
-                                <!-- <v-card v-else :ripple="false" @click="openSpace(space)" class="pa-5">
-                                    <v-img
-                                        :src="space.image"
-                                        height="150px"
-                                        contain
-                                        class="mb-2"
-                                    />
-                                    <v-card-title class="ml-n3 text-h5">{{ space.name }}</v-card-title>
-                                    <v-card-subtitle class="ml-n3">{{ space.description }}</v-card-subtitle>
-                                </v-card> -->
                                 <SpaceCard
                                     v-if="userStore.getIsAdmin"
-                                    class="spaceCard"
                                     :space="space"
                                     :adminActions="userStore.getIsAdmin"
                                     :reserveActions="false"
                                     :maxWidth="'300px'"
                                     :isPreview="true"
                                     @edit-space="openEditSpaceInfo(space)"
-                                    @delete-space="deleteSpace"
+                                    @delete-space="deleteSpace(space._id)"
                                     @click="openSpace(space)"
                                 />
                                 <SpaceCard
                                     v-else
-                                    class="spaceCard"
                                     :space="space"
                                     :adminActions="false"
                                     :reserveActions="false"
                                     :maxWidth="'300px'"
                                     :isPreview="true"
                                     @edit-space="openEditSpaceInfo(space)"
-                                    @delete-space="deleteSpace"
+                                    @delete-space="deleteSpace(space._id)"
                                     @click="openSpace(space)"
                                 />
                                 
@@ -136,14 +99,6 @@
                 </v-col>
             </v-row>
 
-            <!-- <AskModal
-                v-model="deleteModal"
-                :title="'¿Borrar espacio?'"
-                :message="'¿Estás seguro de que quieres borrar este espacio?'"
-                :actionText="'Borrar espacio'"
-                :closeModal="closeDialog"
-                :action="deleteSpace"
-            /> -->
         </v-col>
     </v-container>
 </template>
@@ -154,7 +109,6 @@ import { useSpaceStore } from '@/store/spaceStore';
 import { spaceService } from '@/services/spaceService';
 import { useToast } from 'vue-toastification';
 import TonalButton from '@/components/TonalButton.vue'
-import AskModal from '@/components/AskModal.vue';
 import SpaceCard from '@/components/SpaceCard.vue';
 
 export default {
@@ -171,7 +125,6 @@ export default {
     },
     components: {
         TonalButton,
-        AskModal,
         SpaceCard
     },
     mounted() {
@@ -212,9 +165,9 @@ export default {
         closeDialog() {
             this.deleteModal = false;
         },
-        deleteSpace() {
+        deleteSpace(id) {
             const toast = useToast();
-            spaceService.deleteSpace(this.selectedSpace?._id)
+            spaceService.deleteSpace(id)
                 .then(res => {
                     this.getSpaces();
                     this.deleteModal = false;
@@ -247,13 +200,4 @@ tbody tr:hover {
     background-color: #efefef;
 }
 
-.spaceCard {
-    cursor: pointer;
-    transition: background-color 0.3s ease, box-shadow 0.3s ease;
-}
-
-.spaceCard:hover {
-    background-color: rgba(0, 0, 0, 0.05);
-    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
-}
 </style>

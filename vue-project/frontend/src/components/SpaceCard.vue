@@ -4,6 +4,7 @@
             v-if="space" 
             class="mx-auto" 
             :max-width="maxWidth"
+            :class="isPreview ? 'spaceCardPreview' : ''"
         >
             <v-img 
                 :src="space.image"
@@ -179,3 +180,15 @@ export default {
     }
 };
 </script>
+
+<style scoped>
+.spaceCardPreview {
+    cursor: pointer;
+    transition: background-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.spaceCardPreview:hover {
+    background-color: rgba(0, 0, 0, 0.01);
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+}
+</style>
