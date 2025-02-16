@@ -1,10 +1,14 @@
 <template>
     <v-container class="pa-5 container">
-        <v-card v-if="space" class="mx-auto" max-width="600">
-            <v-img
+        <v-card 
+            v-if="space" 
+            class="mx-auto" 
+            :max-width="maxWidth"
+        >
+            <v-img 
                 :src="space.image"
                 color="surface-variant"
-                height="300px"
+                :height="isPreview ? '150px' : '300px'"
                 cover  
             />
 
@@ -12,9 +16,9 @@
                 <v-col>
                     <v-row class="mt-n5 mb-n3" cols="12">
                         <v-col cols="9">
-                            <span class="text-h4">{{ space.name }}</span>
+                            <span :class="isPreview ? 'text-h5' : 'text-h4'">{{ space.name }}</span>
                         </v-col>
-                        <v-col class="d-flex align-center justify-end ga-3">
+                        <v-col v-if="!isPreview" class="d-flex align-center justify-end ga-3">
                             <v-btn 
                                 v-if="adminActions"
                                 @click="$emit('edit-space')"
@@ -41,7 +45,7 @@
                         </v-col>
                     </v-row>
 
-                    <v-row class="my-n3" cols="12">
+                    <v-row v-if="!isPreview" class="my-n3" cols="12">
                         <v-col cols="1" class="d-flex align-center">
                             <v-icon icon="mdi-table-chair" size="small" />
                         </v-col>
@@ -50,7 +54,7 @@
                         </v-col>
                     </v-row>
 
-                    <v-row class="mt-n1">
+                    <v-row v-if="!isPreview" class="mt-n1">
                         <v-col>
                             <v-row class="d-flex align-center my-n2">
                                 <v-col cols="2">
@@ -73,7 +77,7 @@
                         </v-col>
                     </v-row>
 
-                    <v-row class="mt-n3 mb-n5 d-flex justify-center align-center" cols="12">
+                    <v-row v-if="!isPreview" class="mt-n3 mb-n5 d-flex justify-center align-center" cols="12">
                         <v-col>
                             <v-row>
                                 <v-col cols="2" class="d-flex align-center">
@@ -100,9 +104,24 @@
                 </v-col>
             </v-card-text>
 
-            <v-card-actions v-if="cardActions" class="d-flex justify-end ga-3 mt-n3 mb-3 mr-5">
+            <v-card-actions v-if="reserveActions" class="d-flex justify-end ga-3 mt-n3 mb-3 mr-5">
                 <TonalButton color="grey" text="Volver" @click="$emit('go-back')" />
                 <TonalButton color="blue" text="Reservar" @click="$emit('reserve')" />
+            </v-card-actions>
+
+            <v-card-actions v-if="isPreview && adminActions" class="d-flex align-center justify-space-between ga-3 mx-3 mb-3 mt-n3">
+                <v-btn 
+                    @click.stop="$emit('edit-space')"
+                    variant="tonal"
+                    size="small"
+                    icon="mdi-pencil"           
+                />
+                <v-btn 
+                    @click.stop="deleteModal = true"
+                    variant="tonal"
+                    size="small"
+                    icon="mdi-trash-can-outline" 
+                />
             </v-card-actions>
         </v-card>
 
@@ -129,7 +148,9 @@ export default {
     props: {
         space: { type: Object, required: true },
         adminActions: { type: Boolean, default: false },
-        cardActions: { type: Boolean, default: false}
+        reserveActions: { type: Boolean, default: false},
+        isPreview: { type: Boolean, default: false },
+        maxWidth: { type: String, default: '600px' }
     },
     data() {
         return {

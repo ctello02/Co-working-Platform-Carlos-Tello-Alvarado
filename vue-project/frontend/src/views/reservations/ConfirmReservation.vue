@@ -122,7 +122,7 @@
                 <SpaceCard
                     :space="this.space"
                     :adminActions="false"
-                    :cardActions="false"
+                    :reserveActions="false"
                 />
             </v-col>
         </v-row>

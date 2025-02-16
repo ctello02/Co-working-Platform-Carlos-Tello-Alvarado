@@ -70,7 +70,7 @@
                     <v-container fluid>
                         <v-row>
                             <v-col cols="12" sm="6" md="4" lg="3" v-for="space in spaces" :key="space._id">
-                                <v-card v-if="userStore.getIsAdmin" class="pa-5">
+                                <!-- <v-card v-if="userStore.getIsAdmin" class="pa-5">
                                     <v-img
                                         :src="space.image"
                                         height="150px"
@@ -94,8 +94,8 @@
                                             @click="openDeleteModal(space)"
                                         />
                                     </v-card-actions>
-                                </v-card>
-                                <v-card v-else @click="openSpace(space)" class="pa-5">
+                                </v-card> -->
+                                <!-- <v-card v-else :ripple="false" @click="openSpace(space)" class="pa-5">
                                     <v-img
                                         :src="space.image"
                                         height="150px"
@@ -104,21 +104,46 @@
                                     />
                                     <v-card-title class="ml-n3 text-h5">{{ space.name }}</v-card-title>
                                     <v-card-subtitle class="ml-n3">{{ space.description }}</v-card-subtitle>
-                                </v-card>
+                                </v-card> -->
+                                <SpaceCard
+                                    v-if="userStore.getIsAdmin"
+                                    class="spaceCard"
+                                    :space="space"
+                                    :adminActions="userStore.getIsAdmin"
+                                    :reserveActions="false"
+                                    :maxWidth="'300px'"
+                                    :isPreview="true"
+                                    @edit-space="openEditSpaceInfo(space)"
+                                    @delete-space="deleteSpace"
+                                    @click="openSpace(space)"
+                                />
+                                <SpaceCard
+                                    v-else
+                                    class="spaceCard"
+                                    :space="space"
+                                    :adminActions="false"
+                                    :reserveActions="false"
+                                    :maxWidth="'300px'"
+                                    :isPreview="true"
+                                    @edit-space="openEditSpaceInfo(space)"
+                                    @delete-space="deleteSpace"
+                                    @click="openSpace(space)"
+                                />
+                                
                             </v-col>
                         </v-row>
                     </v-container>
                 </v-col>
             </v-row>
 
-            <AskModal
+            <!-- <AskModal
                 v-model="deleteModal"
                 :title="'¿Borrar espacio?'"
                 :message="'¿Estás seguro de que quieres borrar este espacio?'"
                 :actionText="'Borrar espacio'"
                 :closeModal="closeDialog"
                 :action="deleteSpace"
-            />
+            /> -->
         </v-col>
     </v-container>
 </template>
@@ -130,6 +155,7 @@ import { spaceService } from '@/services/spaceService';
 import { useToast } from 'vue-toastification';
 import TonalButton from '@/components/TonalButton.vue'
 import AskModal from '@/components/AskModal.vue';
+import SpaceCard from '@/components/SpaceCard.vue';
 
 export default {
     data() {
@@ -145,12 +171,12 @@ export default {
     },
     components: {
         TonalButton,
-        AskModal
+        AskModal,
+        SpaceCard
     },
     mounted() {
         this.getSpaces();
         this.spaceStore = useSpaceStore();
-        
     },
     computed: {
         userStore() {
@@ -175,8 +201,12 @@ export default {
         openCreateSpace() {
             this.$router.push('/createSpace');
         },
+        openEditSpaceInfo(space) {
+            this.spaceStore.setSelectedSpace(space); // Guardar el espacio seleccionado en el store
+            this.$router.push('/editSpaceInfo');
+        },
         openDeleteModal(space) {
-            this.selectedSpace = { ...space }; // Hacer una copia del usuario seleccionado
+            this.selectedSpace = { ...space }; // Hacer una copia del espacio seleccionado
             this.deleteModal = true;
         },
         closeDialog() {
@@ -215,5 +245,15 @@ tbody tr {
 
 tbody tr:hover {
     background-color: #efefef;
+}
+
+.spaceCard {
+    cursor: pointer;
+    transition: background-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.spaceCard:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
 }
 </style>
