@@ -119,98 +119,11 @@
                 </v-card>
             </v-col>
             <v-col v-if="space && this.showSpaceInfo">
-                <v-card class="mx-auto" max-width="600">
-                    <v-img
-                        :src="space?.image"
-                        color="surface-variant"
-                        height="300px"
-                        cover
-                    />
-                    <v-card-text v-if="space && this.openingTime && this.closingTime">
-                        <v-col>
-                            <v-row class="mt-n5 mb-n3" cols="12">
-                                <v-col cols="9">
-                                    <span class="text-h4">{{ space?.name }}</span>
-                                </v-col>
-                            </v-row>
-                            <v-row class="my-n3" cols="12">
-                                <v-col cols="1" class="d-flex align-center">
-                                    <v-icon
-                                        icon="mdi-text"
-                                    />
-                                </v-col>
-                                <v-col>
-                                    <span class="text-h6">{{ space?.description }}</span>
-                                </v-col>
-                            </v-row>
-                            <v-row class="my-n3" cols="12">
-                                <v-col cols="1" class="d-flex align-center">
-                                    <v-icon
-                                        icon="mdi-table-chair"
-                                        size="small"
-                                    />
-                                </v-col>
-                                <v-col>
-                                    <span class="text-h6">{{space?.seats}} asientos</span>
-                                </v-col>
-                            </v-row>
-                            <v-row class="mt-n1">
-                                <v-col>
-                                    <v-row class="d-flex align-center my-n2">
-                                        <v-col cols="2">
-                                            <v-icon
-                                                size="small"
-                                                icon="mdi-weather-sunny"
-                                            ></v-icon>
-                                        </v-col>
-                                        <v-col><span class="pt-2 text-h6">Abre a las {{this.openingTime}}</span></v-col>
-                                    </v-row>
-                                </v-col>
-                                <v-col>
-                                    <v-row class="d-flex align-center my-n2">
-                                        <v-col cols="2">
-                                            <v-icon
-                                                size="small"
-                                                icon="mdi-weather-night"
-                                            ></v-icon>
-                                        </v-col>
-                                        <v-col><span class="pt-2 text-h6">Cierra a las {{this.closingTime}}</span></v-col>
-                                    </v-row>
-                                </v-col>
-                            </v-row>
-                            <v-row class="mt-n3 mb-n5 d-flex justify-center align-center" cols="12">
-                                <v-col>
-                                    <v-row>
-                                        <v-col cols="2" class="d-flex align-center">
-                                            <v-icon
-                                                icon="mdi-timer-outline"
-                                                size="small"
-                                            />
-                                        </v-col>
-                                        <v-col>
-                                            <span class="pt-2 text-h6" v-if="space.duration < 60">Reservas de {{space.duration}} minutos</span>
-                                            <span class="pt-2 text-h6" v-if="space.duration == 60">Reservas de {{space.duration / 60}} hora</span>
-                                            <span class="pt-2 text-h6" v-if="space.duration > 60">Reservas de {{space.duration / 60}} horas</span>
-                                        </v-col>
-                                    </v-row>
-                                </v-col>
-                                <v-col>
-                                    <v-row>
-                                        <v-col cols="2" class="d-flex align-center">
-                                            <v-icon
-                                                icon="mdi-repeat"
-                                                size="small"
-                                            />
-                                        </v-col>
-                                        <v-col>
-                                            <span class="pt-2 text-h6"> {{space?.repetition ? 'Permite repetición' : 'No permite repetición'}}</span>
-                                        </v-col>
-                                    </v-row>
-                                </v-col>
-                            </v-row>
-                        </v-col>
-                    </v-card-text>
-                </v-card>
+                <SpaceCard
+                    :space="this.space"
+                    :adminActions="false"
+                    :cardActions="false"
+                />
             </v-col>
         </v-row>
     </v-col>
@@ -224,10 +137,12 @@ import { useSpaceStore } from '@/store/spaceStore';
 import { reservationService } from '@/services/reservationService';
 import TonalButton from '@/components/TonalButton.vue'
 import { useToast } from 'vue-toastification';
+import SpaceCard from '@/components/SpaceCard.vue';
 
 export default{
     components: {
-        TonalButton
+        TonalButton,
+        SpaceCard
     },
     data() {
         return {
