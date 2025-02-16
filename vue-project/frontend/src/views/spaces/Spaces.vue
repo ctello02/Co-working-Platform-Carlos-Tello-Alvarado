@@ -25,88 +25,90 @@
                 <span class="text-h5">Aún no hay espacios creados</span>
             </v-row>
 
-            <v-row v-else class="py-3">
+            <v-row v-else class="py-3 mx-n5">
                 <!-- Vista de lista -->
-                <v-card v-if="list" style="width: 100%;">
-                    <v-table>
-                        <thead>
-                            <tr>
-                                <th>#</th>
-                                <th>Nombre</th>
-                                <th>Descripción</th>
-                                <th>Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr v-for="(space, index) in spaces" :key="space._id">
-                                <td>{{ index + 1 }}</td>
-                                <td>{{ space.name }}</td>
-                                <td>{{ space.description }}</td>
+                <v-col v-if="list">
+                    <v-card style="width: 100%;">
+                        <v-table>
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Nombre</th>
+                                    <th>Descripción</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="(space, index) in spaces" :key="space._id">
+                                    <td>{{ index + 1 }}</td>
+                                    <td>{{ space.name }}</td>
+                                    <td>{{ space.description }}</td>
+                                    <td>
+                                        <v-form class="d-flex">
+                                            <v-btn
+                                                icon="mdi-magnify"
+                                                variant="text"
+                                                @click="openSpace(space)"
+                                            />
+                                            <v-btn
+                                                v-if="userStore.getIsAdmin"
+                                                color="error"
+                                                icon="mdi-trash-can-outline"
+                                                variant="text"
+                                                @click="openDeleteModal(space)"
+                                            />
+                                        </v-form>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </v-table>
+                    </v-card>
+                </v-col>
 
-                                <td>
-                                    <v-form class="d-flex">
-                                        <v-btn 
-                                            icon="mdi-magnify" 
+                <!-- Vista cuadrícula -->
+                <v-col v-else class="pa-0" >
+                    <v-container fluid>
+                        <v-row>
+                            <v-col cols="12" sm="6" md="4" lg="3" v-for="space in spaces" :key="space._id">
+                                <v-card v-if="userStore.getIsAdmin" class="pa-5">
+                                    <v-img
+                                        :src="space.image"
+                                        height="150px"
+                                        contain
+                                        class="mb-2"
+                                    />
+                                    <v-card-title class="ml-n3 text-h5">{{ space.name }}</v-card-title>
+                                    <v-card-subtitle class="ml-n3">{{ space.description }}</v-card-subtitle>
+                                    <v-card-actions v-if="userStore.getIsAdmin" class="mt-n1 mb-n4">
+                                        <v-btn
+                                            icon="mdi-magnify"
                                             variant="text"
                                             @click="openSpace(space)"
                                         />
-                                        <v-btn 
-                                            v-if="userStore.getIsAdmin" 
-                                            color="error" 
-                                            icon="mdi-trash-can-outline" 
+                                        <v-spacer/>
+                                        <v-btn
+                                            v-if="userStore.getIsAdmin"
+                                            color="error"
+                                            icon="mdi-trash-can-outline"
                                             variant="text"
                                             @click="openDeleteModal(space)"
                                         />
-                                    </v-form>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </v-table>
-                </v-card>
-
-                <!-- Vista cuadrícula -->
-                <v-container class="pa-0" v-else style="width: 100%;">
-                    <v-row>
-                        <v-col cols="12" sm="6" md="4" lg="3" v-for="space in spaces" :key="space._id">
-                            <v-card v-if="userStore.getIsAdmin" class="pa-5">
-                                <v-img
-                                    :src="space.image"
-                                    height="150px"
-                                    contain  
-                                    class="mb-2"
-                                />
-                                <v-card-title class="ml-n3 text-h5">{{ space.name }}</v-card-title>
-                                <v-card-subtitle class="ml-n3">{{ space.description }}</v-card-subtitle>
-
-                                <v-card-actions v-if="userStore.getIsAdmin" class="mt-n1 mb-n4">
-                                    <v-btn 
-                                        icon="mdi-magnify" 
-                                        variant="text"
-                                        @click="openSpace(space)"
+                                    </v-card-actions>
+                                </v-card>
+                                <v-card v-else @click="openSpace(space)" class="pa-5">
+                                    <v-img
+                                        :src="space.image"
+                                        height="150px"
+                                        contain
+                                        class="mb-2"
                                     />
-                                    <v-spacer/>
-                                    <v-btn 
-                                        v-if="userStore.getIsAdmin" 
-                                        color="error" 
-                                        icon="mdi-trash-can-outline" 
-                                        variant="text"
-                                        @click="openDeleteModal(space)"
-                                    />
-                                </v-card-actions>
-                            </v-card>
-                            <v-card v-else @click="openSpace(space)" class="pa-5">
-                                <v-img
-                                    :src="space.image"
-                                    height="150px"
-                                    contain  
-                                    class="mb-2"
-                                />
-                                <v-card-title class="ml-n3 text-h5">{{ space.name }}</v-card-title>
-                                <v-card-subtitle class="ml-n3">{{ space.description }}</v-card-subtitle>
-                            </v-card>
-                        </v-col>
-                    </v-row>
-                </v-container>
+                                    <v-card-title class="ml-n3 text-h5">{{ space.name }}</v-card-title>
+                                    <v-card-subtitle class="ml-n3">{{ space.description }}</v-card-subtitle>
+                                </v-card>
+                            </v-col>
+                        </v-row>
+                    </v-container>
+                </v-col>
             </v-row>
 
             <AskModal
