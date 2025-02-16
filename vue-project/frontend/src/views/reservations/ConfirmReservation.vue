@@ -118,13 +118,16 @@
                     </v-card-actions>
                 </v-card>
             </v-col>
-            <v-col v-if="space && this.showSpaceInfo">
-                <SpaceCard
-                    :space="this.space"
-                    :adminActions="false"
-                    :reserveActions="false"
-                />
-            </v-col>
+            
+            <transition name="slide-right" mode="out-in">
+                <v-col v-if="space && showSpaceInfo">
+                    <SpaceCard
+                        :space="space"
+                        :adminActions="false"
+                        :reserveActions="false"
+                    />
+                </v-col>
+            </transition>
         </v-row>
     </v-col>
 </v-container>
@@ -242,3 +245,16 @@ export default{
     }
 }
 </script>
+
+<style scoped>
+/* Transición de deslizamiento hacia la derecha (mostrar SpaceCard) */
+.slide-right-enter-active, .slide-right-leave-active {
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.slide-right-enter-from, .slide-right-leave-to {
+    opacity: 0;
+    transform: translateX(100px);
+}
+
+</style>

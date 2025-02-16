@@ -16,8 +16,8 @@
             <v-card-text v-if="space && openingTime && closingTime">
                 <v-col>
                     <v-row class="mt-n5 mb-n3" cols="12">
-                        <v-col cols="9">
-                            <span :class="isPreview ? 'text-h5' : 'text-h4'">{{ space.name }}</span>
+                        <v-col>
+                            <span :class="isPreview ? 'overflow-text text-h5' : 'text-h4'">{{ space.name }}</span>
                         </v-col>
                         <v-col v-if="!isPreview" class="d-flex align-center justify-end ga-3">
                             <v-btn 
@@ -41,8 +41,8 @@
                         <v-col cols="1" class="d-flex align-center">
                             <v-icon icon="mdi-text" />
                         </v-col>
-                        <v-col>
-                            <span class="text-h6">{{ space.description }}</span>
+                        <v-col cols="10">
+                            <span class="text-h6" :class="isPreview ? 'overflow-text' : ''">{{ space.description }}</span>
                         </v-col>
                     </v-row>
 
@@ -190,5 +190,13 @@ export default {
 .spaceCardPreview:hover {
     background-color: rgba(0, 0, 0, 0.01);
     box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+.overflow-text {
+    white-space: nowrap;      
+    overflow: hidden;         
+    text-overflow: ellipsis;  
+    display: block;           
+    width: 100%;              
 }
 </style>
