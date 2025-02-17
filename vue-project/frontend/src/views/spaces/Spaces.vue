@@ -29,36 +29,46 @@
                 <!-- Vista de lista -->
                 <v-col v-if="list">
                     <v-card style="width: 100%;">
-                        <v-table>
+                        <v-table class="fixed-table">
                             <thead>
                                 <tr>
-                                    <th>#</th>
-                                    <th>Nombre</th>
-                                    <th>Descripción</th>
-                                    <th>Acciones</th>
+                                    <th style="width: 10%;">#</th>
+                                    <th style="width: 20%;">Nombre</th>
+                                    <th style="width: 20%;">Descripción</th>
+                                    <th style="width: 30%;">Horario de apertura y cierre</th>
+                                    <th v-if="userStore.getIsAdmin" style="width: 10%;">Acciones</th>
+                                    <th v-else style="width: 20%;">Duración de las reservas</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr v-for="(space, index) in spaces" :key="space._id">
+                                <tr v-for="(space, index) in spaces" :key="space._id" @click="openSpace(space)" class="cursor-pointer">
                                     <td>{{ index + 1 }}</td>
                                     <td>{{ space.name }}</td>
                                     <td>{{ space.description }}</td>
-                                    <td>
-                                        <v-form class="d-flex">
+                                    <td>{{ calcOpeningAndClosing(space) }}</td>
+                                    <td v-if="userStore.getIsAdmin">
+                                        <v-form class="d-flex align-center">
                                             <v-btn
-                                                icon="mdi-magnify"
+                                                icon="mdi-pencil"
                                                 variant="text"
-                                                @click="openSpace(space)"
+                                                size="small"
+                                                @click.stop="openEditSpaceInfo(space)"
                                             />
                                             <v-btn
-                                                v-if="userStore.getIsAdmin"
                                                 color="error"
                                                 icon="mdi-trash-can-outline"
                                                 variant="text"
-                                                @click="openDeleteModal(space)"
+                                                size="small"
+                                                @click.stop="openDeleteModal(space)"
                                             />
                                         </v-form>
                                     </td>
+                                    <td v-else> 
+                                        <span v-if="space.duration < 60">Reservas de {{ space.duration }} minutos</span>
+                                        <span v-if="space.duration == 60">Reservas de {{ space.duration / 60 }} hora</span>
+                                        <span v-if="space.duration > 60">Reservas de {{ space.duration / 60 }} horas</span>
+                                    </td>
+                                    
                                 </tr>
                             </tbody>
                         </v-table>
@@ -99,6 +109,15 @@
                 </v-col>
             </v-row>
 
+            <AskModal
+                v-model="deleteModal"
+                :title="'¿Borrar espacio?'"
+                :message="'¿Estás seguro de que quieres borrar este espacio?'"
+                :actionText="'Borrar espacio'"
+                :closeModal="closeDialog"
+                :action="deleteSpace"
+            />
+
         </v-col>
     </v-container>
 </template>
@@ -110,6 +129,7 @@ import { spaceService } from '@/services/spaceService';
 import { useToast } from 'vue-toastification';
 import TonalButton from '@/components/TonalButton.vue'
 import SpaceCard from '@/components/SpaceCard.vue';
+import AskModal from '@/components/AskModal.vue';
 
 export default {
     data() {
@@ -125,7 +145,8 @@ export default {
     },
     components: {
         TonalButton,
-        SpaceCard
+        SpaceCard,
+        AskModal
     },
     mounted() {
         this.getSpaces();
@@ -134,7 +155,7 @@ export default {
     computed: {
         userStore() {
             return useUserStore();
-        }
+        },
     },
     methods: {
         getSpaces() {
@@ -165,9 +186,24 @@ export default {
         closeDialog() {
             this.deleteModal = false;
         },
-        deleteSpace(id) {
+        calcOpeningAndClosing(space) {
+            const hoursOpening = Math.floor(space.opening / 60);
+            const hoursClosing = Math.floor(space.closing / 60);
+            const minsOpening = space.opening % 60;
+            const minsClosing = space.closing % 60;
+
+            // Formatea con ceros a la izquierda
+            const formattedHoursOpening = String(hoursOpening).padStart(2, '0');
+            const formattedMinutesOpening = String(minsOpening).padStart(2, '0');
+
+            const formattedHoursClosing = String(hoursClosing).padStart(2, '0');
+            const formattedMinutesClosing = String(minsClosing).padStart(2, '0');
+
+            return `${formattedHoursOpening}:${formattedMinutesOpening}h - ${formattedHoursClosing}:${formattedMinutesClosing}h`;
+        },
+        deleteSpace() {
             const toast = useToast();
-            spaceService.deleteSpace(id)
+            spaceService.deleteSpace(this.selectedSpace._id)
                 .then(res => {
                     this.getSpaces();
                     this.deleteModal = false;
@@ -200,4 +236,16 @@ tbody tr:hover {
     background-color: #efefef;
 }
 
+.v-table {
+    table-layout: fixed;
+    width: 100%;
+}
+
+th, td {
+    text-align: left;
+    padding: 10px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
 </style>

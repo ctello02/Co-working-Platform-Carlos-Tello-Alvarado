@@ -11,14 +11,14 @@
 
       <v-row v-else class="py-5">
         <v-card style="width: 100%;">
-          <v-table class="full-width-table">
+          <v-table class="fixed-table">
             <thead>
               <tr>
-                <th>#</th>
-                <th>Nombre</th>
-                <th>E-mail</th>
-                <th>Administrador</th>
-                <th>Acciones</th>
+                <th style="width: 10%;">#</th>
+                <th style="width: 20%;">Nombre</th>
+                <th style="width: 20%;">E-mail</th>
+                <th style="width: 20%;">Administrador</th>
+                <th style="width: 10%;">Acciones</th>
               </tr>
             </thead>
             <tbody>
@@ -129,26 +129,36 @@ export default {
 </script>
 
 <style scoped>
-.full-width-table {
-  width: 100%;
-}
-
 thead th {
-  text-align: left;
-  padding: 10px;
-  background-color: #f5f5f5;
+    text-align: left;
+    padding: 10px;
+    background-color: #f5f5f5;
 }
 
 tbody td {
-  padding: 10px;
+    padding: 10px;
 }
 
 tbody tr {
-  transition: background-color 0.3s ease;
+    transition: background-color 0.3s ease;
 }
 
 tbody tr:hover {
-  background-color: #efefef;
+    background-color: #efefef;
+}
+
+.v-table {
+    table-layout: fixed;
+    width: 100%;
+}
+
+th, td {
+    /*width: 20%;  Ajusta este valor si es necesario */
+    text-align: left;
+    padding: 10px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 #info-container {

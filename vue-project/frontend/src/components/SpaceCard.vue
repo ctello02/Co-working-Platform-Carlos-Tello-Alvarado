@@ -122,6 +122,7 @@
                     variant="tonal"
                     size="small"
                     icon="mdi-trash-can-outline" 
+                    color="error"
                 />
             </v-card-actions>
         </v-card>
