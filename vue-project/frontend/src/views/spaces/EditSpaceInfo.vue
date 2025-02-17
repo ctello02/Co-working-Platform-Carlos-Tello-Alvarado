@@ -207,7 +207,7 @@ export default {
             } else {
                 toast.clear(); // Elimina todos los toasts como respaldo
             }
-            this.$router.push('/spaceInfo');
+            this.$router.go(-1);
         },
         generateAllTimes() {
             for (let hour = 0; hour < 24; hour++) {
