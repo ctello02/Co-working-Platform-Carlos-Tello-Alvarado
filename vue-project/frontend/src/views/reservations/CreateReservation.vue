@@ -25,6 +25,7 @@
                                             v-bind="props"
                                             variant="outlined"
                                             class="ml-n3"
+                                            :readonly="true"
                                         >{{ formattedDate }}</v-text-field>
                                         </template>
                                         <v-date-picker class="ml-10"
@@ -99,11 +100,9 @@
                     </v-card-text>
                 </v-card>
             </v-row>
-            <v-row v-if="isLoading">
-                <v-col cols="12" class="mt-6 d-flex justify-center align-center">    
-                    <v-progress-circular indeterminate color="primary" size="50"/>
-                </v-col>
-            </v-row>
+            <div v-if="isLoading" class="loader-overlay">
+                <v-progress-circular  indeterminate color="primary" size="50"></v-progress-circular>
+            </div>
             <v-row class="mx-n7">
                 <v-col v-if="!filteredSpaces.length && !isLoading" class="d-flex justify-center align-center mt-5">
                     <span class="text-h4">No hay espacios disponibles para esos filtros de búsqueda</span>
@@ -284,7 +283,7 @@ export default {
         this.getSpaces();         
     },
     watch: {
-        async date(newVal) {
+        async date(newVal) {            
             this.formattedDate = this.parseToStringDate(newVal);
             this.reservationsByDate = null;
             this.filterSpaces(); 
@@ -302,7 +301,6 @@ export default {
     },
     methods: {
         getSpaces() {
-            this.isLoading = true;
             spaceService.getSpaces()
                 .then(res => {
                     this.spaces = res.data.spaces;
@@ -310,8 +308,6 @@ export default {
                 })
                 .catch(error => {
                     console.error(error);
-                }).finally(() => {
-                    this.isLoading = false; // Desactivamos el loader al terminar la carga
                 });
         },
         async getReservationsByDate(date) {
@@ -324,8 +320,26 @@ export default {
             }
         },
         updateAvailableTimes() {
+            const today = new Date();
+            const hour = today.getHours();
+            const min = today.getMinutes();
+            const todayInMinutes = hour * 60 + min;
+
+            const dateSelected = new Date(this.date);
+            dateSelected.setHours(0, 0, 0, 0);            
+
             this.availableTimes = this.spaces.reduce((acc, space) => {
-                acc[space._id] = this.calcStartTimeOfSpace(space); // Guardamos los horarios del espacio                
+                const temp = this.calcStartTimeOfSpace(space);      // Guardamos los horarios del espacio
+                if (dateSelected > today) acc[space._id] = temp;    // Si la fecha seleccionada es mayor a la actual, devuelve todos los horarios del espacio
+                else{
+                    acc[space._id] = temp.filter(spaceTime => {                 // Si la fecha seleccionada es hoy, hay que devolver las horas posteriores a la hora actual, 
+                        if (this.makeMinutes(spaceTime) > todayInMinutes) {     // para evitar que se seleccione horas pasadas
+                            return true;
+                        } 
+                        return false;
+                    });
+                }
+
                 return acc;
             }, {});
         },
@@ -425,15 +439,12 @@ export default {
                 if (isReserved) {
                     continue; // Saltar esta iteración si está dentro de un intervalo reservado
                 }
-
                 // Si no está en un rango reservado, agregar a la lista
                 hours.push(currentTime);
-
                 if (isEnd) {                  
                     break; 
                 }
             }
-
             return hours;
         },
         disablePastDates(date) {
@@ -534,3 +545,17 @@ export default {
     }
 };
 </script>
+
+<style scoped>
+.loader-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999; 
+}
+</style>
