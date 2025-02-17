@@ -28,10 +28,11 @@
                                         >{{ formattedDate }}</v-text-field>
                                         </template>
                                         <v-date-picker class="ml-10"
-                                        :disabled-dates="disabledDates"
-                                        is-required
-                                        v-model="date"
-                                        ></v-date-picker>
+                                            :disabled-dates="disabledDates"
+                                            :min-date='new Date()'
+                                            is-required
+                                            v-model="date"
+                                        />
                                     </v-menu>
                                 </v-col>
                             </v-row>
@@ -98,8 +99,13 @@
                     </v-card-text>
                 </v-card>
             </v-row>
+            <v-row v-if="isLoading">
+                <v-col cols="12" class="mt-6 d-flex justify-center align-center">    
+                    <v-progress-circular indeterminate color="primary" size="50"/>
+                </v-col>
+            </v-row>
             <v-row class="mx-n7">
-                <v-col v-if="!filteredSpaces.length" class="d-flex justify-center align-center mt-5">
+                <v-col v-if="!filteredSpaces.length && !isLoading" class="d-flex justify-center align-center mt-5">
                     <span class="text-h4">No hay espacios disponibles para esos filtros de búsqueda</span>
                 </v-col>
                 <v-col v-else class="px-0">
@@ -174,7 +180,7 @@
                                                 <v-select
                                                     :model-value="reservationTimes[space._id]?.reservationStartTime || null"
                                                     @update:model-value="val => updateReservation(space._id, 'reservationStartTime', val)"
-                                                    :items="calcStartTimeOfSpace(space)"
+                                                    :items="availableTimes[space._id]"
                                                     label="Inicio"
                                                     prepend-icon="mdi-timer-sand"
                                                     variant="outlined"
@@ -251,11 +257,7 @@ export default {
             date: new Date(),
             formattedDate: this.parseToStringDate(new Date()),
             disabledDates: [
-                {
-                    repeat: {
-                        weekdays: [1],
-                    },
-                },
+                { repeat: { weekdays: [1], }, },
             ],
             
             /*** Time variables ***/
@@ -268,7 +270,9 @@ export default {
                 { label: '1 hora', value: 60 },
                 { label: '2 horas', value: 120 },
                 { label: '3 horas', value: 180 },
-            ],            
+            ],    
+            availableTimes: {}, // Cache de horarios disponibles  
+            isLoading: false,      
         };
     },
     mounted() {
@@ -277,17 +281,13 @@ export default {
         this.reservationStore = useReservationStore();
 
         this.generateAllTimes();
-        this.getSpaces();        
-
-        if (this.formattedDate) {
-            this.getReservationsByDate(this.formattedDate);
-        }
-        
+        this.getSpaces();         
     },
     watch: {
-        date(newVal) {
-             this.formattedDate = this.parseToStringDate(newVal); 
-             this.getReservationsByDate(this.formattedDate);
+        async date(newVal) {
+            this.formattedDate = this.parseToStringDate(newVal);
+            this.reservationsByDate = null;
+            this.filterSpaces(); 
         },
         startTime(newVal) {
             this.filterSpaces();
@@ -302,24 +302,32 @@ export default {
     },
     methods: {
         getSpaces() {
+            this.isLoading = true;
             spaceService.getSpaces()
                 .then(res => {
                     this.spaces = res.data.spaces;
-                    this.filteredSpaces = res.data.spaces;
                     this.filterSpaces();
                 })
                 .catch(error => {
                     console.error(error);
+                }).finally(() => {
+                    this.isLoading = false; // Desactivamos el loader al terminar la carga
                 });
         },
         async getReservationsByDate(date) {
             const parsedDate = this.parseToYYYYMMDD(date);
             try{
                 const response = await reservationService.getReservationsByDate(parsedDate);
-                this.reservationsByDate = response.data.reservations;
+                this.reservationsByDate = response.data.reservations;    
             }catch(error){
                 console.error(error);
             }
+        },
+        updateAvailableTimes() {
+            this.availableTimes = this.spaces.reduce((acc, space) => {
+                acc[space._id] = this.calcStartTimeOfSpace(space); // Guardamos los horarios del espacio                
+                return acc;
+            }, {});
         },
         updateReservation(spaceId, key, value) {
             if (!this.reservationTimes[spaceId]) {
@@ -331,25 +339,31 @@ export default {
                 this.reservationTimes[spaceId].reservationEndTime = null;
             }
         },
-        filterSpaces(){
+        async filterSpaces() {
+            this.isLoading = true;
+            if (!this.reservationsByDate || this.reservationsByDate.length === 0) {
+                await this.getReservationsByDate(this.formattedDate); // Asegurar que tenga datos
+            }
+
+            this.updateAvailableTimes();
+
             this.filteredSpaces = this.spaces.filter(space => {
-                const matchesStartTime = this.startTime == null || (this.makeHoursAndMinutes(space.opening) <= this.startTime && this.makeHoursAndMinutes(space.closing) > this.startTime);
+                const isAvailable = this.availableTimes[space._id] || []; // Accedemos a los horarios pre-cargados
+
+                if (isAvailable.length === 0) {
+                    return false; // Excluye espacios sin horarios disponibles
+                }
+
+                const matchesStartTime = this.startTime == null || 
+                    (this.makeHoursAndMinutes(space.opening) <= this.startTime && 
+                    this.makeHoursAndMinutes(space.closing) > this.startTime);
+
                 const matchesDuration = this.durationSearched == null || space.duration <= this.durationSearched;
                 const matchesSeats = this.reservationSeats == null || space.seats >= this.reservationSeats;
-                                
-                // Retorna true solo si cumple todas las condiciones
+
                 return matchesStartTime && matchesDuration && matchesSeats;
             });
-        },
-        generateAllTimes() {
-            const times = [];
-            for (let hour = 0; hour < 24; hour++) {
-                for (let minute = 0; minute < 60; minute += 15) {
-                    const formattedTime = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
-                    times.push(formattedTime);
-                }
-            }
-            return times;
+            this.isLoading = false;
         },
         calcStartTimeOfSpace(space) {
             return this.calcFrameTimesOfSpace(space._id, space.opening, space.closing, 15, space.duration, true);
@@ -421,6 +435,24 @@ export default {
             }
 
             return hours;
+        },
+        disablePastDates(date) {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const selectedDate = new Date(date);
+            selectedDate.setHours(0, 0, 0, 0);
+
+            return selectedDate < today; // Desactiva fechas pasadas
+        },
+        generateAllTimes() {
+            const times = [];
+            for (let hour = 0; hour < 24; hour++) {
+                for (let minute = 0; minute < 60; minute += 15) {
+                    const formattedTime = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+                    times.push(formattedTime);
+                }
+            }
+            return times;
         },
         makeMinutes(time) {
             const [hour, minutes] = time.split(':').map(Number);
