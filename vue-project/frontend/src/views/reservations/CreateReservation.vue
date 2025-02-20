@@ -430,7 +430,7 @@ export default {
                     }
                     currentSeats += event.change;
                 }
-                console.log(hoursReserved);
+                this.reservationStore.setHoursReservedBySpace(space._id, hoursReserved);
             }
 
             // Bucle para calcular los intervalos según la duración y los asientos reservados

@@ -47,7 +47,7 @@
                                     ></v-icon>
                                 </v-col>
                                 <v-col class="ml-n4 mr-7">
-                                    <span class="text-h6">Hora de inicio: {{parseHoursAndMinutes(this.reservation.startTime)}}</span>
+                                    <span class="text-h6">Hora de inicio: {{parseDateInHoursAndMinutes(this.reservation.startTime)}}</span>
                                 </v-col>
                                 <v-col cols="1">
                                     <v-icon
@@ -56,7 +56,7 @@
                                     ></v-icon>
                                 </v-col>
                                 <v-col class="ml-n7 mr-7">
-                                    <span class="text-h6">Hora de fin: {{parseHoursAndMinutes(this.reservation.endTime)}}</span>
+                                    <span class="text-h6">Hora de fin: {{parseDateInHoursAndMinutes(this.reservation.endTime)}}</span>
                                 </v-col>
                             </v-row>
                             <v-divider/>
@@ -155,9 +155,10 @@ export default{
             space: null,
             showSpaceInfo: false,
 
-            openingTime: null,
-            closingTime: null,
             reservationSeats: 1,
+            hoursReserved: null,
+            maxSeatsAllowed: null,
+
             repetition: 'no_repeat', 
             repetitionOptions: [
                 { label: 'No repetir', value: 'no_repeat' },
@@ -174,8 +175,8 @@ export default{
     },
     watch: {
         reservationSeats(newValue) {
-            if(newValue > this.space.seats) {
-                this.reservationSeats = this.reservationSeats-1;
+            if(newValue > this.maxSeatsAllowed) {
+                this.reservationSeats = this.reservationSeats - 1;
             }
         }
     },
@@ -185,13 +186,18 @@ export default{
         this.space = this.spaceStore.getSelectedSpace;
         this.reservation = this.reservationStore.getReservation;
 
-        if (!this.space && !this.reservation) {
+        if (!this.space || !this.reservation) {
             this.$router.push('/createReservation'); // Redirigir al componente padre
         }
 
-        this.openingTime = this.makeHoursAndMinutes(this.space?.opening);
-        this.closingTime = this.makeHoursAndMinutes(this.space?.closing);
-        this.reservationSeats = this.reservation?.seatsReserved;        
+        this.hoursReserved = this.reservationStore.getHoursReservedBySpace(this.space._id);
+
+        this.reservationSeats = this.reservation?.seatsReserved; 
+        this.maxSeatsAllowed = this.reservation?.seatsReserved; 
+
+        if(this.hoursReserved || this.hoursReserved.length > 0) {
+            this.calcSeatsAllowed();
+        }      
                 
     },
     methods: {
@@ -215,15 +221,40 @@ export default{
                 console.error(error);
             }
         },
-        makeHoursAndMinutes(minutes) {
-            const hours = Math.floor(minutes / 60);
-            const mins = minutes % 60;
+        calcSeatsAllowed() {
+            const startTime = this.parseDateInHoursAndMinutes(this.reservation.startTime);
+            const endTime = this.parseDateInHoursAndMinutes(this.reservation.endTime);
 
-            // Formatea con ceros a la izquierda
-            const formattedHours = String(hours).padStart(2, '0');
-            const formattedMinutes = String(mins).padStart(2, '0');
+            const reservationStartTime = this.makeMinutes(startTime);
+            const reservationEndTime = this.makeMinutes(endTime);
 
-            return `${formattedHours}:${formattedMinutes}`;
+            console.log(this.hoursReserved);
+            
+            let max = 0;
+
+            this.hoursReserved.forEach(reservation => {
+                const startMinutes = reservation.startMinutes;
+                const endMinutes = reservation.endMinutes;
+
+                // Si la reserva está completamente antes de las existentes, la ignoramos
+                if (reservationStartTime < startMinutes && reservationEndTime < endMinutes) {
+                    console.log("Las horas escogidas son antes de las reservadas");
+                    return; // Saltamos esta iteración
+                }
+                // Si la reserva está completamente después de las existentes, la ignoramos
+                if (reservationStartTime > startMinutes && reservationEndTime > endMinutes) {
+                    console.log("Las horas escogidas son después de las reservadas");
+                    return; // Saltamos esta iteración
+                }
+
+                // Encontrar el máximo de asientos reservados en las reservas en conflicto
+                if (reservation.seatsReserved > max) {
+                    max = reservation.seatsReserved;
+                }
+            });
+
+            // Calcular los asientos permitidos
+            this.maxSeatsAllowed = this.space.seats - max;
         },
         routerBack() {
             this.$router.go(-1);
@@ -236,13 +267,26 @@ export default{
         formatDate(date) {
             return new Intl.DateTimeFormat('es-ES', { day: 'numeric', month: 'long', year: 'numeric' }).format(date);
         },
-        parseHoursAndMinutes(date) {            
+        // makeHoursAndMinutes(minutes) {
+        //     const hours = Math.floor(minutes / 60);
+        //     const mins = minutes % 60;
+
+        //     // Formatea con ceros a la izquierda
+        //     const formattedHours = String(hours).padStart(2, '0');
+        //     const formattedMinutes = String(mins).padStart(2, '0');
+
+        //     return `${formattedHours}:${formattedMinutes}`;
+        // },
+        parseDateInHoursAndMinutes(date) {            
             const dateObj = new Date(date);
             const hours = String(dateObj.getUTCHours()).padStart(2, '0'); 
             const mins = String(dateObj.getUTCMinutes()).padStart(2, '0');
             return `${hours}:${mins}`;
-        }
-
+        },
+        makeMinutes(time) {
+            const [hour, minutes] = time.split(':').map(Number);
+            return hour * 60 + minutes;
+        },
     }
 }
 </script>
