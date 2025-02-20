@@ -29,7 +29,6 @@
                                         >{{ formattedDate }}</v-text-field>
                                         </template>
                                         <v-date-picker class="ml-10"
-                                            :disabled-dates="disabledDates"
                                             :min-date='new Date()'
                                             is-required
                                             v-model="date"
@@ -231,6 +230,7 @@ import { useUserStore } from '@/store/userStore';
 import { useSpaceStore } from '@/store/spaceStore';
 import { useReservationStore } from '@/store/reservationStore';
 import TonalButton from '@/components/TonalButton.vue';
+import { end } from '@popperjs/core';
 
 export default {
     components: {
@@ -255,9 +255,6 @@ export default {
             /*** Dates variables ***/
             date: new Date(),
             formattedDate: this.parseToStringDate(new Date()),
-            disabledDates: [
-                { repeat: { weekdays: [1], }, },
-            ],
             
             /*** Time variables ***/
             startTime: null,
@@ -285,7 +282,8 @@ export default {
     watch: {
         async date(newVal) {            
             this.formattedDate = this.parseToStringDate(newVal);
-            this.reservationsByDate = null;
+            this.reservationsByDate = [];
+            this.reservationTimes = {};
             this.filterSpaces(); 
         },
         startTime(newVal) {
@@ -294,9 +292,11 @@ export default {
         },
         durationSearched(newVal) {
             this.filterSpaces();
+            this.reservationTimes = {};
         },
         reservationSeats(newVal) {
             this.filterSpaces();
+            this.reservationTimes = {};
         },
     },
     methods: {
@@ -314,7 +314,7 @@ export default {
             const parsedDate = this.parseToYYYYMMDD(date);
             try{
                 const response = await reservationService.getReservationsByDate(parsedDate);
-                this.reservationsByDate = response.data.reservations;    
+                this.reservationsByDate = response.data.reservations;                   
             }catch(error){
                 console.error(error);
             }
@@ -380,80 +380,142 @@ export default {
             this.isLoading = false;
         },
         calcStartTimeOfSpace(space) {
-            return this.calcFrameTimesOfSpace(space._id, space.opening, space.closing, 15, space.duration, true);
+            return this.calcFrameTimesOfSpace(space, space.opening, space.closing, 15, space.duration, true);
         },
         calcEndTimeOfSpace(space) { 
             if (this.reservationTimes[space._id] != null && this.reservationTimes[space._id].reservationStartTime != undefined) {
                 const start = this.makeMinutes(this.reservationTimes[space._id].reservationStartTime);
-                return this.calcFrameTimesOfSpace(space._id, start + space.duration, space.closing, space.duration, space.duration, false);
+                return this.calcFrameTimesOfSpace(space, start + space.duration, space.closing, space.duration, space.duration, false);
             }
         },
-        calcFrameTimesOfSpace(spaceId, startingTime, endingTime, interval, duration, needsVerification) {
-            const hours = [];
-            const hoursReserved = [];
+        calcFrameTimesOfSpace(space, startingTime, endingTime, interval, duration, needsVerification) {
+            const availableHours = [];
+            const hoursReserved = [];                        
 
             if (this.reservationsByDate.length > 0 ) {
-                this.reservationsByDate.map(reservation => {
-                    if (reservation.spaceId === spaceId) {
-                        hoursReserved.push({
-                            start: this.getHoursAndMinsFromDate(reservation.startTime),
-                            end: this.getHoursAndMinsFromDate(reservation.endTime)
-                        });
-                    }
+                const events = this.reservationsByDate
+                .filter(reservation => reservation.spaceId === space._id)
+                .flatMap(reservation => {
+                    const startTimeStr = this.getHoursAndMinsFromDate(reservation.startTime);
+                    const endTimeStr = this.getHoursAndMinsFromDate(reservation.endTime);
+                    const seats = reservation.seatsReserved;
+                    const startMinutes = this.makeMinutes(startTimeStr);
+                    const endMinutes = this.makeMinutes(endTimeStr);
+                    return [
+                        { time: startMinutes, change: seats },              // Evento de inicio: se suman los asientos
+                        { time: endMinutes, change: -seats }                // Evento de fin: se restan los asientos
+                    ];
                 });
+                
+                // Ordenar los eventos por tiempo
+                events.sort((a, b) => a.time - b.time);
+                
+                let currentSeats = 0;
+                let currentTime = events[0] ? events[0].time : 0;
+                
+                // Recorrer los eventos para crear los intervalos con reservas acumuladas
+                for (let i = 0; i < events.length; i++) {
+                    const event = events[i];
+                    if (event.time !== currentTime) {
+                        if (currentSeats !== 0) {
+                            hoursReserved.push({
+                                start: this.makeHoursAndMinutes(currentTime),
+                                end: this.makeHoursAndMinutes(event.time),
+                                startMinutes: currentTime,                      // valor de start en minutos
+                                endMinutes: event.time,                         // valor de end en minutos
+                                seatsReserved: currentSeats
+                            });
+                        }
+                        currentTime = event.time;
+                    }
+                    currentSeats += event.change;
+                }
+                console.log(hoursReserved);
             }
 
-            // Bucle para calcular los intervalos según la duración
+            // Bucle para calcular los intervalos según la duración y los asientos reservados
             for (let time = startingTime; time <= endingTime; time += interval) {
                 if (needsVerification && time + duration > endingTime) break;
 
-                const hoursPart = Math.floor(time / 60).toString().padStart(2, '0');
-                const minutesPart = (time % 60).toString().padStart(2, '0');
-                const currentTime = `${hoursPart}:${minutesPart}`;
+                const currentTime = this.makeHoursAndMinutes(time);
 
-                // Verificar si la hora está en un intervalo reservado
-                let isReserved = false;
-                let isEnd = false;
-                for (const reservation of hoursReserved) {
-                    const startMinutes = parseInt(reservation.start.split(":")[0]) * 60 + parseInt(reservation.start.split(":")[1]);
-                    const endMinutes = parseInt(reservation.end.split(":")[0]) * 60 + parseInt(reservation.end.split(":")[1]);
+                if (this.reservationsByDate.length > 0 ) {          //Solo se tratarán los tiempos cuando haya reservas ese día                    
+                    // Utilizamos la función isTimeReserved para determinar si 'time' está en un intervalo reservado
+                    const { reserved, isEnd } = this.isTimeReserved(time, duration, hoursReserved, space, needsVerification);
 
-                    if (time === startMinutes && needsVerification == false) {     //Si needsVerification es false, entonces está calculando las horas del final
-                        isEnd = true;                                              // y por lo tanto, si encuentra una hora que coincide con el inicio de otra reserva, no debe agregar más horas
-                        break; // No es necesario seguir buscando
+                    if (reserved) {
+                        continue; // Saltar esta iteración si está dentro de un intervalo reservado
                     }
-
-                    if(time + duration > startMinutes && time + duration < endMinutes){
-                        // Si time + duration está dentro del intervalo reservado, no agregar a la lista
-                        // serán las horas previas a una reserva que coincida con el inicio de otra reserva
-                        isReserved = true
-                        break;
-                    }
-
-                    if (time >= startMinutes && time < endMinutes) {
-                        isReserved = true;
-                        break; // No es necesario seguir buscando
+                    if (isEnd) {
+                        availableHours.push(currentTime);
+                        break; // Finalizar el bucle si se cumple la condición de "isEnd", después de agregar la última hora a la lista
                     }
                 }
 
-                if (isReserved) {
-                    continue; // Saltar esta iteración si está dentro de un intervalo reservado
-                }
                 // Si no está en un rango reservado, agregar a la lista
-                hours.push(currentTime);
-                if (isEnd) {                  
-                    break; 
+                availableHours.push(currentTime);
+            }
+            return availableHours;
+        },
+        isTimeReserved(time, duration, hoursReserved, space, needsVerification) {
+            const reservationInterval = this.binarySearchReservation(time, duration, hoursReserved);
+            //console.log(reservationInterval);
+            
+            // Si no hay ningún intervalo que contenga el tiempo, no está reservado.
+            if (!reservationInterval) {
+                // console.log("ES NULO. Tiempo: ", time);
+                // console.log("S NULO. reservationInterval: ", reservationInterval);
+                return { reserved: false, isEnd: false };
+            }
+
+            // console.log("Tiempo: ", time);
+            // console.log("reservationInterval: ", reservationInterval);
+
+            if(!needsVerification && time + duration > reservationInterval.startMinutes && reservationInterval.seatsReserved >= space.seats){
+                return { reserved: false, isEnd: true };
+            }
+
+            if(!needsVerification && time >= reservationInterval.startMinutes && reservationInterval.seatsReserved >= space.seats){
+                return { reserved: false, isEnd: true };
+            }
+
+            if (time + duration > reservationInterval.startMinutes && time + duration < reservationInterval.endMinutes && reservationInterval.seatsReserved >= space.seats) {
+                return { reserved: true, isEnd: false };
+            }
+
+            if(time === reservationInterval.startMinutes && reservationInterval.seatsReserved < space.seats){
+                return { reserved: false, isEnd: false };
+            }
+
+            if(time >= reservationInterval.startMinutes && reservationInterval.seatsReserved >= space.seats){
+                return { reserved: true, isEnd: false };
+            }
+
+            // Si ninguna condición se cumple, no está reservado.
+            return { reserved: false, isEnd: false };
+        },
+        binarySearchReservation(time, duration, hoursReserved) {
+            let low = 0;
+            let high = hoursReserved.length - 1;
+            while (low <= high) {
+                const mid = Math.floor((low + high) / 2);
+                const interval = hoursReserved[mid];
+                // Si el tiempo se encuentra dentro de este intervalo, lo devolvemos
+                if (time >= interval.startMinutes && time < interval.endMinutes) {
+                    return interval; 
+                }
+                if (time + duration >= interval.startMinutes && time + duration < interval.endMinutes) {
+                    return interval; 
+                }
+                // Si el tiempo es menor que el inicio del intervalo del medio, buscamos a la izquierda
+                if (time < interval.startMinutes) {
+                    high = mid - 1;
+                } else { // Si el tiempo es mayor o igual al final, buscamos a la derecha
+                    low = mid + 1;
                 }
             }
-            return hours;
-        },
-        disablePastDates(date) {
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            const selectedDate = new Date(date);
-            selectedDate.setHours(0, 0, 0, 0);
-
-            return selectedDate < today; // Desactiva fechas pasadas
+            // Si no se encontró ningún intervalo que contenga 'time', devolvemos null
+            return null;
         },
         generateAllTimes() {
             const times = [];

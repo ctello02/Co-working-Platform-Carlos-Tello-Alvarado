@@ -164,6 +164,7 @@ export default{
                 { label: 'Cada día', value: 'daily' },
                 { label: 'Todos los días laborales (de lunes a viernes)', value: 'workdays' },
                 { label: 'Cada semana este día', value: 'weekly' },
+                { label: 'Cada mes este día', value: 'monthly' },
             ],
 
             rules: {
