@@ -62,7 +62,7 @@
                             <v-divider/>
                             <v-row class="mt-5 mb-n8">
                                 <v-col cols="5">
-                                    <v-text-field
+                                    <!-- <v-text-field
                                         v-model.number="reservationSeats"
                                         label="Número de asientos"
                                         prepend-icon="mdi-table-chair"
@@ -72,7 +72,19 @@
                                         required
                                         @input="reservationSeats = Math.max(1, reservationSeats)"
                                         :rules="[rules.max]"
+                                    /> -->
+                                    <v-text-field
+                                        v-model.number="reservationSeats"
+                                        label="Número de asientos"
+                                        prepend-icon="mdi-table-chair"
+                                        type="number"
+                                        variant="outlined"
+                                        density="compact"
+                                        required
+                                        @input="reservationSeats = Math.max(1, reservationSeats)"
                                     />
+
+
                                 </v-col>
                                 <v-col v-if="this.space.repetition">
                                     <v-select
@@ -100,10 +112,24 @@
                                     </v-row>
                                 </v-col>
                             </v-row>
+                            <v-row class="mt-n3 mb-n4">
+                                <v-col>
+                                    <v-fade-transition>
+                                        <v-alert
+                                            v-if="reservationSeats >= maxSeatsAllowed"
+                                            type="warning"
+                                            density="compact"
+                                            variant="tonal"
+                                        >
+                                            No se pueden reservar más de {{ maxSeatsAllowed }} asientos.
+                                        </v-alert>
+                                    </v-fade-transition>
+                                </v-col>
+                            </v-row>
                         </v-col>
                     </v-card-text>
                     <v-card-actions>
-                        <v-row class="mt-n3 mb-3 mr-2 d-flex justify-end ga-3">
+                        <v-row class="mt-n6 mb-3 mr-2 d-flex justify-end ga-3">
                             <TonalButton
                                 color="grey"
                                 text="Volver"
@@ -155,7 +181,7 @@ export default{
             space: null,
             showSpaceInfo: false,
 
-            reservationSeats: 1,
+            reservationSeats: 0,
             hoursReserved: null,
             maxSeatsAllowed: null,
 
@@ -169,7 +195,7 @@ export default{
             ],
 
             rules: {
-                max: value => value <= this.space.seats || 'Se ha superado el número máximo de asientos',
+                max: value => value < this.maxSeatsAllowed || 'No se pueden reservar más asientos',
             }
         }
     },
@@ -178,7 +204,7 @@ export default{
             if(newValue > this.maxSeatsAllowed) {
                 this.reservationSeats = this.reservationSeats - 1;
             }
-        }
+        },
     },
     mounted() {
         this.reservationStore = useReservationStore();
@@ -188,62 +214,38 @@ export default{
 
         if (!this.space || !this.reservation) {
             this.$router.push('/createReservation'); // Redirigir al componente padre
-        }
+        }else {
+            this.hoursReserved = this.reservationStore.getHoursReservedBySpace(this.space._id);
 
-        this.hoursReserved = this.reservationStore.getHoursReservedBySpace(this.space._id);
+            this.reservationSeats = this.reservation?.seatsReserved; 
 
-        this.reservationSeats = this.reservation?.seatsReserved; 
-        this.maxSeatsAllowed = this.reservation?.seatsReserved; 
-
-        if(this.hoursReserved || this.hoursReserved.length > 0) {
             this.calcSeatsAllowed();
-        }      
+        }
                 
     },
     methods: {
-        async confirmReservation() {
-            const formData = new FormData();
-            const toast = useToast();
-
-            formData.append('spaceId', this.reservation.spaceId);
-            formData.append('userId', this.reservation.userId);
-            formData.append('startTime', this.reservation.startTime);
-            formData.append('endTime', this.reservation.endTime);
-            formData.append('seatsReserved', this.reservationSeats);
-            formData.append('repetition', this.repetition);
-
-            try {
-                const res = await reservationService.createReservation(formData);
-                console.log(res.data);
-                toast.success('Reserva creada con éxito');
-                this.$router.push('/reservations');
-            } catch (error) {
-                console.error(error);
-            }
-        },
         calcSeatsAllowed() {
+            if (!this.hoursReserved || this.hoursReserved.length === 0) {
+                this.maxSeatsAllowed = this.space.seats; // Si no hay reservas, todos los asientos están disponibles
+                return;
+            }
+
             const startTime = this.parseDateInHoursAndMinutes(this.reservation.startTime);
             const endTime = this.parseDateInHoursAndMinutes(this.reservation.endTime);
 
             const reservationStartTime = this.makeMinutes(startTime);
             const reservationEndTime = this.makeMinutes(endTime);
-
-            console.log(this.hoursReserved);
             
             let max = 0;
 
-            this.hoursReserved.forEach(reservation => {
+            this.hoursReserved?.forEach(reservation => {
                 const startMinutes = reservation.startMinutes;
                 const endMinutes = reservation.endMinutes;
 
-                // Si la reserva está completamente antes de las existentes, la ignoramos
-                if (reservationStartTime < startMinutes && reservationEndTime < endMinutes) {
-                    console.log("Las horas escogidas son antes de las reservadas");
-                    return; // Saltamos esta iteración
-                }
-                // Si la reserva está completamente después de las existentes, la ignoramos
-                if (reservationStartTime > startMinutes && reservationEndTime > endMinutes) {
-                    console.log("Las horas escogidas son después de las reservadas");
+                // Si la reserva está completamente antes o después de las existentes, la ignoramos
+                if (reservationStartTime < startMinutes && reservationEndTime < startMinutes ||
+                    reservationStartTime > endMinutes && reservationEndTime > endMinutes
+                ) {
                     return; // Saltamos esta iteración
                 }
 
@@ -267,16 +269,6 @@ export default{
         formatDate(date) {
             return new Intl.DateTimeFormat('es-ES', { day: 'numeric', month: 'long', year: 'numeric' }).format(date);
         },
-        // makeHoursAndMinutes(minutes) {
-        //     const hours = Math.floor(minutes / 60);
-        //     const mins = minutes % 60;
-
-        //     // Formatea con ceros a la izquierda
-        //     const formattedHours = String(hours).padStart(2, '0');
-        //     const formattedMinutes = String(mins).padStart(2, '0');
-
-        //     return `${formattedHours}:${formattedMinutes}`;
-        // },
         parseDateInHoursAndMinutes(date) {            
             const dateObj = new Date(date);
             const hours = String(dateObj.getUTCHours()).padStart(2, '0'); 
@@ -286,6 +278,26 @@ export default{
         makeMinutes(time) {
             const [hour, minutes] = time.split(':').map(Number);
             return hour * 60 + minutes;
+        },
+        async confirmReservation() {
+            const formData = new FormData();
+            const toast = useToast();
+
+            formData.append('spaceId', this.reservation.spaceId);
+            formData.append('userId', this.reservation.userId);
+            formData.append('startTime', this.reservation.startTime);
+            formData.append('endTime', this.reservation.endTime);
+            formData.append('seatsReserved', this.reservationSeats);
+            formData.append('repetition', this.repetition);
+
+            try {
+                const res = await reservationService.createReservation(formData);
+                console.log(res.data);
+                toast.success('Reserva creada con éxito');
+                this.$router.push('/reservations');
+            } catch (error) {
+                console.error(error);
+            }
         },
     }
 }
