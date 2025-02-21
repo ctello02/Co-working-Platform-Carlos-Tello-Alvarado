@@ -243,8 +243,8 @@ export default{
                 const endMinutes = reservation.endMinutes;
 
                 // Si la reserva está completamente antes o después de las existentes, la ignoramos
-                if (reservationStartTime < startMinutes && reservationEndTime < startMinutes ||
-                    reservationStartTime > endMinutes && reservationEndTime > endMinutes
+                if (reservationStartTime < startMinutes && reservationEndTime <= startMinutes ||
+                    reservationStartTime >= endMinutes && reservationEndTime > endMinutes
                 ) {
                     return; // Saltamos esta iteración
                 }
