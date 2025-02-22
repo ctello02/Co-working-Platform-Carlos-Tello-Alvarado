@@ -265,7 +265,7 @@ export default {
                 { label: '30 mins', value: 30 },
                 { label: '1 hora', value: 60 },
                 { label: '2 horas', value: 120 },
-                { label: '3 horas', value: 180 },
+                { label: '3 horas o más', value: 180 },
             ],    
             availableTimes: {}, // Cache de horarios disponibles  
             isLoading: false,      
@@ -286,15 +286,15 @@ export default {
             this.reservationTimes = {};
             this.filterSpaces(); 
         },
-        startTime(newVal) {
+        startTime() {
+            this.filterSpaces();
+            //this.reservationTimes = {};
+        },
+        durationSearched() {
             this.filterSpaces();
             this.reservationTimes = {};
         },
-        durationSearched(newVal) {
-            this.filterSpaces();
-            this.reservationTimes = {};
-        },
-        reservationSeats(newVal) {
+        reservationSeats() {
             this.filterSpaces();
             this.reservationTimes = {};
         },
@@ -362,7 +362,7 @@ export default {
             this.updateAvailableTimes();
 
             this.filteredSpaces = this.spaces.filter(space => {
-                const isAvailable = this.availableTimes[space._id] || []; // Accedemos a los horarios pre-cargados
+                const isAvailable = this.availableTimes[space._id] || []; // Accedemos a los horarios pre-cargados                
 
                 if (isAvailable.length === 0) {
                     return false; // Excluye espacios sin horarios disponibles
@@ -370,14 +370,47 @@ export default {
 
                 const matchesStartTime = this.startTime == null || 
                     (this.makeHoursAndMinutes(space.opening) <= this.startTime && 
-                    this.makeHoursAndMinutes(space.closing) > this.startTime);
+                    this.makeHoursAndMinutes(space.closing) > this.startTime && 
+                    this.availableTimes[space._id].includes(this.startTime));
 
-                const matchesDuration = this.durationSearched == null || space.duration <= this.durationSearched;
+                const matchesDuration = this.durationSearched == null || 
+                    (space.duration <= this.durationSearched &&
+                    this.calcDurationAvailable(this.durationSearched, this.availableTimes[space._id], space));
+
                 const matchesSeats = this.reservationSeats == null || space.seats >= this.reservationSeats;
 
                 return matchesStartTime && matchesDuration && matchesSeats;
             });
             this.isLoading = false;
+        },
+        calcDurationAvailable(duration, availableTimes, space) {
+            let flag = false;
+
+            console.log(availableTimes);   
+                        
+            for (const time of availableTimes) {
+                const timeInMinutes = this.makeMinutes(time);
+                const temp = this.makeHoursAndMinutes(timeInMinutes + space.duration);
+                const timeToSearch = this.makeHoursAndMinutes(timeInMinutes + duration);
+                const closingTime = this.makeHoursAndMinutes(space.closing - duration);
+
+                console.log("time: " + time);
+                console.log("temp: " + temp);
+                console.log("timeToSearch: " + timeToSearch);
+                console.log("startTime: " + this.startTime);
+                console.log("closingTime: " + closingTime);
+
+                if (availableTimes.includes(timeToSearch)) {
+                    flag = true;
+                    break;
+                }
+
+
+
+                console.log("-------------------------------------");
+            }
+            console.log("DEVUELVE EL ÚLTIMO FLAG: " + flag);
+            return flag;
         },
         calcStartTimeOfSpace(space) {
             return this.calcFrameTimesOfSpace(space, space.opening, space.closing, 15, space.duration, true);
