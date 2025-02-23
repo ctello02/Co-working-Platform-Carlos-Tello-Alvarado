@@ -231,6 +231,7 @@ import { useSpaceStore } from '@/store/spaceStore';
 import { useReservationStore } from '@/store/reservationStore';
 import TonalButton from '@/components/TonalButton.vue';
 import { end } from '@popperjs/core';
+import { all } from 'axios';
 
 export default {
     components: {
@@ -384,59 +385,96 @@ export default {
             this.isLoading = false;
         },
         calcDurationAvailable(duration, availableTimes, space) {
-            let flag = false;
+            
             let hoursReserved = this.reservationStore.getHoursReservedBySpace(space._id) || [];
             
-            if (hoursReserved != null && hoursReserved.length > 0) {
-                // hoursReserved = hoursReserved.filter(hr => hr.startMinutes >= (new Date().getHours() * 60 + new Date().getMinutes()));
-                // for(let time of hoursReserved) {
-                //     availableTimes.push(time.start);
-                // }
+            //--------------------Si no hay reservas--------------------//
+            const first = this.makeMinutes(availableTimes[0]);
+
+            if (!hoursReserved || hoursReserved.length === 0){
+                const total = space.closing - first;
+                return total >= duration;
+            }
+            //---------------------------------------------------------//
+
+            //------------------------- Si hay ------------------------//
+
+            //Quitamos de las hoursReserved, las horas que no tienen todos los asientos completos
+            hoursReserved = hoursReserved.filter((hour) => hour.seatsReserved >= space.seats); 
+
+            const allTimes = [];
+            for (let minute = first; minute <= space.closing; minute += 15) {
+                allTimes.push(minute);
             }
 
-            const availableMinutes = availableTimes.map(time => this.makeMinutes(time));
+            let flag = false;
 
-            //availableMinutes.sort((a, b) => a - b);
-
-            for (let time = availableMinutes[availableMinutes.length - 1] + 15; time <= space.closing; time += 15) {
-                availableMinutes.push(time);
-            }
-
-            console.log(availableMinutes);   
-                        
-            for (let i = 0; i < availableMinutes.length; i++) {
-                const timeToSearch = availableMinutes[i] + duration;
-                console.log("availableMinutes[i]: " + availableMinutes[i] + " o " + availableMinutes[i]/60);
-                console.log("timeToSearch: " + timeToSearch + " o " + timeToSearch/60);
-
-                // if (hoursReserved != null && hoursReserved.length > 0) {
-                //     console.log(hoursReserved);
-                    
-                //     if(hoursReserved.some(hr => hr.startMinutes <= timeToSearch && hr.endMinutes >= timeToSearch)){
-                //         flag = false;
-                //         continue;
-                //     }
-                    
-                //     // flag = false;
-                //     // continue;
-                // }
-
-                if(availableMinutes.includes(timeToSearch)){
-                    flag = true;
-                    break;
-                }
-
-                if (timeToSearch >= space.closing) {
-                    flag = false;
-                    break;
-                }
+            for(let time of allTimes) {
                 
-                console.log("-------------------------------------");
-            }
+                for (let hourReserved of hoursReserved){
 
+                    // Si el tiempo+duration cae fuera del horario, entonces flag = false
+                    if((time + duration > space.closing)){
+                        flag = false;           // Da igual si hay más reservas, que ese tiempo ya no es válido
+                        break;
+                    }
+
+                    // Si el tiempo actual está en el intervalo de una reserva, entonces flag = false
+                    // (si el tiempo caba en la reserva entonces puede seguir comprobando ese tiempo en los siguientes ifs)
+                    if((time >= hourReserved.startMinutes && time < hourReserved.endMinutes)){
+                        flag = false;           // Da igual si hay más reservas, que ese tiempo ya no es válido
+                        break;
+                    }
+
+
+                    // Si el tiempo actual y el tiempo+duración están totalmente después de una reserva, 
+                    // entonces flag = true y se debe seguir mirando, a ver si hay otra reserva
+                    if(time >= hourReserved.endMinutes && time+duration >= hourReserved.endMinutes){
+                        // console.log(hourReserved);
+                        // console.log(time);
+                        // console.log(time+duration);
+                        
+                        // console.log("Entra en el continue");
+                        // console.log("--------------------------------------------");
+                        flag = true;
+                        continue;
+                    }
+                    
+                    
+                    // Si el tiempo actual y el tiempo+duración están totalmente antes de una reserva, 
+                    // (o al menos acaba justo al principio de otra), entonces flag = true
+                    if(time < hourReserved.startMinutes && time+duration <= hourReserved.startMinutes){
+                        // console.log(hourReserved);
+                        // console.log(time);
+                        // console.log(time+duration);
+                        
+                        // console.log("Entra en el break");
+                        // console.log("--------------------------------------------");
+                        flag = true;
+                        break;
+                    }
+
+                    // Si el tiempo actual está antes de una reserva pero el tiempo+duración
+                    // está después de que haya empezado una reserva, entonces flag = false
+                    if(time < hourReserved.startMinutes && time+duration > hourReserved.startMinutes){
+                        flag = false;           // Da igual si hay más reservas, que ese tiempo ya no es válido
+                        break;                  // Se deben comprobar otros tiempos   
+                    }     
+                    
+                    // Si el tiempo actual y tiempo+duración es igual a la reserva, entonces flag = false
+                    if(time == hourReserved.startMinutes && time+duration == hourReserved.endMinutes){
+                        flag = false;           // Da igual si hay más reservas, que ese tiempo ya no es válido
+                        break;                  // Se deben comprobar otros tiempos   
+                    } 
+                    
+                }
+
+                // Si en la búsqueda, se ha determinado que hay un intervalo disponible para esa duración,
+                // se acaba y retorna true
+                if(flag) return true;
+                
+            }
             
-            console.log("DEVUELVE EL ÚLTIMO FLAG: " + flag);
-            return flag;
         },
         calcStartTimeOfSpace(space) {
             return this.calcFrameTimesOfSpace(space, space.opening, space.closing, 15, space.duration, true);
@@ -518,17 +556,11 @@ export default {
         },
         isTimeReserved(time, duration, hoursReserved, space, needsVerification) {
             const reservationInterval = this.binarySearchReservation(time, duration, hoursReserved);
-            //console.log(reservationInterval);
             
             // Si no hay ningún intervalo que contenga el tiempo, no está reservado.
             if (!reservationInterval) {
-                // console.log("ES NULO. Tiempo: ", time);
-                // console.log("S NULO. reservationInterval: ", reservationInterval);
                 return { reserved: false, isEnd: false };
             }
-
-            // console.log("Tiempo: ", time);
-            // console.log("reservationInterval: ", reservationInterval);
 
             if(!needsVerification && time + duration > reservationInterval.startMinutes && reservationInterval.seatsReserved >= space.seats){
                 return { reserved: false, isEnd: true };
