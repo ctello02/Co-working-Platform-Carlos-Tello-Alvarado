@@ -17,8 +17,9 @@ export const useReservationStore = defineStore({
         setHoursReservedBySpace(spaceId, hours) {
             this.hoursReservedBySpace[spaceId] = hours;
         },
-        clearReservation() {
+        clearStore() {
             this.reservation = null;
+            this.hoursReservedBySpace = {};
         }
     }
 });

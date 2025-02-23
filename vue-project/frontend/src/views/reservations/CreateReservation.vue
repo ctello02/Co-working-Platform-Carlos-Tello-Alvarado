@@ -261,7 +261,6 @@ export default {
             durationSearched: null,
             timeFrames: [
                 { label: '15 mins', value: 15 },
-                { label: '20 mins', value: 20 },
                 { label: '30 mins', value: 30 },
                 { label: '1 hora', value: 60 },
                 { label: '2 horas', value: 120 },
@@ -284,6 +283,7 @@ export default {
             this.formattedDate = this.parseToStringDate(newVal);
             this.reservationsByDate = [];
             this.reservationTimes = {};
+            this.reservationStore.clearStore();
             this.filterSpaces(); 
         },
         startTime() {
@@ -385,30 +385,56 @@ export default {
         },
         calcDurationAvailable(duration, availableTimes, space) {
             let flag = false;
+            let hoursReserved = this.reservationStore.getHoursReservedBySpace(space._id) || [];
+            
+            if (hoursReserved != null && hoursReserved.length > 0) {
+                // hoursReserved = hoursReserved.filter(hr => hr.startMinutes >= (new Date().getHours() * 60 + new Date().getMinutes()));
+                // for(let time of hoursReserved) {
+                //     availableTimes.push(time.start);
+                // }
+            }
 
-            console.log(availableTimes);   
+            const availableMinutes = availableTimes.map(time => this.makeMinutes(time));
+
+            //availableMinutes.sort((a, b) => a - b);
+
+            for (let time = availableMinutes[availableMinutes.length - 1] + 15; time <= space.closing; time += 15) {
+                availableMinutes.push(time);
+            }
+
+            console.log(availableMinutes);   
                         
-            for (const time of availableTimes) {
-                const timeInMinutes = this.makeMinutes(time);
-                const temp = this.makeHoursAndMinutes(timeInMinutes + space.duration);
-                const timeToSearch = this.makeHoursAndMinutes(timeInMinutes + duration);
-                const closingTime = this.makeHoursAndMinutes(space.closing - duration);
+            for (let i = 0; i < availableMinutes.length; i++) {
+                const timeToSearch = availableMinutes[i] + duration;
+                console.log("availableMinutes[i]: " + availableMinutes[i] + " o " + availableMinutes[i]/60);
+                console.log("timeToSearch: " + timeToSearch + " o " + timeToSearch/60);
 
-                console.log("time: " + time);
-                console.log("temp: " + temp);
-                console.log("timeToSearch: " + timeToSearch);
-                console.log("startTime: " + this.startTime);
-                console.log("closingTime: " + closingTime);
+                // if (hoursReserved != null && hoursReserved.length > 0) {
+                //     console.log(hoursReserved);
+                    
+                //     if(hoursReserved.some(hr => hr.startMinutes <= timeToSearch && hr.endMinutes >= timeToSearch)){
+                //         flag = false;
+                //         continue;
+                //     }
+                    
+                //     // flag = false;
+                //     // continue;
+                // }
 
-                if (availableTimes.includes(timeToSearch)) {
+                if(availableMinutes.includes(timeToSearch)){
                     flag = true;
                     break;
                 }
 
-
-
+                if (timeToSearch >= space.closing) {
+                    flag = false;
+                    break;
+                }
+                
                 console.log("-------------------------------------");
             }
+
+            
             console.log("DEVUELVE EL ÚLTIMO FLAG: " + flag);
             return flag;
         },
