@@ -117,7 +117,7 @@
                                         height="200px"
                                         cover
                                     ></v-img>
-                                    <v-card-title class="text-h5">{{space?.name}}</v-card-title>
+                                    <v-card-title class="text-h4 mb-1">{{space?.name}}</v-card-title>
                                     <v-card-text>
                                         <v-row class="d-flex align-center">
                                             <v-col>
@@ -126,7 +126,7 @@
                                                         <v-icon
                                                             size="small"
                                                             icon="mdi-weather-sunny"
-                                                        ></v-icon>
+                                                        />
                                                     </v-col>
                                                     <v-col><span class="text-h6">Abre: {{this.makeHoursAndMinutes(space?.opening)}}</span></v-col>
                                                 </v-row>
@@ -137,7 +137,7 @@
                                                         <v-icon
                                                             size="small"
                                                             icon="mdi-weather-night"
-                                                        ></v-icon>
+                                                        />
                                                     </v-col>
                                                     <v-col><span class="text-h6">Cierra: {{this.makeHoursAndMinutes(space?.closing)}}</span></v-col>
                                                 </v-row>
@@ -159,17 +159,17 @@
                                                     </v-col>
                                                 </v-row>
                                             </v-col>
-                                            <v-col cols="12" >
-                                                <v-row>
-                                                    <v-col cols="1" class="d-flex align-center">
+                                        </v-row>
+                                        <v-row>
+                                            <v-col>
+                                                <v-row class="d-flex align-center">
+                                                    <v-col cols="1">
                                                         <v-icon
                                                             icon="mdi-table-chair"
                                                             size="small"
                                                         />
                                                     </v-col>
-                                                    <v-col>
-                                                        <span class="text-h6">Máx. {{space?.seats}} asientos</span>
-                                                    </v-col>
+                                                    <v-col><span class="text-h6">Máx. {{space?.seats}} asientos</span></v-col>
                                                 </v-row>
                                             </v-col>
                                         </v-row>
@@ -177,7 +177,7 @@
                                             <v-col>
                                                 <v-select
                                                     :model-value="reservationTimes[space._id]?.reservationStartTime || null"
-                                                    @update:model-value="val => updateReservation(space._id, 'reservationStartTime', val)"
+                                                    @update:model-value="val => updateReservation(space, 'reservationStartTime', val)"
                                                     :items="availableTimes[space._id]"
                                                     label="Inicio"
                                                     prepend-icon="mdi-timer-sand"
@@ -189,7 +189,7 @@
                                             <v-col>
                                                 <v-select
                                                     :model-value="reservationTimes[space._id]?.reservationEndTime || null"
-                                                    @update:model-value="val => updateReservation(space._id, 'reservationEndTime', val)"
+                                                    @update:model-value="val => updateReservation(space, 'reservationEndTime', val)"
                                                     :items="calcEndTimeOfSpace(space)"
                                                     item-title="label"
                                                     item-value="value"
@@ -202,6 +202,27 @@
                                                 />
                                             </v-col>
                                         </v-row>
+                                        <v-row class="mt-n6 mx-0 mb-2">
+                                            <v-fade-transition>
+                                                <v-alert 
+                                                    v-if="reservationTimes[space._id]?.reservationNotAllowed" 
+                                                    type="error" 
+                                                    icon="mdi-alert-outline"
+                                                    density="compact" variant="tonal">
+                                                    Ya tiene una reserva a esa hora
+                                                </v-alert>
+                                            </v-fade-transition>
+
+                                            <v-fade-transition>
+                                                <v-alert 
+                                                    v-if="reservationTimes[space._id]?.seatsLeft" 
+                                                    :type="reservationTimes[space._id].seatsLeft == space.seats ? 'success' : reservationTimes[space._id].seatsLeft > 3 ? 'warning' : 'error'" 
+                                                    icon="mdi-information-outline"
+                                                    density="compact" variant="tonal">
+                                                    Quedan {{ reservationTimes[space._id].seatsLeft }} asientos
+                                                </v-alert>
+                                            </v-fade-transition>
+                                        </v-row>
                                     </v-card-text>
                                     <v-card-actions class="mt-n6 mx-2 mb-2">
                                         <TonalButton
@@ -209,7 +230,7 @@
                                             class=""
                                             color="blue"
                                             text="Reservar"
-                                            :disabled="!reservationTimes[space._id]?.reservationStartTime || !reservationTimes[space._id]?.reservationEndTime"
+                                            :disabled="(!reservationTimes[space._id]?.reservationStartTime || !reservationTimes[space._id]?.reservationEndTime) || reservationTimes[space._id]?.reservationNotAllowed == true"
                                             @click="createReservation(space)"
                                         />
                                     </v-card-actions>
@@ -230,8 +251,6 @@ import { useUserStore } from '@/store/userStore';
 import { useSpaceStore } from '@/store/spaceStore';
 import { useReservationStore } from '@/store/reservationStore';
 import TonalButton from '@/components/TonalButton.vue';
-import { end } from '@popperjs/core';
-import { all } from 'axios';
 
 export default {
     components: {
@@ -241,17 +260,20 @@ export default {
         return {
             /*** Store variables ***/
             userStore: null,
+            user: null,
             spaceStore: null,
             reservationStore: null,
 
             /*** Spaces variables ***/
             spaces: [],
             filteredSpaces: [],
+            seatsLeft: null,
             
             /*** Reservation variables ***/
             reservationTimes: {},
             reservationSeats: 1,
             reservationsByDate: [],
+            reservationNotAllowed: false,
             
             /*** Dates variables ***/
             date: new Date(),
@@ -289,15 +311,12 @@ export default {
         },
         startTime() {
             this.filterSpaces();
-            //this.reservationTimes = {};
         },
         durationSearched() {
             this.filterSpaces();
-            this.reservationTimes = {};
         },
         reservationSeats() {
             this.filterSpaces();
-            this.reservationTimes = {};
         },
     },
     methods: {
@@ -344,15 +363,105 @@ export default {
                 return acc;
             }, {});
         },
-        updateReservation(spaceId, key, value) {
-            if (!this.reservationTimes[spaceId]) {
-                this.reservationTimes[spaceId] = { reservationStartTime: null, reservationEndTime: null };
+        updateReservation(space, key, value) {
+            if (!this.reservationTimes[space._id]) {
+                this.reservationTimes[space._id] = { reservationStartTime: null, reservationEndTime: null, seatsLeft: null, reservationNotAllowed: false };
             }
-            this.reservationTimes[spaceId][key] = value;
+
+            this.reservationTimes[space._id][key] = value;
 
             if (key === 'reservationStartTime') {              
-                this.reservationTimes[spaceId].reservationEndTime = null;
+                this.reservationTimes[space._id].reservationEndTime = null;
+                this.reservationTimes[space._id].reservationNotAllowed = false;
             }
+
+            if (key === 'reservationEndTime' && value != null) {              
+                this.calcSeatsAllowed(space);
+                this.calcReservationAllowed(space);
+            }
+
+            if(value == null) {                
+                this.reservationTimes[space._id].seatsLeft = null;
+                this.reservationTimes[space._id].reservationNotAllowed = false;
+            }
+
+        },
+        calcSeatsAllowed(space){
+
+            let hoursReserved = this.reservationStore.getHoursReservedBySpace(space._id) || [];
+
+            //--------------------Si no hay reservas--------------------//
+            if (!hoursReserved || hoursReserved.length === 0) {
+                this.reservationTimes[space._id].seatsLeft = space.seats;
+                return;
+            }
+            //---------------------------------------------------------//
+
+            //------------------------- Si hay ------------------------//
+            const startTime = this.makeMinutes(this.reservationTimes[space._id].reservationStartTime);
+            const endTime = this.makeMinutes(this.reservationTimes[space._id].reservationEndTime);
+
+            let max = 0;
+            hoursReserved.forEach(res => {               
+                const startReservation = res.startMinutes;
+                const endReservation = res.endMinutes;
+            
+                // Si la reserva actual está completamente antes o después de la existente, se ignora
+                if (
+                    (startTime < startReservation && endTime <= startReservation) ||
+                    (startTime >= endReservation && endTime > endReservation)
+                ) {
+                    return;
+                }
+            
+                if (res.seatsReserved > max) {
+                    max = res.seatsReserved;
+                }
+            });            
+        
+            this.reservationTimes[space._id].seatsLeft = space.seats - max;
+            //---------------------------------------------------------//
+
+        },
+        calcReservationAllowed(space){
+            console.log(this.reservationsByDate);
+
+            const events = this.reservationsByDate.filter(reservation => reservation.spaceId === space._id && reservation.userId === this.userStore.getId)
+                                    
+            if(events || events.length > 0) {
+                console.log(events);
+
+                // Convertimos la fecha seleccionada a un formato válido (YYYY-MM-DD)
+                const selectedDate = this.parseToYYYYMMDD(this.formattedDate);
+
+                // Obtener la hora de inicio y fin en formato HH:MM directamente
+                const startTimeString = this.reservationTimes[space._id].reservationStartTime; // Ejemplo: "09:30"
+                const endTimeString = this.reservationTimes[space._id].reservationEndTime; // Ejemplo: "11:00"
+
+                // Crear objetos Date combinando la fecha seleccionada con la hora de inicio y fin
+                const selectedStartTime = new Date(`${selectedDate}T${startTimeString}:00Z`).toUTCString();
+                const selectedEndTime = new Date(`${selectedDate}T${endTimeString}:00Z`).toUTCString();
+
+                for(let ev of events){
+                    const evStartTime = new Date (ev.startTime).toUTCString();
+                    const evEndTime = new Date (ev.endTime).toUTCString();                    
+
+                    if (
+                        (selectedStartTime < evStartTime && selectedEndTime <= evStartTime) ||
+                        (selectedStartTime >= evEndTime && selectedEndTime > evEndTime)
+                    ) {
+                        this.reservationTimes[space._id].reservationNotAllowed = false;
+                    }
+                    else {
+                        this.reservationTimes[space._id].reservationNotAllowed = true;
+                        this.reservationTimes[space._id].seatsLeft = null;
+                        return;
+                    }
+                }
+            }
+
+            this.reservationTimes[space._id].reservationNotAllowed = false;
+            
         },
         async filterSpaces() {
             this.isLoading = true;
@@ -491,18 +600,18 @@ export default {
 
             if (this.reservationsByDate.length > 0 ) {
                 const events = this.reservationsByDate
-                .filter(reservation => reservation.spaceId === space._id)
-                .flatMap(reservation => {
-                    const startTimeStr = this.getHoursAndMinsFromDate(reservation.startTime);
-                    const endTimeStr = this.getHoursAndMinsFromDate(reservation.endTime);
-                    const seats = reservation.seatsReserved;
-                    const startMinutes = this.makeMinutes(startTimeStr);
-                    const endMinutes = this.makeMinutes(endTimeStr);
-                    return [
-                        { time: startMinutes, change: seats },              // Evento de inicio: se suman los asientos
-                        { time: endMinutes, change: -seats }                // Evento de fin: se restan los asientos
-                    ];
-                });
+                                .filter(reservation => reservation.spaceId === space._id)
+                                    .flatMap(reservation => {
+                                        const startTimeStr = this.getHoursAndMinsFromDate(reservation.startTime);
+                                        const endTimeStr = this.getHoursAndMinsFromDate(reservation.endTime);
+                                        const seats = reservation.seatsReserved;
+                                        const startMinutes = this.makeMinutes(startTimeStr);
+                                        const endMinutes = this.makeMinutes(endTimeStr);
+                                        return [
+                                            { time: startMinutes, change: seats },              // Evento de inicio: se suman los asientos
+                                            { time: endMinutes, change: -seats },                // Evento de fin: se restan los asientos
+                                        ];
+                                    });
                 
                 // Ordenar los eventos por tiempo
                 events.sort((a, b) => a.time - b.time);
@@ -520,13 +629,13 @@ export default {
                                 end: this.makeHoursAndMinutes(event.time),
                                 startMinutes: currentTime,                      // valor de start en minutos
                                 endMinutes: event.time,                         // valor de end en minutos
-                                seatsReserved: currentSeats
+                                seatsReserved: currentSeats,
                             });
                         }
                         currentTime = event.time;
                     }
                     currentSeats += event.change;
-                }
+                }                
                 this.reservationStore.setHoursReservedBySpace(space._id, hoursReserved);
             }
 

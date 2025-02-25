@@ -13,6 +13,8 @@
 import { RouterView } from 'vue-router'
 import NavBar from './components/NavBar.vue'
 import { useUserStore } from './store/userStore';
+import { authService } from './services/authService';
+
 export default {
   data(){
     return {
@@ -27,11 +29,18 @@ export default {
   async beforeMount() {
     this.userStore = useUserStore();
 
-    //this.userStore.loadFromStorage();
     const isValidSession = await this.userStore.validateSession();
     if (!isValidSession) {
       this.$router.push("/login"); // Redirigir al login si la sesión es inválida
     }
+    authService.getUser()
+      .then(res => {
+        this.userStore.setSelectedUser(res.data.user);
+      })
+      .catch(error => {
+          console.log(error);
+      });
+
   },
   computed: {
     isLogged() {
