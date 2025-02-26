@@ -33,7 +33,7 @@
                                 size="small"
                             />
                         </v-col>
-                        <v-col><span class="text-h6"> {{this.formatDate(new Date(reservation.startTime))}}</span></v-col>
+                        <v-col><span class="text-h6"> {{parseToStringDate(new Date(reservation.startTime))}}</span></v-col>
                     </v-row>
 
                     <v-row class="my-n3 d-flex justify-center align-center" cols="12">
@@ -45,7 +45,7 @@
                                         size="small"
                                     />
                                 </v-col>
-                                <v-col><span class="pt-2 text-h6">{{parseHoursAndMinutes(reservation.startTime)}}h - {{parseHoursAndMinutes(reservation.endTime)}}h</span></v-col>
+                                <v-col><span class="pt-2 text-h6">{{getHoursAndMinsFromDate(reservation.startTime)}}h - {{getHoursAndMinsFromDate(reservation.endTime)}}h</span></v-col>
                             </v-row>
                         </v-col>
                         <v-col>
@@ -72,7 +72,7 @@
                             />
                         </v-col>
                         <v-col>
-                            <span class="pt-2 text-h6"> {{this.parseRepetition(reservation.repetition)}}</span>
+                            <span class="pt-2 text-h6"> {{parseRepetition(reservation.repetition)}}</span>
                         </v-col>
                     </v-row>
                 </v-col>
@@ -90,77 +90,52 @@
     </v-container>
 </template>
 
-<script>
-import { useUserStore } from '@/store/userStore';
+<script setup>
+import { ref, onMounted } from 'vue';
 import { useReservationStore } from '@/store/reservationStore';
+import { useRouter } from 'vue-router';
 import TonalButton from '@/components/TonalButton.vue'
 
-export default {
-    data() {
-        return {
-            userStore: null,
-            reservationStore: null,
+import { useTime } from '@/composables/useTime';
 
-            reservation: null,
-            space: null,
-            deleteModal: false,
+// Instanciar stores
+const reservationStore = useReservationStore();
+const router = useRouter();
 
-            openingTime: null,
-            closingTime: null,
-        };
-    },
-    components: {
-        TonalButton,
-    },
-    mounted() {
-        this.userStore = useUserStore();
-        this.reservationStore = useReservationStore();
+// Variables reactivas
+const reservation = ref(null);
 
-        this.reservation = this.reservationStore.getReservation;
+// Extraemos funciones del composable useTime
+const { 
+getHoursAndMinsFromDate, 
+parseToStringDate, 
+} = useTime();
 
-        if (!this.reservation) {
-            this.$router.push('/reservations'); // Redirigir al componente padre
-        }
+// Al montar el componente, se asigna la reserva y se redirige si no existe
+onMounted(() => {
+    reservation.value = reservationStore.getReservation;
+    if (!reservation.value) {
+        router.push('/reservations');
+    }
+});
 
-    },
-    methods: {
-        routerBack() {
-            this.$router.push('/reservations');
-        },
-        parseHoursAndMinutes(date) {            
-            const dateObj = new Date(date);
-            const hours = String(dateObj.getUTCHours()).padStart(2, '0'); 
-            const mins = String(dateObj.getUTCMinutes()).padStart(2, '0');
-            return `${hours}:${mins}`;
-        },
-        parseRepetition(repetition) {
-            if (repetition === 'no_repeat') {
-                return 'Sin repetición';
-            } else if (repetition === 'daily') {
-                return 'Se repite todos los días';
-            } else if (repetition === 'workdays') {
-                return 'Se repite los días laborales';
-            } else if (repetition === 'weekly') {
-                return 'Se repite todas las semanas este día';
-            } else if (repetition === 'monthly') {
-                return 'Se repite todas los meses este día';
-            }
-        },
-        formatDate(date) {
-            return new Intl.DateTimeFormat('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(date);
-        },
-        deleteSpace() {
-            spaceService.deleteSpace(this.space._id)
-            .then(res => {
-                console.log(res.data);
-                this.deleteModal = false;
-                this.spaceStore.clearSelectedSpace();
-                this.routerBack();
-            })
-            .catch(error => {
-                console.log(error);
-            });
-        }
-    },
+
+// Traduce el valor de repetición a un string legible
+const parseRepetition = (repetition) => {
+    if (repetition === 'no_repeat') {
+        return 'Sin repetición';
+    } else if (repetition === 'daily') {
+        return 'Se repite todos los días';
+    } else if (repetition === 'workdays') {
+        return 'Se repite los días laborales';
+    } else if (repetition === 'weekly') {
+        return 'Se repite todas las semanas este día';
+    } else if (repetition === 'monthly') {
+        return 'Se repite todas los meses este día';
+    }
+};
+
+const routerBack = () => {
+    router.push('/reservations');
 };
 </script>

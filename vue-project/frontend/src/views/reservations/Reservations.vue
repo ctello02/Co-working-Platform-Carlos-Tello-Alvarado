@@ -19,7 +19,7 @@
                     />
                 </div>
             </v-row>
-            <v-row v-if="this.reservations.length === 0" class="mt-8">
+            <v-row v-if="reservations.length === 0" class="mt-8">
                 <span class="text-h5">No se encuentran datos</span>
             </v-row>
             <v-row v-else>
@@ -41,7 +41,7 @@
                                                 <v-col style="color: grey"><span class="text-h6">Fecha: </span></v-col>
                                             </v-row>
                                             <v-row>
-                                                <v-col class="mt-n7"><span class="text-h6"> {{this.formatDate(new Date(reservation.startTime))}}</span></v-col>
+                                                <v-col class="mt-n7"><span class="text-h6"> {{twoDigitsDate(new Date(reservation.startTime))}}</span></v-col>
                                             </v-row>
                                         </v-col>
                                         <v-col>
@@ -49,7 +49,7 @@
                                                 <v-col style="color: grey"><span class="text-h6">Horas: </span></v-col>
                                             </v-row>
                                             <v-row>
-                                                <v-col class="mt-n7"><span class="text-h6">{{parseHoursAndMinutes(reservation.startTime)}}h-{{parseHoursAndMinutes(reservation.endTime)}}h</span></v-col>
+                                                <v-col class="mt-n7"><span class="text-h6">{{getHoursAndMinsFromDate(reservation.startTime)}}h-{{getHoursAndMinsFromDate(reservation.endTime)}}h</span></v-col>
                                             </v-row>
                                         </v-col>
                                     </v-row>
@@ -62,62 +62,60 @@
     </v-container>
 </template>
 
-<script>
+<script setup>
+import { ref, onMounted } from 'vue';
 import { useUserStore } from '@/store/userStore';
+import { useRouter } from 'vue-router';
 import { useReservationStore } from '@/store/reservationStore';
 import TonalButton from '@/components/TonalButton.vue';
 import { reservationService } from '@/services/reservationService';
 
-export default {
-    components: {
-        TonalButton
-    },
-    data() {
-        return {
-            userStore: null,
-            reservationStore: null,
-            reservations: [],
+import { useTime } from '@/composables/useTime';
 
-            list: false,
-        }
-    },
-    mounted() {
-        this.userStore = useUserStore();
-        this.reservationStore = useReservationStore();
-        this.getUserReservations();
-    },
-    methods: {
-        getUserReservations() {            
-            try{
-                reservationService.getUserReservations(this.userStore.getId)
-                .then(res => {
-                    console.log(res.data.reservations);
-                    this.reservations = res.data.reservations;
-                })
-                .catch(error => {
-                    console.error(error);
-                });
-            } catch (error) {
-                console.error(error);
-            }
-        },
-        infoEvent(reservation) {
-            console.log(reservation);
-            this.reservationStore.setReservation(reservation);
-            this.$router.push('/reservationInfo');
-        },
-        formatDate(date) {
-            return new Intl.DateTimeFormat('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(date);
-        },
-        parseHoursAndMinutes(date) {            
-            const dateObj = new Date(date);
-            const hours = String(dateObj.getUTCHours()).padStart(2, '0'); 
-            const mins = String(dateObj.getUTCMinutes()).padStart(2, '0');
-            return `${hours}:${mins}`;
-        },
-        openCreateReservation() {
-            this.$router.push('/createReservation');
-        },
+const userStore = useUserStore();
+const router = useRouter();
+const reservationStore = useReservationStore();
+
+const reservations = ref([]);
+const list = ref(false);
+
+const { 
+getHoursAndMinsFromDate, 
+twoDigitsDate, 
+} = useTime();
+
+onMounted(() => {
+    reservations.value = reservationStore.getReservation;
+    if (!reservations.value) {
+        router.push('/reservations');
+    }
+    getUserReservations();
+});
+
+const getUserReservations = () => {            
+    try{
+        reservationService.getUserReservations(userStore.getId)
+        .then(res => {
+            reservations.value = res.data.reservations;
+        })
+        .catch(error => {
+            console.error(error);
+        });
+    } catch (error) {
+        console.error(error);
     }
 }
+
+const infoEvent = (reservation) => {
+    console.log(reservation.value);
+    reservationStore.setReservation(reservation);
+    router.push('/reservationInfo');
+}
+
+const openCreateReservation = () => {
+    router.push('/createReservation');
+}
+
+
+
 </script>

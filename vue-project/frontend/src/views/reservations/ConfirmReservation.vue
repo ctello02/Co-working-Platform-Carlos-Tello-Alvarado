@@ -38,7 +38,7 @@
                       </v-row>
                       <v-row>
                         <v-col class="text-center mt-n7">
-                          <span class="text-h4">{{ formatDate(new Date(reservation.startTime)) }}</span>
+                          <span class="text-h4">{{ parseToStringDate(new Date(reservation.startTime)) }}</span>
                         </v-col>
                       </v-row>
                     </v-col>
@@ -49,13 +49,13 @@
                       <v-icon size="small" icon="mdi-weather-sunny" />
                     </v-col>
                     <v-col class="ml-n4 mr-7">
-                      <span class="text-h6">Hora de inicio: {{ parseDateInHoursAndMinutes(reservation.startTime) }}</span>
+                      <span class="text-h6">Hora de inicio: {{ getHoursAndMinsFromDate(reservation.startTime) }}</span>
                     </v-col>
                     <v-col cols="1">
                       <v-icon size="small" icon="mdi-weather-night" />
                     </v-col>
                     <v-col class="ml-n7 mr-7">
-                      <span class="text-h6">Hora de fin: {{ parseDateInHoursAndMinutes(reservation.endTime) }}</span>
+                      <span class="text-h6">Hora de fin: {{ getHoursAndMinsFromDate(reservation.endTime) }}</span>
                     </v-col>
                   </v-row>
                   <v-divider />
@@ -135,6 +135,8 @@
   
   import TonalButton from '@/components/TonalButton.vue';
   import SpaceCard from '@/components/SpaceCard.vue';
+
+  import { useTime } from '@/composables/useTime';
   
   // ------------------------------------------------
   // Instancias de Router, Toast y Stores
@@ -146,6 +148,17 @@
   // ------------------------------------------------
 
   
+  // ------------------------------------------------
+  // Extraemos funciones del composable useTime
+  // ------------------------------------------------
+  const { 
+    makeMinutes, 
+    getHoursAndMinsFromDate, 
+    parseToStringDate, 
+  } = useTime();
+  // ------------------------------------------------
+  
+
   // ------------------------------------------------
   // Variables Reactivas
   // ------------------------------------------------
@@ -177,8 +190,8 @@
       return;
     }
   
-    const startTime = parseDateInHoursAndMinutes(reservation.value.startTime);
-    const endTime = parseDateInHoursAndMinutes(reservation.value.endTime);
+    const startTime = getHoursAndMinsFromDate(reservation.value.startTime);
+    const endTime = getHoursAndMinsFromDate(reservation.value.endTime);
     const reservationStartTime = makeMinutes(startTime);
     const reservationEndTime = makeMinutes(endTime);
     let max = 0;
@@ -259,24 +272,8 @@
 
 
   // ------------------------------------------------
-  // Métodos Auxiliares / Utilitarios
+  // Métodos Auxiliares 
   // ------------------------------------------------
-  const formatDate = (date) => {
-    return new Intl.DateTimeFormat('es-ES', { day: 'numeric', month: 'long', year: 'numeric' }).format(date);
-  };
-  
-  const parseDateInHoursAndMinutes = (date) => {
-    const dateObj = new Date(date);
-    const hours = String(dateObj.getUTCHours()).padStart(2, '0');
-    const mins = String(dateObj.getUTCMinutes()).padStart(2, '0');
-    return `${hours}:${mins}`;
-  };
-  
-  const makeMinutes = (time) => {
-    const [hour, minutes] = time.split(':').map(Number);
-    return hour * 60 + minutes;
-  };
-
   const routerBack = () => {
     router.go(-1);
   };
