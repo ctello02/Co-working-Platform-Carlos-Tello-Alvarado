@@ -1,5 +1,6 @@
 import { defineStore } from "pinia";
 import axios from "axios";
+import { authService } from "@/services/authService";
 
 export const useUserStore = defineStore({
     id: "user",
@@ -62,6 +63,14 @@ export const useUserStore = defineStore({
                 // Verificar el token con el backend
                 const response = await axios.get("/api/auth/validate", {
                     headers: { Authorization: `Bearer ${token}` },
+                });
+
+                authService.getUser()
+                .then(res => {
+                    this.selectedUser = res.data.user;
+                })
+                .catch(error => {
+                    console.log(error);
                 });
 
                 if (response.data.valid) return true;

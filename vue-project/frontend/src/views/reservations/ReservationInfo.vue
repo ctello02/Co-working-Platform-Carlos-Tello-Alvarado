@@ -141,7 +141,9 @@ export default {
             } else if (repetition === 'workdays') {
                 return 'Se repite los días laborales';
             } else if (repetition === 'weekly') {
-                return 'Se repite todas las semans este día';
+                return 'Se repite todas las semanas este día';
+            } else if (repetition === 'monthly') {
+                return 'Se repite todas los meses este día';
             }
         },
         formatDate(date) {

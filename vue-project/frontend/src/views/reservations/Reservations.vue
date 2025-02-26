@@ -28,7 +28,7 @@
                     :key="reservation._id"
                     lg="3" md="4" sm="12" xs="12"
                 >
-                        <v-card @click="infoEvent(reservation)" class="text-center" max-width="400">
+                        <v-card @click="infoEvent(reservation)" class="text-center" max-width="400" :ripple="false">
                             <v-card-title>
                                 <span class="text-h5">Reserva de {{reservation.spaceId.name}}</span>
                                 <v-divider class="mt-1"/>

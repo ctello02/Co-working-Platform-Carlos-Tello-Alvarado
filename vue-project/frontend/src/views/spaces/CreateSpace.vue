@@ -147,7 +147,6 @@ export default {
 
       timeFrames: [
         { label: '15 mins', value: 15 },
-        { label: '20 mins', value: 20 },
         { label: '30 mins', value: 30 },
         { label: '1 hora', value: 60 },
         { label: '2 horas', value: 120 },
