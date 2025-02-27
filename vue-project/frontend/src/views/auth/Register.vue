@@ -7,73 +7,32 @@
       <v-card-text>
         <v-col>
           <v-row>
-            <v-text-field
-              v-model="name"
-              type="text"
-              variant="outlined"
-              label="Nombre"
-              :prepend-icon="isCompany? 'mdi-office-building-outline': 'mdi-account-circle-outline'"
-              required
-              :rules="nameRules"
-              class="my-1"
-            />
+            <v-text-field v-model="name" type="text" variant="outlined" label="Nombre"
+              :prepend-icon="isCompany ? 'mdi-office-building-outline' : 'mdi-account-circle-outline'" required
+              :rules="nameRules" class="my-1" />
           </v-row>
           <v-row>
-            <v-text-field
-              v-model="email"
-              variant="outlined"
-              label="E-mail"
-              prepend-icon="mdi-email-outline"
-              required
-              class="my-1"
-              :rules="emailRules"
-            />
+            <v-text-field v-model="email" variant="outlined" label="E-mail" prepend-icon="mdi-email-outline" required
+              class="my-1" :rules="emailRules" />
           </v-row>
           <v-row>
-            <v-text-field
-              v-model="password"
-              variant="outlined"
-              label="Contraseña"
-              :type="show ? 'text' : 'password'"
-              prepend-icon="mdi-lock-outline"
-              :append-inner-icon="show ? 'mdi-eye' : 'mdi-eye-off'"  
-              @click:append-inner="show = !show"
-              required
-              class="my-1"
-              :rules="passwordRules"
-            />
+            <v-text-field v-model="password" variant="outlined" label="Contraseña" :type="show ? 'text' : 'password'"
+              prepend-icon="mdi-lock-outline" :append-inner-icon="show ? 'mdi-eye' : 'mdi-eye-off'"
+              @click:append-inner="show = !show" required class="my-1" :rules="passwordRules" />
           </v-row>
           <v-row>
-            <v-text-field
-              v-model="phone"
-              variant="outlined"
-              label="Teléfono"
-              prepend-icon="mdi-phone-outline"
-              required
-              class="my-1"
-              :rules="phoneRules"
-            />
+            <v-text-field v-model="phone" variant="outlined" label="Teléfono" prepend-icon="mdi-phone-outline" required
+              class="my-1" :rules="phoneRules" />
           </v-row>
           <v-row>
-            <v-text-field
-              v-model="address"
-              variant="outlined"
-              label="Dirección"
-              :prepend-icon="isCompany? 'mdi-map-marker-outline': 'mdi-home-outline'"
-              required
-              class="my-1"
-              :rules="addressRules"
-            />
+            <v-text-field v-model="address" variant="outlined" label="Dirección"
+              :prepend-icon="isCompany ? 'mdi-map-marker-outline' : 'mdi-home-outline'" required class="my-1"
+              :rules="addressRules" />
           </v-row>
 
           <v-row class="mt-n4">
             <v-col>
-              <v-radio-group
-                class="d-flex justify-center"
-                inline
-                v-model="isCompany"
-                label="¿Es empresa?"
-              >
+              <v-radio-group class="d-flex justify-center" inline v-model="isCompany" label="¿Es empresa?">
                 <v-radio label="No" :value="false"></v-radio>
                 <v-radio label="Si" :value="true"></v-radio>
               </v-radio-group>
@@ -81,27 +40,13 @@
           </v-row>
 
           <v-row>
-            <v-text-field
-              v-if="isCompany"
-              variant="outlined"
-              v-model="cif"
-              label="CIF"
-              prepend-icon="mdi-file-document-outline"
-              required
-              :rules="cifRules"
-              class="my-1"
-            />
+            <v-text-field v-if="isCompany" variant="outlined" v-model="cif" label="CIF"
+              prepend-icon="mdi-file-document-outline" required :rules="cifRules" class="my-1" />
           </v-row>
 
           <v-row>
-            <TonalButton
-                color="primary"
-                text="Registrarse"
-                class="cta-btn custom-disabled-btn"
-                @click="submit" 
-                :disabled="camposVacios()"
-                block
-              />
+            <TonalButton color="primary" text="Registrarse" class="cta-btn custom-disabled-btn" @click="submit"
+              :disabled="emptyFields()" block />
           </v-row>
 
           <v-row>
@@ -136,10 +81,10 @@ export default {
     show: false,
     isCompany: false,
     cif: '',
-    nameRules : [v => !!v || 'El nombre es requerido'],
-    emailRules : [
-        v => !!v || 'El email es obligatorio',
-        v => /^[\w.-]+@[a-zA-Z\d.-]+\.[a-zA-Z]{2,}$/i.test(v) || 'El email debe ser válido',
+    nameRules: [v => !!v || 'El nombre es requerido'],
+    emailRules: [
+      v => !!v || 'El email es obligatorio',
+      v => /^[\w.-]+@[a-zA-Z\d.-]+\.[a-zA-Z]{2,}$/i.test(v) || 'El email debe ser válido',
     ],
     passwordRules: [
       v => !!v || 'La contraseña es requerida',
@@ -148,20 +93,20 @@ export default {
       v => /[a-z]/.test(v) || 'La contraseña debe incluir al menos una letra minúscula',
       v => /\d/.test(v) || 'La contraseña debe incluir al menos un número',
     ],
-    phoneRules : [
-        v => !!v || 'El teléfono de contacto es requerido',
-        v => /^[6-9]\d{8}$/.test(v) || 'El teléfono debe tener 9 dígitos y empezar con un número válido (6-9)',
+    phoneRules: [
+      v => !!v || 'El teléfono de contacto es requerido',
+      v => /^[6-9]\d{8}$/.test(v) || 'El teléfono debe tener 9 dígitos y empezar con un número válido (6-9)',
     ],
-    addressRules : [
-        v => !!v || 'La dirección es requerida',
+    addressRules: [
+      v => !!v || 'La dirección es requerida',
     ],
-    cifRules : [
-        v => !!v || 'El CIF es requerido',
-        v => /^[A-HJNP-SUVW]\d{7}[A-J]$/i.test(v) || 'El CIF debe ser válido y comenzar con una letra válida',
+    cifRules: [
+      v => !!v || 'El CIF es requerido',
+      v => /^[A-HJNP-SUVW]\d{7}[A-J]$/i.test(v) || 'El CIF debe ser válido y comenzar con una letra válida',
     ],
   }),
   methods: {
-    camposVacios() {
+    emptyFields() {
       // Verificar que los campos no estén vacíos y que cumplan las reglas de validación
       const nameValid = this.nameRules.every(rule => rule(this.name) === true);
       const emailValid = this.emailRules.every(rule => rule(this.email) === true);
@@ -171,13 +116,13 @@ export default {
       const cifValid = this.cifRules.every(rule => rule(this.cif) === true);
 
       if (this.isCompany) {
-        return !(this.name && this.email && this.cif && this.password && this.phone && this.address && nameValid &&  emailValid && cifValid && passwordValid &&  phoneValid &&  addressValid);
+        return !(this.name && this.email && this.cif && this.password && this.phone && this.address && nameValid && emailValid && cifValid && passwordValid && phoneValid && addressValid);
       }
-      return !(this.name && this.email && this.password && this.phone && this.address && nameValid &&  emailValid && passwordValid &&  phoneValid &&  addressValid);
+      return !(this.name && this.email && this.password && this.phone && this.address && nameValid && emailValid && passwordValid && phoneValid && addressValid);
     },
     async submit() {
       const toast = useToast();
-      if (!this.camposVacios()) {
+      if (!this.emptyFields()) {
         authService
           .signUp(this.name, this.email, this.password, this.phone, this.address, this.isCompany, this.cif)
           .then((res) => {
@@ -204,7 +149,6 @@ export default {
 </script>
 
 <style scoped>
-
 .subtitle {
   margin-top: 10px;
 }
@@ -215,15 +159,15 @@ export default {
 }
 
 .custom-disabled-btn:disabled {
-  background-color: #bfbfbf; 
-  color: white !important; 
-  cursor: not-allowed; 
-  opacity: 1; 
-  border: 1px solid #bbb; 
+  background-color: #bfbfbf;
+  color: white !important;
+  cursor: not-allowed;
+  opacity: 1;
+  border: 1px solid #bbb;
 }
 
 .routerLink {
-  text-decoration: none; 
+  text-decoration: none;
   font-weight: bold;
   cursor: pointer;
   color: rgb(16, 86, 189);
@@ -231,7 +175,7 @@ export default {
 }
 
 .routerLink:hover {
-  text-decoration: underline; 
+  text-decoration: underline;
 }
 
 .routerLink:visited {

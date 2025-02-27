@@ -1,139 +1,71 @@
 <template>
-    <v-container class="container">
-        <v-card v-if="space" class="mx-auto" max-width="600">
-            <v-img
-                :src="newSpace?.image"
-                color="surface-variant"
-                height="300px"
-                cover 
-                class="img-container" 
-                @click="triggerFileInput"
-                style="position: relative; cursor: pointer; border: 0px; border-radius: 0px;"
-            >
-                <v-icon
-                class="mdi-camera camera-icon"
-                style="
+  <v-container class="container">
+    <v-card v-if="space" class="mx-auto" max-width="600">
+      <v-img :src="newSpace?.image" color="surface-variant" height="300px" cover class="img-container"
+        @click="triggerFileInput" style="position: relative; cursor: pointer; border: 0px; border-radius: 0px;">
+        <v-icon class="mdi-camera camera-icon" style="
                     position: absolute;
                     top: 50%;
                     left: 50%;
                     transform: translate(-50%, -50%);
                     color: white;
                     z-index: 1001;
-                "
-                >mdi-camera</v-icon>
-                <input
-                    type="file"
-                    ref="fileInput"
-                    accept="image/*"
-                    @change="onFileChange"
-                    style="display: none"
-                />
-            </v-img>
+                ">mdi-camera</v-icon>
+        <input type="file" ref="fileInput" accept="image/*" @change="onFileChange" style="display: none" />
+      </v-img>
 
-            <v-card-text class="px-6">
-                <v-col>
-                    <v-row>
-                        <v-text-field
-                            v-model="newSpace.name"
-                            label="Nombre"
-                            variant="outlined"
-                            required
-                            :rules="[v => !!v || 'El texto es requerido']"
-                            class="my-1"
-                        />
-                    </v-row>
-                        
-                    <v-row>
-                        <v-text-field
-                            v-model="newSpace.description"
-                            label="Descripción"
-                            variant="outlined"
-                            prepend-icon="mdi-text"
-                            required
-                            :rules="[v => !!v || 'El texto es requerido']"
-                            class="my-1"
-                        />
-                    </v-row>
+      <v-card-text class="px-6">
+        <v-col>
+          <v-row>
+            <v-text-field v-model="newSpace.name" label="Nombre" variant="outlined" required
+              :rules="[v => !!v || 'El texto es requerido']" class="my-1" />
+          </v-row>
 
-                    <v-row>
-                        <v-text-field
-                            v-model.number="newSpace.seats"
-                            label="Número de asientos"
-                            prepend-icon="mdi-table-chair"
-                            type="number"
-                            variant="outlined"
-                            required
-                            :rules="[v => !!v || 'El campo es obligatorio']"
-                            @input="newSpace.seats = Math.max(0, newSpace.seats)"
-                            class="my-1"
-                        />
-                    </v-row>
+          <v-row>
+            <v-text-field v-model="newSpace.description" label="Descripción" variant="outlined" prepend-icon="mdi-text"
+              required :rules="[v => !!v || 'El texto es requerido']" class="my-1" />
+          </v-row>
 
-                    <v-row>
-                        <v-select
-                            v-model="selectedTimeFrame"
-                            :items="timeFrames"
-                            item-title="label"
-                            item-value="value"
-                            label="Duración de las reservas"
-                            prepend-icon="mdi-clock-outline"
-                            :rules="[v => !!v || 'El campo es obligatorio']"
-                            variant="outlined"
-                            class="my-1"
-                        ></v-select>
-                    </v-row>
+          <v-row>
+            <v-text-field v-model.number="newSpace.seats" label="Número de asientos" prepend-icon="mdi-table-chair"
+              type="number" variant="outlined" required :rules="[v => !!v || 'El campo es obligatorio']"
+              @input="newSpace.seats = Math.max(0, newSpace.seats)" class="my-1" />
+          </v-row>
 
-                    <v-row class="mt-1">
-                        <v-radio-group 
-                            inline 
-                            prepend-icon="mdi-repeat"
-                            v-model="newSpace.repetition" 
-                            label="¿Permite repetición de reservas?"
-                        >
-                            <v-radio label="Si" :value="true"/>
-                            <v-radio label="No" :value="false"/>
-                        </v-radio-group>
-                    </v-row>
+          <v-row>
+            <v-select v-model="selectedTimeFrame" :items="timeFrames" item-title="label" item-value="value"
+              label="Duración de las reservas" prepend-icon="mdi-clock-outline"
+              :rules="[v => !!v || 'El campo es obligatorio']" variant="outlined" class="my-1"></v-select>
+          </v-row>
 
-                    <v-row class="mt-n1">
-                        <v-col cols="6">
-                            <v-select
-                                v-model="openingTime"
-                                :items="allTimes"
-                                label="Hora de apertura"
-                                prepend-icon="mdi-weather-sunny"
-                            ></v-select>
-                        </v-col>
+          <v-row class="mt-1">
+            <v-radio-group inline prepend-icon="mdi-repeat" v-model="newSpace.repetition"
+              label="¿Permite repetición de reservas?">
+              <v-radio label="Si" :value="true" />
+              <v-radio label="No" :value="false" />
+            </v-radio-group>
+          </v-row>
 
-                        <v-col cols="6">
-                            <v-select
-                                v-model="closingTime"
-                                :items="filteredClosingTimes"
-                                label="Hora de cierre"
-                                prepend-icon="mdi-weather-night"
-                                :disabled="!openingTime"
-                            ></v-select>
-                        </v-col>
-                    </v-row>
-                </v-col>
-            </v-card-text>
+          <v-row class="mt-n1">
+            <v-col cols="6">
+              <v-select v-model="openingTime" :items="allTimes" label="Hora de apertura"
+                prepend-icon="mdi-weather-sunny"></v-select>
+            </v-col>
 
-            <v-card-actions class="mt-n9 mb-3 mr-4 d-flex justify-end ga-3">
-                <TonalButton 
-                    color="grey" 
-                    text="Volver" 
-                    @click="routerBack"
-                />
-                <TonalButton 
-                    color="blue" 
-                    text="Guardar" 
-                    @click="submit" 
-                    :disabled="camposVacios()"
-                />
-            </v-card-actions>
-        </v-card>
+            <v-col cols="6">
+              <v-select v-model="closingTime" :items="filteredClosingTimes" label="Hora de cierre"
+                prepend-icon="mdi-weather-night" :disabled="!openingTime"></v-select>
+            </v-col>
+          </v-row>
+        </v-col>
+      </v-card-text>
 
-    </v-container>
+      <v-card-actions class="mt-n9 mb-3 mr-4 d-flex justify-end ga-3">
+        <TonalButton color="grey" text="Volver" @click="routerBack" />
+        <TonalButton color="blue" text="Guardar" @click="submit" :disabled="emptyFields()" />
+      </v-card-actions>
+    </v-card>
+  </v-container>
 </template>
 
 <script>
@@ -143,152 +75,152 @@ import { useToast } from 'vue-toastification';
 import TonalButton from '@/components/TonalButton.vue'
 
 export default {
-    data() {
-        return {
-            spaceStore: null,
-            space: null,
-            newSpace: null,
-            newImageUrl: null,
-            isNewImage: false,
-            successToastId: null,
-            selectedTimeFrame: null,
-            openingTime: null,
-            closingTime: null,
-            allTimes: [],
-            timeFrames: [
-                { label: '15 mins', value: 15 },
-                { label: '30 mins', value: 30 },
-                { label: '1 hora', value: 60 },
-                { label: '2 horas', value: 120 },
-                { label: '3 horas', value: 180 },
-            ],
-        };
+  data() {
+    return {
+      spaceStore: null,
+      space: null,
+      newSpace: null,
+      newImageUrl: null,
+      isNewImage: false,
+      successToastId: null,
+      selectedTimeFrame: null,
+      openingTime: null,
+      closingTime: null,
+      allTimes: [],
+      timeFrames: [
+        { label: '15 mins', value: 15 },
+        { label: '30 mins', value: 30 },
+        { label: '1 hora', value: 60 },
+        { label: '2 horas', value: 120 },
+        { label: '3 horas', value: 180 },
+      ],
+    };
+  },
+  components: {
+    TonalButton,
+  },
+  computed: {
+    filteredClosingTimes() {
+      if (!this.openingTime) return this.allTimes;
+      const openingIndex = this.allTimes.indexOf(this.openingTime);
+      return this.allTimes.slice(openingIndex + 1);
     },
-    components: {
-        TonalButton,
+  },
+  watch: {
+    openingTime(newVal) {
+      if (newVal && this.closingTime && newVal >= this.closingTime) {
+        this.closingTime = null;
+      }
     },
-    computed: {
-        filteredClosingTimes() {
-            if (!this.openingTime) return this.allTimes;
-            const openingIndex = this.allTimes.indexOf(this.openingTime);
-            return this.allTimes.slice(openingIndex + 1);
-        },
-    },
-    watch: {
-        openingTime(newVal) {
-            if (newVal && this.closingTime && newVal >= this.closingTime) {
-                this.closingTime = null;
-            }
-        },
-    },
-    mounted() {
-        this.generateAllTimes();
-        this.spaceStore = useSpaceStore();
-        this.space = this.spaceStore.getSelectedSpace;
+  },
+  mounted() {
+    this.generateAllTimes();
+    this.spaceStore = useSpaceStore();
+    this.space = this.spaceStore.getSelectedSpace;
 
-        if (!this.space) {
-            this.$router.push('/spaces'); // Redirigir al componente padre
+    if (!this.space) {
+      this.$router.push('/spaces'); // Redirigir al componente padre
+    }
+
+    this.newSpace = { ...this.space };    // Hacer una copia del objeto space
+    this.openingTime = this.makeHoursAndMinutes(this.space?.opening);
+    this.closingTime = this.makeHoursAndMinutes(this.space?.closing);
+    this.selectedTimeFrame = this.space?.duration;
+  },
+  methods: {
+    routerBack() {
+      const toast = useToast();
+      if (this.successToastId) {
+        toast.dismiss(this.successToastId); // Cierra el toast específico usando el ID
+      } else {
+        toast.clear(); // Elimina todos los toasts como respaldo
+      }
+      this.$router.go(-1);
+    },
+    generateAllTimes() {
+      for (let hour = 0; hour < 24; hour++) {
+        for (let minute = 0; minute < 60; minute += 15) {
+          const formattedTime = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+          this.allTimes.push(formattedTime);
         }
-        
-        this.newSpace = { ...this.space };    // Hacer una copia del objeto space
-        this.openingTime = this.makeHoursAndMinutes(this.space?.opening);
-        this.closingTime = this.makeHoursAndMinutes(this.space?.closing);
-        this.selectedTimeFrame = this.space?.duration;
+      }
     },
-    methods: {
-        routerBack() {
-            const toast = useToast();
-            if (this.successToastId) {
-                toast.dismiss(this.successToastId); // Cierra el toast específico usando el ID
-            } else {
-                toast.clear(); // Elimina todos los toasts como respaldo
-            }
-            this.$router.go(-1);
-        },
-        generateAllTimes() {
-            for (let hour = 0; hour < 24; hour++) {
-                for (let minute = 0; minute < 60; minute += 15) {
-                    const formattedTime = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
-                    this.allTimes.push(formattedTime);
-                }
-            }
-        },
-        triggerFileInput() {
-            this.$refs.fileInput.click();
-        },
-        onFileChange(e) {
-            const file = e.target.files[0];
-            if (file) {
-                this.isNewImage = true;
-                this.newImageUrl = file; // Guardamos el archivo para el FormData
+    triggerFileInput() {
+      this.$refs.fileInput.click();
+    },
+    onFileChange(e) {
+      const file = e.target.files[0];
+      if (file) {
+        this.isNewImage = true;
+        this.newImageUrl = file; // Guardamos el archivo para el FormData
 
-                // Previsualizar la imagen seleccionada
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    this.newSpace.image = e.target.result; // Asigna la URL de la imagen previsualizada
-                };
-                reader.readAsDataURL(file);
-            }
-        },
-        camposVacios() {
-            return !this.newSpace.name || !this.newSpace.description || !this.newSpace.seats || !this.selectedTimeFrame || !this.openingTime || !this.closingTime;
-        },
-        decomposeHoursAndMinutes(time) {
-            const [hour, minute] = time.split(':').map(Number);
-            const hourInMinutes = hour * 60 + minute;
-            return hourInMinutes;
-        },
-        makeHoursAndMinutes(minutes) {
-            const hours = Math.floor(minutes / 60);
-            const mins = minutes % 60;
+        // Previsualizar la imagen seleccionada
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          this.newSpace.image = e.target.result; // Asigna la URL de la imagen previsualizada
+        };
+        reader.readAsDataURL(file);
+      }
+    },
+    emptyFields() {
+      return !this.newSpace.name || !this.newSpace.description || !this.newSpace.seats || !this.selectedTimeFrame || !this.openingTime || !this.closingTime;
+    },
+    decomposeHoursAndMinutes(time) {
+      const [hour, minute] = time.split(':').map(Number);
+      const hourInMinutes = hour * 60 + minute;
+      return hourInMinutes;
+    },
+    makeHoursAndMinutes(minutes) {
+      const hours = Math.floor(minutes / 60);
+      const mins = minutes % 60;
 
-            // Formatea con ceros a la izquierda
-            const formattedHours = String(hours).padStart(2, '0');
-            const formattedMinutes = String(mins).padStart(2, '0');
+      // Formatea con ceros a la izquierda
+      const formattedHours = String(hours).padStart(2, '0');
+      const formattedMinutes = String(mins).padStart(2, '0');
 
-            return `${formattedHours}:${formattedMinutes}`;
-        },
-        async submit() {
-            const toast = useToast();
-            const formData = new FormData();
+      return `${formattedHours}:${formattedMinutes}`;
+    },
+    async submit() {
+      const toast = useToast();
+      const formData = new FormData();
 
-            // Descomposición de las horas y minutos de apertura y cierre
-            const openingTimeInMinutes = this.decomposeHoursAndMinutes(this.openingTime);
-            const closingTimeInMinutes = this.decomposeHoursAndMinutes(this.closingTime);
+      // Descomposición de las horas y minutos de apertura y cierre
+      const openingTimeInMinutes = this.decomposeHoursAndMinutes(this.openingTime);
+      const closingTimeInMinutes = this.decomposeHoursAndMinutes(this.closingTime);
 
-            formData.append('id', this.newSpace._id);
-            formData.append('name', this.newSpace.name);
-            formData.append('description', this.newSpace.description);
-            formData.append('seats', this.newSpace.seats);
-            formData.append('repetition', this.newSpace.repetition);
-            formData.append('opening', openingTimeInMinutes); 
-            formData.append('closing', closingTimeInMinutes);
-            const numbersOnly = parseFloat(this.selectedTimeFrame);
-            formData.append('duration', numbersOnly);
+      formData.append('id', this.newSpace._id);
+      formData.append('name', this.newSpace.name);
+      formData.append('description', this.newSpace.description);
+      formData.append('seats', this.newSpace.seats);
+      formData.append('repetition', this.newSpace.repetition);
+      formData.append('opening', openingTimeInMinutes);
+      formData.append('closing', closingTimeInMinutes);
+      const numbersOnly = parseFloat(this.selectedTimeFrame);
+      formData.append('duration', numbersOnly);
 
-            if (this.isNewImage && this.newImageUrl) {
-                formData.append('image', this.newImageUrl); // Agrega la nueva imagen al FormData
-            }
+      if (this.isNewImage && this.newImageUrl) {
+        formData.append('image', this.newImageUrl); // Agrega la nueva imagen al FormData
+      }
 
-            this.newSpace.opening = openingTimeInMinutes;
-            this.newSpace.closing = closingTimeInMinutes;
-            this.newSpace.duration = numbersOnly
+      this.newSpace.opening = openingTimeInMinutes;
+      this.newSpace.closing = closingTimeInMinutes;
+      this.newSpace.duration = numbersOnly
 
-            spaceService.updateSpace(formData)
-                .then(res => {
-                    console.log(res.data);
-                    const newSpaceSelected = { ...this.newSpace };
-                    this.spaceStore.setSelectedSpace(newSpaceSelected);
-                    // Mostrar la alerta de éxito y ocultarla después de 3 segundos
-                    this.successToastId = toast.success('¡Espacio actualizado con éxito!');
-                })
-                .catch(error => {
-                    console.log(error);
-                });
-
-        },
+      spaceService.updateSpace(formData)
+        .then(res => {
+          console.log(res.data);
+          const newSpaceSelected = { ...this.newSpace };
+          this.spaceStore.setSelectedSpace(newSpaceSelected);
+          // Mostrar la alerta de éxito y ocultarla después de 3 segundos
+          this.successToastId = toast.success('¡Espacio actualizado con éxito!');
+        })
+        .catch(error => {
+          console.log(error);
+        });
 
     },
+
+  },
 }
 </script>
 

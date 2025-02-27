@@ -1,247 +1,174 @@
 <template>
-    <v-container fluid>
-        <v-col>
-            <v-row>
-                <span class="text-h4">Nueva reserva</span>
-            </v-row>
-            <v-row>
-                <v-card class="pa-2 mt-4 mb-n3" width="100%">
-                    <v-card-text class="d-flex justify-space-between mb-n5 flex-wrap">
-                        <v-col xl="3" lg="3" md="4" sm="12" xs="12">
-                            <v-row>
-                                <span class="text-h6">Seleccione una fecha</span>
-                            </v-row>
-                            <v-row>
-                                <v-col>
-                                    <v-menu
-                                        :close-on-content-click="false"
-                                        location="bottom"
-                                        transition="slide-y-transition"
-                                    >
-                                        <template v-slot:activator="{ props }">
-                                        <v-text-field
-                                            density="compact"
-                                            prepend-icon="mdi-calendar-month-outline"
-                                            v-bind="props"
-                                            variant="outlined"
-                                            class="ml-n3"
-                                            :readonly="true"
-                                        >{{ formattedDate }}</v-text-field>
-                                        </template>
-                                        <v-date-picker class="ml-10"
-                                            :min-date='new Date()'
-                                            is-required
-                                            v-model="date"
-                                        />
-                                    </v-menu>
-                                </v-col>
-                            </v-row>
-                        </v-col>
-                        <v-col xl="3" lg="3" md="5" sm="12" xs="12">
-                            <v-row>
-                                <span class="text-h6">¿Hora de inicio?</span>
-                            </v-row>
-                            <v-row>
-                                <v-col>
-                                    <v-select
-                                        v-model="startTime"
-                                        :items="generateAllTimes()"
-                                        label="Inicio"
-                                        prepend-icon="mdi-timer-sand"
-                                        variant="outlined"
-                                        density="compact"
-                                        class="ml-n3"
-                                        clearable
-                                    />
-                                </v-col>
-                            </v-row>
-                        </v-col>
-                        <v-col xl="3" lg="3" md="5" sm="12" xs="12">
-                            <v-row>
-                                <span class="text-h6">¿Duración?</span>
-                            </v-row>
-                            <v-row>
-                                <v-col>
-                                    <v-select
-                                        v-model="durationSearched"
-                                        :items="timeFrames"
-                                        item-title="label"
-                                        item-value="value"
-                                        label="Duración"
-                                        prepend-icon="mdi-timer-outline"
-                                        variant="outlined"
-                                        density="compact"
-                                        class="ml-n3"
-                                        clearable
-                                    />
-                                </v-col>
-                            </v-row>
-                        </v-col>
-                        <v-col xl="3" lg="3" md="5" sm="12" xs="12">
-                            <v-row>
-                                <span class="text-h6">¿Número de asientos?</span>
-                            </v-row>
-                            <v-row>
-                                <v-col>
-                                    <v-text-field 
-                                        v-model.number="reservationSeats" 
-                                        label="Número de asientos"
-                                        prepend-icon="mdi-table-chair" 
-                                        type="number"
-                                        variant="outlined"
-                                        density="compact"
-                                        required
-                                        @input="reservationSeats = Math.max(1, reservationSeats)"
-                                    />
-                                </v-col>
-                            </v-row>
-                        </v-col>
-                    </v-card-text>
-                </v-card>
-            </v-row>
-            <div v-if="isLoading" class="loader-overlay">
-                <v-progress-circular  indeterminate color="primary" size="50"></v-progress-circular>
-            </div>
-            <v-row class="mx-n7">
-                <v-col v-if="!filteredSpaces.length && !isLoading" class="d-flex justify-center align-center mt-5">
-                    <span class="text-h4">No hay espacios disponibles para esos filtros de búsqueda</span>
+  <v-container fluid>
+    <v-col>
+      <v-row>
+        <span class="text-h4">Nueva reserva</span>
+      </v-row>
+      <v-row>
+        <v-card class="pa-2 mt-4 mb-n3" width="100%">
+          <v-card-text class="d-flex justify-space-between mb-n5 flex-wrap">
+            <v-col xl="3" lg="3" md="4" sm="12" xs="12">
+              <v-row>
+                <span class="text-h6">Seleccione una fecha</span>
+              </v-row>
+              <v-row>
+                <v-col>
+                  <v-menu :close-on-content-click="false" location="bottom" transition="slide-y-transition">
+                    <template v-slot:activator="{ props }">
+                      <v-text-field density="compact" prepend-icon="mdi-calendar-month-outline" v-bind="props"
+                        variant="outlined" class="ml-n3" :readonly="true">{{ formattedDate }}</v-text-field>
+                    </template>
+                    <v-date-picker class="ml-10" :min-date="new Date()" is-required v-model="date" />
+                  </v-menu>
                 </v-col>
-                <v-col v-else class="px-0">
-                    <v-container fluid>
-                        <v-row>
-                            <v-col v-for="space in filteredSpaces" :key="space._id" xl="3" lg="4" md="6" sm="12" xs="12">
-                                <v-card>
-                                    <v-img
-                                        :src="space?.image"
-                                        color="surface-variant"
-                                        height="200px"
-                                        cover
-                                    ></v-img>
-                                    <v-card-title class="text-h4 mb-1">{{space?.name}}</v-card-title>
-                                    <v-card-text>
-                                        <v-row class="d-flex align-center">
-                                            <v-col>
-                                                <v-row class="d-flex align-center">
-                                                    <v-col cols="1">
-                                                        <v-icon
-                                                            size="small"
-                                                            icon="mdi-weather-sunny"
-                                                        />
-                                                    </v-col>
-                                                    <v-col><span class="text-h6">Abre: {{makeHoursAndMinutes(space?.opening)}}</span></v-col>
-                                                </v-row>
-                                            </v-col>
-                                            <v-col>
-                                                <v-row class="d-flex align-center"> 
-                                                    <v-col cols="1">
-                                                        <v-icon
-                                                            size="small"
-                                                            icon="mdi-weather-night"
-                                                        />
-                                                    </v-col>
-                                                    <v-col><span class="text-h6">Cierra: {{makeHoursAndMinutes(space?.closing)}}</span></v-col>
-                                                </v-row>
-                                            </v-col>
-                                        </v-row>
-                                        <v-row>
-                                            <v-col>
-                                                <v-row>
-                                                    <v-col cols="1" class="d-flex align-center">
-                                                        <v-icon
-                                                            icon="mdi-timer-outline"
-                                                            size="small"
-                                                        />
-                                                    </v-col>
-                                                    <v-col>
-                                                        <span class="pt-2 text-h6" v-if="space.duration < 60">Tiempos de: {{space.duration}} minutos</span>
-                                                        <span class="pt-2 text-h6" v-if="space.duration == 60">Tiempos de: {{space.duration / 60}} hora</span>
-                                                        <span class="pt-2 text-h6" v-if="space.duration > 60">Tiempos de: {{space.duration / 60}} horas</span>
-                                                    </v-col>
-                                                </v-row>
-                                            </v-col>
-                                        </v-row>
-                                        <v-row>
-                                            <v-col>
-                                                <v-row class="d-flex align-center">
-                                                    <v-col cols="1">
-                                                        <v-icon
-                                                            icon="mdi-table-chair"
-                                                            size="small"
-                                                        />
-                                                    </v-col>
-                                                    <v-col><span class="text-h6">Máx. {{space?.seats}} asientos</span></v-col>
-                                                </v-row>
-                                            </v-col>
-                                        </v-row>
-                                        <v-row>
-                                            <v-col>
-                                                <v-select
-                                                    :model-value="reservationTimes[space._id]?.reservationStartTime || null"
-                                                    @update:model-value="val => updateReservation(space, 'reservationStartTime', val)"
-                                                    :items="availableTimes[space._id]"
-                                                    label="Inicio"
-                                                    prepend-icon="mdi-timer-sand"
-                                                    variant="outlined"
-                                                    density="compact"
-                                                    clearable
-                                                />
-                                            </v-col>
-                                            <v-col>
-                                                <v-select
-                                                    :model-value="reservationTimes[space._id]?.reservationEndTime || null"
-                                                    @update:model-value="val => updateReservation(space, 'reservationEndTime', val)"
-                                                    :items="calcEndTimeOfSpace(space)"
-                                                    item-title="label"
-                                                    item-value="value"
-                                                    label="Final"
-                                                    prepend-icon="mdi-timer-sand-complete"
-                                                    variant="outlined"
-                                                    density="compact"
-                                                    clearable
-                                                    :disabled="!reservationTimes[space._id]?.reservationStartTime"
-                                                />
-                                            </v-col>
-                                        </v-row>
-                                        <v-row class="mt-n6 mx-0 mb-2">
-                                            <v-fade-transition>
-                                                <v-alert 
-                                                    v-if="reservationTimes[space._id]?.reservationNotAllowed" 
-                                                    type="error" 
-                                                    icon="mdi-alert-outline"
-                                                    density="compact" variant="tonal">
-                                                    Ya tiene una reserva a esa hora
-                                                </v-alert>
-                                            </v-fade-transition>
-
-                                            <v-fade-transition>
-                                                <v-alert 
-                                                    v-if="reservationTimes[space._id]?.seatsLeft" 
-                                                    :type="reservationTimes[space._id].seatsLeft == space.seats ? 'success' : reservationTimes[space._id].seatsLeft > 3 ? 'warning' : 'error'" 
-                                                    icon="mdi-information-outline"
-                                                    density="compact" variant="tonal">
-                                                    Quedan {{ reservationTimes[space._id].seatsLeft }} asientos
-                                                </v-alert>
-                                            </v-fade-transition>
-                                        </v-row>
-                                    </v-card-text>
-                                    <v-card-actions class="mt-n6 mx-2 mb-2">
-                                        <TonalButton
-                                            block
-                                            class=""
-                                            color="blue"
-                                            text="Reservar"
-                                            :disabled="(!reservationTimes[space._id]?.reservationStartTime || !reservationTimes[space._id]?.reservationEndTime) || reservationTimes[space._id]?.reservationNotAllowed == true"
-                                            @click="createReservation(space)"
-                                        />
-                                    </v-card-actions>
-                                </v-card>
-                            </v-col>
-                        </v-row>
-                    </v-container>
+              </v-row>
+            </v-col>
+            <v-col xl="3" lg="3" md="5" sm="12" xs="12">
+              <v-row>
+                <span class="text-h6">¿Hora de inicio?</span>
+              </v-row>
+              <v-row>
+                <v-col>
+                  <v-select v-model="startTime" :items="generateAllTimes()" label="Inicio" prepend-icon="mdi-timer-sand"
+                    variant="outlined" density="compact" class="ml-n3" clearable />
                 </v-col>
-            </v-row>
+              </v-row>
+            </v-col>
+            <v-col xl="3" lg="3" md="5" sm="12" xs="12">
+              <v-row>
+                <span class="text-h6">¿Duración?</span>
+              </v-row>
+              <v-row>
+                <v-col>
+                  <v-select v-model="durationSearched" :items="timeFrames" item-title="label" item-value="value"
+                    label="Duración" prepend-icon="mdi-timer-outline" variant="outlined" density="compact" class="ml-n3"
+                    clearable />
+                </v-col>
+              </v-row>
+            </v-col>
+            <v-col xl="3" lg="3" md="5" sm="12" xs="12">
+              <v-row>
+                <span class="text-h6">¿Número de asientos?</span>
+              </v-row>
+              <v-row>
+                <v-col>
+                  <v-text-field v-model.number="reservationSeats" label="Número de asientos"
+                    prepend-icon="mdi-table-chair" type="number" variant="outlined" density="compact" required
+                    @input="reservationSeats = Math.max(1, reservationSeats)" />
+                </v-col>
+              </v-row>
+            </v-col>
+          </v-card-text>
+        </v-card>
+      </v-row>
+      <div v-if="isLoading" class="loader-overlay">
+        <v-progress-circular indeterminate color="primary" size="50"></v-progress-circular>
+      </div>
+      <v-row class="mx-n7">
+        <v-col v-if="!filteredSpaces.length && !isLoading" class="d-flex justify-center align-center mt-5">
+          <span class="text-h4">No hay espacios disponibles para esos filtros de búsqueda</span>
         </v-col>
-    </v-container>
+        <v-col v-else class="px-0">
+          <v-container fluid>
+            <v-row>
+              <v-col v-for="space in filteredSpaces" :key="space._id" xl="3" lg="4" md="6" sm="12" xs="12">
+                <v-card>
+                  <v-img :src="space?.image" color="surface-variant" height="200px" cover></v-img>
+                  <v-card-title class="text-h4 mb-1">{{ space?.name }}</v-card-title>
+                  <v-card-text>
+                    <v-row class="d-flex align-center">
+                      <v-col>
+                        <v-row class="d-flex align-center">
+                          <v-col cols="1">
+                            <v-icon size="small" icon="mdi-weather-sunny" />
+                          </v-col>
+                          <v-col><span class="text-h6">Abre:
+                              {{ makeHoursAndMinutes(space?.opening) }}</span></v-col>
+                        </v-row>
+                      </v-col>
+                      <v-col>
+                        <v-row class="d-flex align-center">
+                          <v-col cols="1">
+                            <v-icon size="small" icon="mdi-weather-night" />
+                          </v-col>
+                          <v-col><span class="text-h6">Cierra:
+                              {{ makeHoursAndMinutes(space?.closing) }}</span></v-col>
+                        </v-row>
+                      </v-col>
+                    </v-row>
+                    <v-row>
+                      <v-col>
+                        <v-row>
+                          <v-col cols="1" class="d-flex align-center">
+                            <v-icon icon="mdi-timer-outline" size="small" />
+                          </v-col>
+                          <v-col>
+                            <span class="pt-2 text-h6" v-if="space.duration < 60">Tiempos de: {{ space.duration }}
+                              minutos</span>
+                            <span class="pt-2 text-h6" v-if="space.duration == 60">Tiempos de: {{ space.duration / 60 }}
+                              hora</span>
+                            <span class="pt-2 text-h6" v-if="space.duration > 60">Tiempos de: {{ space.duration / 60 }}
+                              horas</span>
+                          </v-col>
+                        </v-row>
+                      </v-col>
+                    </v-row>
+                    <v-row>
+                      <v-col>
+                        <v-row class="d-flex align-center">
+                          <v-col cols="1">
+                            <v-icon icon="mdi-table-chair" size="small" />
+                          </v-col>
+                          <v-col><span class="text-h6">Máx. {{ space?.seats }} asientos</span></v-col>
+                        </v-row>
+                      </v-col>
+                    </v-row>
+                    <v-row>
+                      <v-col>
+                        <v-select :model-value="reservationTimes[space._id]?.reservationStartTime || null"
+                          @update:model-value="val => updateReservation(space, 'reservationStartTime', val)"
+                          :items="availableTimes[space._id]" label="Inicio" prepend-icon="mdi-timer-sand"
+                          variant="outlined" density="compact" clearable />
+                      </v-col>
+                      <v-col>
+                        <v-select :model-value="reservationTimes[space._id]?.reservationEndTime || null"
+                          @update:model-value="val => updateReservation(space, 'reservationEndTime', val)"
+                          :items="calcEndTimeOfSpace(space)" item-title="label" item-value="value" label="Final"
+                          prepend-icon="mdi-timer-sand-complete" variant="outlined" density="compact" clearable
+                          :disabled="!reservationTimes[space._id]?.reservationStartTime" />
+                      </v-col>
+                    </v-row>
+                    <v-row class="mt-n6 mx-0 mb-2">
+                      <v-fade-transition>
+                        <v-alert v-if="reservationTimes[space._id]?.reservationNotAllowed" type="error"
+                          icon="mdi-alert-outline" density="compact" variant="tonal">
+                          Ya tiene una reserva a esa hora
+                        </v-alert>
+                      </v-fade-transition>
+
+                      <v-fade-transition>
+                        <v-alert v-if="reservationTimes[space._id]?.seatsLeft"
+                          :type="reservationTimes[space._id].seatsLeft == space.seats ? 'success' : reservationTimes[space._id].seatsLeft > 3 ? 'warning' : 'error'"
+                          icon="mdi-information-outline" density="compact" variant="tonal">
+                          Quedan
+                          {{ reservationTimes[space._id].seatsLeft }} asientos
+                        </v-alert>
+                      </v-fade-transition>
+                    </v-row>
+                  </v-card-text>
+                  <v-card-actions class="mt-n6 mx-2 mb-2">
+                    <TonalButton block class="" color="blue" text="Reservar"
+                      :disabled="(!reservationTimes[space._id]?.reservationStartTime || !reservationTimes[space._id]?.reservationEndTime) || reservationTimes[space._id]?.reservationNotAllowed == true"
+                      @click="createReservation(space)" />
+                  </v-card-actions>
+                </v-card>
+              </v-col>
+            </v-row>
+          </v-container>
+        </v-col>
+      </v-row>
+    </v-col>
+  </v-container>
 </template>
 
 <script setup>
@@ -262,13 +189,13 @@ const spaceStore = useSpaceStore();
 const reservationStore = useReservationStore();
 
 // Extraemos funciones del composable useTime
-const { 
-  generateAllTimes, 
-  makeMinutes, 
-  makeHoursAndMinutes, 
-  getHoursAndMinsFromDate, 
-  parseToStringDate, 
-  parseToYYYYMMDD 
+const {
+  generateAllTimes,
+  makeMinutes,
+  makeHoursAndMinutes,
+  getHoursAndMinsFromDate,
+  parseToStringDate,
+  parseToYYYYMMDD
 } = useTime();
 
 // Variables reactivas
@@ -295,8 +222,15 @@ const timeFrames = [
 const availableTimes = reactive({});
 const isLoading = ref(false);
 
-/* ------------------------- Funciones del componente ------------------------- */
 
+/* ------------------------- Ciclo de vida ------------------------- */
+onMounted(() => {
+  // Llamamos a getSpaces para obtener los espacios al montar el componente
+  getSpaces();
+});
+
+
+/* ------------------------- Funciones del componente ------------------------- */
 // Obtiene los espacios a través del servicio
 const getSpaces = () => {
   spaceService.getSpaces()
@@ -393,7 +327,7 @@ const calcSeatsAllowed = (space) => {
 
 // Valida si se permite la reserva según las reservas del usuario
 const calcReservationAllowed = (space) => {
-  const events = reservationsByDate.value.filter(reservation => 
+  const events = reservationsByDate.value.filter(reservation =>
     reservation.spaceId === space._id && reservation.userId === userStore.getId
   );
 
@@ -438,12 +372,12 @@ const filterSpaces = async () => {
 
     const matchesStartTime = startTime.value == null ||
       (makeHoursAndMinutes(space.opening) <= startTime.value &&
-       makeHoursAndMinutes(space.closing) > startTime.value &&
-       availableTimes[space._id].includes(startTime.value));
+        makeHoursAndMinutes(space.closing) > startTime.value &&
+        availableTimes[space._id].includes(startTime.value));
 
     const matchesDuration = durationSearched.value == null ||
       (space.duration <= durationSearched.value &&
-       calcDurationAvailable(durationSearched.value, availableTimes[space._id], space));
+        calcDurationAvailable(durationSearched.value, availableTimes[space._id], space));
 
     const matchesSeats = reservationSeats.value == null || space.seats >= reservationSeats.value;
 
@@ -462,7 +396,7 @@ const calcDurationAvailable = (duration, availableTimesForSpace, space) => {
   if (!hoursReserved || hoursReserved.length === 0) {
     const total = space.closing - first;
     return total >= duration;
-  }  
+  }
 
   const allTimes = [];
 
@@ -477,7 +411,7 @@ const calcDurationAvailable = (duration, availableTimesForSpace, space) => {
         flag = false;
         break;
       }
-      if (time >= hourReserved.startMinutes && time < hourReserved.endMinutes) {        
+      if (time >= hourReserved.startMinutes && time < hourReserved.endMinutes) {
         flag = false;
         break;
       }
@@ -618,10 +552,6 @@ const binarySearchReservation = (time, duration, hoursReserved) => {
   return null;
 };
 
-// Navega a la ruta anterior
-const routerBack = () => {
-  router.go(-1);
-};
 
 // Crea la reserva y redirige a la pantalla de confirmación
 const createReservation = async (space) => {
@@ -670,26 +600,18 @@ watch(durationSearched, () => {
 watch(reservationSeats, () => {
   filterSpaces();
 });
-
-/* ------------------------- Ciclo de vida ------------------------- */
-
-onMounted(() => {
-  // Llamamos a getSpaces para obtener los espacios al montar el componente
-  getSpaces();
-});
 </script>
-
 
 <style scoped>
 .loader-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 9999; 
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
 }
 </style>

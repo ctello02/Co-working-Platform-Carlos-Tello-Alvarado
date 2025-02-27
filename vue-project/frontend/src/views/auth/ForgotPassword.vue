@@ -7,28 +7,13 @@
       <v-card-text>
         <v-col>
           <v-row>
-            <v-text-field
-              v-model="email"
-              label="Email"
-              type="email"
-              variant="outlined"
-              prepend-icon="mdi-email-outline"
-              required
-              :rules="emailRules"
-              autocomplete="off"
-              class="my-1"
-            />
+            <v-text-field v-model="email" label="Email" type="email" variant="outlined" prepend-icon="mdi-email-outline"
+              required :rules="emailRules" autocomplete="off" class="my-1" />
           </v-row>
 
           <v-row>
-            <v-btn
-              class="cta-btn custom-disabled-btn"
-              color="#1056bd"
-              variant="tonal"
-              @click="submit"
-              :disabled="camposVacios() || loading"
-              block
-            >
+            <v-btn class="cta-btn custom-disabled-btn" color="#1056bd" variant="tonal" @click="submit"
+              :disabled="emptyFields() || loading" block>
               <template v-if="loading">
                 <v-progress-circular indeterminate size="20" color="white" />
               </template>
@@ -51,7 +36,7 @@
     </v-card>
   </v-container>
 </template>
-  
+
 <script>
 import { authService } from '@/services/authService';
 import { useToast } from 'vue-toastification';
@@ -63,7 +48,7 @@ export default {
     return {
       email: "",
       loading: false, // Estado de carga
-      emailRules : [
+      emailRules: [
         v => !!v || 'El email es obligatorio',
         v => /^[\w.-]+@[a-zA-Z\d.-]+\.[a-zA-Z]{2,}$/i.test(v) || 'El email debe ser válido',
       ],
@@ -73,7 +58,7 @@ export default {
     TonalButton,
   },
   methods: {
-    camposVacios() {
+    emptyFields() {
       // Verificar que los campos no estén vacíos y que cumplan las reglas de validación
       const emailValido = this.emailRules.every(rule => rule(this.email) === true);
       return !(this.email && emailValido);
@@ -105,15 +90,15 @@ export default {
 }
 
 .custom-disabled-btn:disabled {
-  background-color: #bfbfbf; 
-  color: white !important; 
-  cursor: not-allowed; 
-  opacity: 1; 
-  border: 1px solid #bbb; 
+  background-color: #bfbfbf;
+  color: white !important;
+  cursor: not-allowed;
+  opacity: 1;
+  border: 1px solid #bbb;
 }
 
 .routerLink {
-  text-decoration: none; 
+  text-decoration: none;
   font-weight: bold;
   cursor: pointer;
   color: rgb(16, 86, 189);
@@ -121,11 +106,10 @@ export default {
 }
 
 .routerLink:hover {
-  text-decoration: underline; 
+  text-decoration: underline;
 }
 
 .routerLink:visited {
   color: rgb(16, 86, 189);
 }
 </style>
-  

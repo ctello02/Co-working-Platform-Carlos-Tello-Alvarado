@@ -7,46 +7,20 @@
       <v-card-text>
         <v-col>
           <v-row>
-            <v-text-field
-              v-model="email"
-              label="Email"
-              type="email"
-              variant="outlined"
-              prepend-icon="mdi-email-outline"
-              required
-              :rules="emailRules"
-              autocomplete="off"
-              class="my-1"
-            />
+            <v-text-field v-model="email" label="Email" type="email" variant="outlined" prepend-icon="mdi-email-outline"
+              required :rules="emailRules" autocomplete="off" class="my-1" />
           </v-row>
           <v-row class="d-flex flex-column justify-start">
-            <v-text-field
-              v-model="password"
-              variant="outlined"
-              label="Contraseña"
-              :type="show ? 'text' : 'password'"
-              prepend-icon="mdi-lock-outline"
-              :append-inner-icon="show ? 'mdi-eye' : 'mdi-eye-off'"  
-              @click:append-inner="show = !show"
-              required
-              class="my-1"
-              :rules="passwordRules"
-            />
-            <router-link
-              class="align-self-end mt-n1 mb-3 routerLink"
-              to="/forgot_password">
+            <v-text-field v-model="password" variant="outlined" label="Contraseña" :type="show ? 'text' : 'password'"
+              prepend-icon="mdi-lock-outline" :append-inner-icon="show ? 'mdi-eye' : 'mdi-eye-off'"
+              @click:append-inner="show = !show" required class="my-1" :rules="passwordRules" />
+            <router-link class="align-self-end mt-n1 mb-3 routerLink" to="/forgot_password">
               Recuperar contraseña
             </router-link>
           </v-row>
           <v-row>
-            <TonalButton
-              color="blue"
-              text="Iniciar sesión"
-              class="cta-btn custom-disabled-btn"
-              @click="submit" 
-              :disabled="camposVacios()"
-              block
-            />
+            <TonalButton color="blue" text="Iniciar sesión" class="cta-btn custom-disabled-btn" @click="submit"
+              :disabled="emptyFields()" block />
           </v-row>
           <v-row>
             <v-col class="text-center">
@@ -70,14 +44,14 @@ import { useToast } from 'vue-toastification';
 import TonalButton from '@/components/TonalButton.vue'
 
 export default {
-  data () {
+  data() {
     return {
       email: '',
       password: '',
       show: false,
-      emailRules : [
-          v => !!v || 'El email es obligatorio',
-          v => /^[\w.-]+@[a-zA-Z\d.-]+\.[a-zA-Z]{2,}$/i.test(v) || 'El email debe ser válido',
+      emailRules: [
+        v => !!v || 'El email es obligatorio',
+        v => /^[\w.-]+@[a-zA-Z\d.-]+\.[a-zA-Z]{2,}$/i.test(v) || 'El email debe ser válido',
       ],
       passwordRules: [
         v => !!v || 'La contraseña es requerida',
@@ -92,7 +66,7 @@ export default {
     TonalButton
   },
   methods: {
-    camposVacios() {
+    emptyFields() {
       // Verificar que los campos no estén vacíos y que cumplan las reglas de validación
       const emailValido = this.emailRules.every(rule => rule(this.email) === true);
       const passwordValido = this.passwordRules.every(rule => rule(this.password) === true);
@@ -100,13 +74,13 @@ export default {
       return !(this.email && this.password && emailValido && passwordValido);
     },
     async submit() {
-      authService.login(this.email, this.password)              
+      authService.login(this.email, this.password)
         .then(res => {
           const userStore = useUserStore();
 
           userStore.setId(res.data.user._id);
-          userStore.setToken(res.data.token); 
-          userStore.setIsAdmin(res.data.user.isAdmin);         
+          userStore.setToken(res.data.token);
+          userStore.setIsAdmin(res.data.user.isAdmin);
 
           this.$router.push('/')
         })
@@ -114,7 +88,7 @@ export default {
           const toast = useToast();
           if (error.response && error.response.status === 401) {
             toast.error("Contraseña incorrecta");
-          } else if(error.response && error.response.status === 404){
+          } else if (error.response && error.response.status === 404) {
             toast.error("Usuario no econtrado");
           }
           console.log(error);
@@ -139,15 +113,15 @@ export default {
 }
 
 .custom-disabled-btn:disabled {
-  background-color: #bfbfbf; 
-  color: white !important; 
-  cursor: not-allowed; 
-  opacity: 1; 
-  border: 1px solid #bbb; 
+  background-color: #bfbfbf;
+  color: white !important;
+  cursor: not-allowed;
+  opacity: 1;
+  border: 1px solid #bbb;
 }
 
 .routerLink {
-  text-decoration: none; 
+  text-decoration: none;
   font-weight: bold;
   cursor: pointer;
   color: rgb(16, 86, 189);
@@ -155,7 +129,7 @@ export default {
 }
 
 .routerLink:hover {
-  text-decoration: underline; 
+  text-decoration: underline;
 }
 
 .routerLink:visited {

@@ -72,18 +72,23 @@ import { reservationService } from '@/services/reservationService';
 
 import { useTime } from '@/composables/useTime';
 
+// Instancias de router y stores
 const userStore = useUserStore();
 const router = useRouter();
 const reservationStore = useReservationStore();
 
+// Variables reactivas
 const reservations = ref([]);
 const list = ref(false);
 
+// Extraemos funciones del composable useTime
 const { 
 getHoursAndMinsFromDate, 
 twoDigitsDate, 
 } = useTime();
 
+
+/* ------------------------- Funciones del componente ------------------------- */
 onMounted(() => {
     reservations.value = reservationStore.getReservation;
     if (!reservations.value) {
@@ -92,6 +97,8 @@ onMounted(() => {
     getUserReservations();
 });
 
+/* ------------------------- Funciones del componente ------------------------- */
+// Obtiene las reservas del usuario a través del servicio
 const getUserReservations = () => {            
     try{
         reservationService.getUserReservations(userStore.getId)
@@ -115,7 +122,5 @@ const infoEvent = (reservation) => {
 const openCreateReservation = () => {
     router.push('/createReservation');
 }
-
-
 
 </script>
