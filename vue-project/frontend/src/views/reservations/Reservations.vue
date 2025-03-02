@@ -17,7 +17,7 @@
                 <v-col v-for="reservation in reservations" :key="reservation._id" lg="3" md="4" sm="12" xs="12">
                     <v-card @click="infoEvent(reservation)" class="text-center" max-width="400" :ripple="false">
                         <v-card-title>
-                            <span class="text-h5">Reserva de {{ reservation.spaceId.name }}</span>
+                            <span class="text-h5">Reserva de {{ reservation?.spaceId.name }}</span>
                             <v-divider class="mt-1" />
                         </v-card-title>
                         <v-card-text>
@@ -38,8 +38,8 @@
                                         </v-row>
                                         <v-row>
                                             <v-col class="mt-n7"><span class="text-h6">{{
-                                                    getHoursAndMinsFromDate(reservation.startTime) }}h-{{
-                                                    getHoursAndMinsFromDate(reservation.endTime) }}h</span></v-col>
+                                                getHoursAndMinsFromDate(reservation.startTime) }}h-{{
+                                                        getHoursAndMinsFromDate(reservation.endTime) }}h</span></v-col>
                                         </v-row>
                                     </v-col>
                                 </v-row>
@@ -80,11 +80,10 @@ const {
 
 /* ------------------------- Funciones del componente ------------------------- */
 onMounted(() => {
-    reservations.value = reservationStore.getReservation;
+    getUserReservations();
     if (!reservations.value) {
         router.push('/reservations');
     }
-    getUserReservations();
 });
 
 /* ------------------------- Funciones del componente ------------------------- */
@@ -104,7 +103,6 @@ const getUserReservations = () => {
 }
 
 const infoEvent = (reservation) => {
-    console.log(reservation.value);
     reservationStore.setReservation(reservation);
     router.push('/reservationInfo');
 }
