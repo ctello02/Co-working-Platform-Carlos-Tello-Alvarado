@@ -86,7 +86,7 @@ const closingTime = ref(null);
 const allTimes = ref([]);
 
 // Extraemos funciones del composable useTime
-const { timeFrames, generateAllTimes } = useTime();
+const { timeFrames, generateAllTimes, makeMinutes } = useTime();
 
 // Cargar las horas disponibles al montar el componente
 onMounted(() => {
@@ -125,12 +125,6 @@ const clearFields = () => {
   closingTime.value = null;
 };
 
-// Función para descomponer la hora en minutos
-const decomposeHoursAndMinutes = (time) => {
-  const [hour, minute] = time.split(':').map(Number);
-  return hour * 60 + minute;
-};
-
 // Función para manejar la creación del espacio
 const submit = async () => {
   if (emptyFields()) {
@@ -139,8 +133,8 @@ const submit = async () => {
   }
 
   // Descomposición de las horas y minutos de apertura y cierre
-  const openingTimeInMinutes = decomposeHoursAndMinutes(openingTime.value);
-  const closingTimeInMinutes = decomposeHoursAndMinutes(closingTime.value);
+  const openingTimeInMinutes = makeMinutes(openingTime.value);
+  const closingTimeInMinutes = makeMinutes(closingTime.value);
 
   const formData = new FormData();
   formData.append('name', spaceName.value);
@@ -170,6 +164,6 @@ const routerBack = () => {
   } else {
     toast.clear();
   }
-  router.push('/spaces');
+  router.go(-1);
 };
 </script>

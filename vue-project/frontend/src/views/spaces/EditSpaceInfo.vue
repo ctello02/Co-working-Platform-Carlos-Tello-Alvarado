@@ -2,15 +2,8 @@
   <v-container class="container">
     <v-card v-if="space" class="mx-auto" max-width="600">
       <v-img :src="newSpace?.image" color="surface-variant" height="300px" cover class="img-container"
-        @click="triggerFileInput" style="position: relative; cursor: pointer; border: 0px; border-radius: 0px;">
-        <v-icon class="mdi-camera camera-icon" style="
-                    position: absolute;
-                    top: 50%;
-                    left: 50%;
-                    transform: translate(-50%, -50%);
-                    color: white;
-                    z-index: 1001;
-                ">mdi-camera</v-icon>
+        @click="triggerFileInput" style="cursor: pointer; border: 0; border-radius: 0">
+        <v-icon class="mdi-camera camera-icon">mdi-camera</v-icon>
         <input type="file" ref="fileInput" accept="image/*" @change="onFileChange" style="display: none" />
       </v-img>
 
@@ -68,161 +61,133 @@
   </v-container>
 </template>
 
-<script>
+<script setup>
+import { ref, computed, watch, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
+import { useToast } from 'vue-toastification';
 import { useSpaceStore } from '@/store/spaceStore';
 import { spaceService } from '@/services/spaceService';
-import { useToast } from 'vue-toastification';
-import TonalButton from '@/components/TonalButton.vue'
+import TonalButton from '@/components/TonalButton.vue';
 
-export default {
-  data() {
-    return {
-      spaceStore: null,
-      space: null,
-      newSpace: null,
-      newImageUrl: null,
-      isNewImage: false,
-      successToastId: null,
-      selectedTimeFrame: null,
-      openingTime: null,
-      closingTime: null,
-      allTimes: [],
-      timeFrames: [
-        { label: '15 mins', value: 15 },
-        { label: '30 mins', value: 30 },
-        { label: '1 hora', value: 60 },
-        { label: '2 horas', value: 120 },
-        { label: '3 horas', value: 180 },
-      ],
+import { useTime } from '@/composables/useTime';
+
+// Store y router
+const router = useRouter();
+const successToastId = ref(null);
+const toast = useToast();
+const spaceStore = useSpaceStore();
+
+// Variables reactivas
+const space = ref(null);
+const newSpace = ref(null);
+const newImageUrl = ref(null);
+const isNewImage = ref(false);
+const selectedTimeFrame = ref(null);
+const openingTime = ref(null);
+const closingTime = ref(null);
+const fileInput = ref(null);
+const allTimes = ref([]);
+
+// Extraemos funciones del composable useTime
+const {
+  timeFrames,
+  generateAllTimes,
+  makeMinutes,
+  makeHoursAndMinutes
+} = useTime();
+
+// Cargar datos al montar el componente
+onMounted(() => {
+  allTimes.value = generateAllTimes();
+  space.value = spaceStore.getSelectedSpace;
+
+  if (!space.value) {
+    router.push('/spaces');
+  }
+
+  newSpace.value = { ...space.value };
+  openingTime.value = makeHoursAndMinutes(space.value?.opening);
+  closingTime.value = makeHoursAndMinutes(space.value?.closing);
+  selectedTimeFrame.value = space.value?.duration;
+});
+
+// Computed para filtrar las horas de cierre
+const filteredClosingTimes = computed(() => {
+  if (!openingTime.value) return allTimes.value;
+  const openingIndex = allTimes.value.indexOf(openingTime.value);
+  return allTimes.value.slice(openingIndex + 1);
+});
+
+// Watch para validar hora de cierre
+watch(openingTime, (newVal) => {
+  if (newVal && closingTime.value && newVal >= closingTime.value) {
+    closingTime.value = null;
+  }
+});
+
+// Función para activar la selección de archivo
+const triggerFileInput = () => {
+  fileInput.value.click();
+};
+
+// Función para manejar la carga de archivos
+const onFileChange = (e) => {
+  const file = e.target.files[0];
+  if (file) {
+    isNewImage.value = true;
+    newImageUrl.value = file;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      newSpace.value.image = e.target.result;
     };
-  },
-  components: {
-    TonalButton,
-  },
-  computed: {
-    filteredClosingTimes() {
-      if (!this.openingTime) return this.allTimes;
-      const openingIndex = this.allTimes.indexOf(this.openingTime);
-      return this.allTimes.slice(openingIndex + 1);
-    },
-  },
-  watch: {
-    openingTime(newVal) {
-      if (newVal && this.closingTime && newVal >= this.closingTime) {
-        this.closingTime = null;
-      }
-    },
-  },
-  mounted() {
-    this.generateAllTimes();
-    this.spaceStore = useSpaceStore();
-    this.space = this.spaceStore.getSelectedSpace;
+    reader.readAsDataURL(file);
+  }
+};
 
-    if (!this.space) {
-      this.$router.push('/spaces'); // Redirigir al componente padre
-    }
+// Validación de campos vacíos
+const emptyFields = () => {
+  return !newSpace.value.name || !newSpace.value.description || !newSpace.value.seats ||
+    !selectedTimeFrame.value || !openingTime.value || !closingTime.value;
+};
 
-    this.newSpace = { ...this.space };    // Hacer una copia del objeto space
-    this.openingTime = this.makeHoursAndMinutes(this.space?.opening);
-    this.closingTime = this.makeHoursAndMinutes(this.space?.closing);
-    this.selectedTimeFrame = this.space?.duration;
-  },
-  methods: {
-    routerBack() {
-      const toast = useToast();
-      if (this.successToastId) {
-        toast.dismiss(this.successToastId); // Cierra el toast específico usando el ID
-      } else {
-        toast.clear(); // Elimina todos los toasts como respaldo
-      }
-      this.$router.go(-1);
-    },
-    generateAllTimes() {
-      for (let hour = 0; hour < 24; hour++) {
-        for (let minute = 0; minute < 60; minute += 15) {
-          const formattedTime = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
-          this.allTimes.push(formattedTime);
-        }
-      }
-    },
-    triggerFileInput() {
-      this.$refs.fileInput.click();
-    },
-    onFileChange(e) {
-      const file = e.target.files[0];
-      if (file) {
-        this.isNewImage = true;
-        this.newImageUrl = file; // Guardamos el archivo para el FormData
+// Guardar cambios
+const submit = async () => {
+  if (emptyFields()) {
+    toast.error('Formulario inválido');
+    return;
+  }
 
-        // Previsualizar la imagen seleccionada
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          this.newSpace.image = e.target.result; // Asigna la URL de la imagen previsualizada
-        };
-        reader.readAsDataURL(file);
-      }
-    },
-    emptyFields() {
-      return !this.newSpace.name || !this.newSpace.description || !this.newSpace.seats || !this.selectedTimeFrame || !this.openingTime || !this.closingTime;
-    },
-    decomposeHoursAndMinutes(time) {
-      const [hour, minute] = time.split(':').map(Number);
-      const hourInMinutes = hour * 60 + minute;
-      return hourInMinutes;
-    },
-    makeHoursAndMinutes(minutes) {
-      const hours = Math.floor(minutes / 60);
-      const mins = minutes % 60;
+  const formData = new FormData();
+  formData.append('id', newSpace.value._id);
+  formData.append('name', newSpace.value.name);
+  formData.append('description', newSpace.value.description);
+  formData.append('seats', newSpace.value.seats);
+  formData.append('repetition', newSpace.value.repetition);
+  formData.append('opening', makeMinutes(openingTime.value));
+  formData.append('closing', makeMinutes(closingTime.value));
+  formData.append('duration', parseFloat(selectedTimeFrame.value));
 
-      // Formatea con ceros a la izquierda
-      const formattedHours = String(hours).padStart(2, '0');
-      const formattedMinutes = String(mins).padStart(2, '0');
+  if (isNewImage.value && newImageUrl.value) {
+    formData.append('image', newImageUrl.value);
+  }
 
-      return `${formattedHours}:${formattedMinutes}`;
-    },
-    async submit() {
-      const toast = useToast();
-      const formData = new FormData();
+  await spaceService.updateSpace(formData);
+  toast.success('¡Espacio actualizado con éxito!');
+};
 
-      // Descomposición de las horas y minutos de apertura y cierre
-      const openingTimeInMinutes = this.decomposeHoursAndMinutes(this.openingTime);
-      const closingTimeInMinutes = this.decomposeHoursAndMinutes(this.closingTime);
-
-      formData.append('id', this.newSpace._id);
-      formData.append('name', this.newSpace.name);
-      formData.append('description', this.newSpace.description);
-      formData.append('seats', this.newSpace.seats);
-      formData.append('repetition', this.newSpace.repetition);
-      formData.append('opening', openingTimeInMinutes);
-      formData.append('closing', closingTimeInMinutes);
-      const numbersOnly = parseFloat(this.selectedTimeFrame);
-      formData.append('duration', numbersOnly);
-
-      if (this.isNewImage && this.newImageUrl) {
-        formData.append('image', this.newImageUrl); // Agrega la nueva imagen al FormData
-      }
-
-      this.newSpace.opening = openingTimeInMinutes;
-      this.newSpace.closing = closingTimeInMinutes;
-      this.newSpace.duration = numbersOnly
-
-      spaceService.updateSpace(formData)
-        .then(res => {
-          console.log(res.data);
-          const newSpaceSelected = { ...this.newSpace };
-          this.spaceStore.setSelectedSpace(newSpaceSelected);
-          // Mostrar la alerta de éxito y ocultarla después de 3 segundos
-          this.successToastId = toast.success('¡Espacio actualizado con éxito!');
-        })
-        .catch(error => {
-          console.log(error);
-        });
-
-    },
-
-  },
-}
+// Función para volver a la vista anterior
+const routerBack = () => {
+  const toast = useToast();
+  if (successToastId.value) {
+    toast.dismiss(successToastId);
+  } else {
+    toast.clear();
+  }
+  router.go(-1);
+};
 </script>
+
 
 <style scoped>
 .img-container {

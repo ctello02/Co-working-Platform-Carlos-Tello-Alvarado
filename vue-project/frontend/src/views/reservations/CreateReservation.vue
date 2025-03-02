@@ -190,6 +190,7 @@ const reservationStore = useReservationStore();
 
 // Extraemos funciones del composable useTime
 const {
+  timeFrames,
   generateAllTimes,
   makeMinutes,
   makeHoursAndMinutes,
@@ -197,6 +198,10 @@ const {
   parseToStringDate,
   parseToYYYYMMDD
 } = useTime();
+// Cambiamos el label de la última duración del filtro para que incluya el 'o más'
+// Ya que en timeFrames no lo incluye
+timeFrames[timeFrames.length - 1].label = '3 horas o más';
+
 
 // Variables reactivas
 const spaces = ref([]);
@@ -211,17 +216,8 @@ const formattedDate = ref(parseToStringDate(new Date()));
 const startTime = ref(null);
 const durationSearched = ref(null);
 
-const timeFrames = [
-  { label: '15 mins', value: 15 },
-  { label: '30 mins', value: 30 },
-  { label: '1 hora', value: 60 },
-  { label: '2 horas', value: 120 },
-  { label: '3 horas o más', value: 180 },
-];
-
 const availableTimes = reactive({});
 const isLoading = ref(false);
-
 
 /* ------------------------- Ciclo de vida ------------------------- */
 onMounted(() => {
