@@ -1,74 +1,53 @@
 <template>
-    <SpaceCard
-        :space="this.space"
-        :adminActions="userStore.getIsAdmin"
-        :reserveActions="true"
-        @go-back="routerBack"
-        @reserve="createReservation"
-        @edit-space="openEditSpaceInfo"
-        @delete-space="deleteSpace"
-    />
+    <SpaceCard :space="space" :adminActions="userStore.getIsAdmin" :reserveActions="true" @go-back="routerBack"
+        @reserve="createReservation" @edit-space="openEditSpaceInfo" @delete-space="deleteSpace" />
 </template>
 
-<script>
+<script setup>
+import { ref, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
 import { useUserStore } from '@/store/userStore';
 import { useSpaceStore } from '@/store/spaceStore';
 import { spaceService } from '@/services/spaceService';
-import TonalButton from '@/components/TonalButton.vue'
-import AskModal from '@/components/AskModal.vue';
 import SpaceCard from '@/components/SpaceCard.vue';
 
-export default {
-    data() {
-        return {
-            spaceStore: null,
-            space: null,
-            deleteModal: false,
-        };
-    },
-    components: {
-        SpaceCard,
-        TonalButton,
-        AskModal
-    },
-    computed: {
-        userStore() {
-            return useUserStore();
-        },
-    },
-    mounted() {
-        this.spaceStore = useSpaceStore();
-        this.space = this.spaceStore.getSelectedSpace;
+const router = useRouter();
+const userStore = useUserStore();
+const spaceStore = useSpaceStore();
 
-        if (!this.space) {
-            this.$router.push('/spaces'); // Redirigir al componente padre
-        }
-    },
-    methods: {
-        closeDialog() {
-            this.deleteModal = false;
-        },
-        routerBack() {
-            this.$router.push('/spaces');
-        },
-        openEditSpaceInfo() {
-            this.$router.push('/editSpaceInfo');
-        },
-        createReservation() {
-            this.$router.push('/createReservation');
-        },
-        deleteSpace() {
-            spaceService.deleteSpace(this.space._id)
-            .then(res => {
-                console.log(res.data);
-                this.deleteModal = false;
-                this.spaceStore.clearSelectedSpace();
-                this.routerBack();
-            })
-            .catch(error => {
-                console.log(error);
-            });
-        },
-    },
-};
+const space = ref(null);
+const deleteModal = ref(false);
+
+onMounted(() => {
+    space.value = spaceStore.getSelectedSpace;
+    if (!space.value) {
+        router.push('/spaces');
+    }
+});
+
+function routerBack() {
+    router.push('/spaces');
+}
+
+function openEditSpaceInfo() {
+    router.push('/editSpaceInfo');
+}
+
+function createReservation() {
+    router.push('/createReservation');
+}
+
+function deleteSpace() {
+    spaceService
+        .deleteSpace(space.value._id)
+        .then((res) => {
+            console.log(res.data);
+            deleteModal.value = false;
+            spaceStore.clearSelectedSpace();
+            routerBack();
+        })
+        .catch((error) => {
+            console.log(error);
+        });
+}
 </script>

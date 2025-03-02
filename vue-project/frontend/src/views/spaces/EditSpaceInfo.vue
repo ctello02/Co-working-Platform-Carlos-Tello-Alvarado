@@ -158,22 +158,33 @@ const submit = async () => {
     return;
   }
 
+  //Guardamos en el nuevo espacio los nuevos valores
+  newSpace.value.opening = makeMinutes(openingTime.value);
+  newSpace.value.closing = makeMinutes(closingTime.value);
+  newSpace.value.duration = parseFloat(selectedTimeFrame.value);
+
   const formData = new FormData();
   formData.append('id', newSpace.value._id);
   formData.append('name', newSpace.value.name);
   formData.append('description', newSpace.value.description);
   formData.append('seats', newSpace.value.seats);
   formData.append('repetition', newSpace.value.repetition);
-  formData.append('opening', makeMinutes(openingTime.value));
-  formData.append('closing', makeMinutes(closingTime.value));
-  formData.append('duration', parseFloat(selectedTimeFrame.value));
+  formData.append('opening', newSpace.value.opening);
+  formData.append('closing', newSpace.value.closing);
+  formData.append('duration', newSpace.value.duration);
 
   if (isNewImage.value && newImageUrl.value) {
     formData.append('image', newImageUrl.value);
   }
 
-  await spaceService.updateSpace(formData);
-  toast.success('¡Espacio actualizado con éxito!');
+  try {
+    const res = await spaceService.updateSpace(formData);
+    console.log(res.data);
+    toast.success('¡Espacio actualizado con éxito!');
+    spaceStore.setSelectedSpace(newSpace);
+  } catch (error) {
+    console.error(error);
+  }
 };
 
 // Función para volver a la vista anterior
