@@ -1,42 +1,31 @@
 <template>
   <v-container fluid class="d-flex gap-4">
     <v-row>
-      <v-col cols="12" lg="3">
+      <v-col cols="12" lg="3" md="3">
         <span class="text-h4">Reservas ({{ reservations.length }})</span>
         <v-card class="pa-2 mt-4">
-            <v-list v-if="reservations.length > 0">
-              <v-list-item
-                @click="infoEvent(reservation)"
-                v-for="reservation in reservations"
-                :key="reservation._id"
-              >
-                <v-list-item-content>
-                  <v-list-item-title>
-                    <p>Reserva de espacio</p>
-                  </v-list-item-title>
+          <v-list v-if="reservations.length > 0">
+            <v-list-item @click="infoEvent(reservation)" v-for="reservation in reservations" :key="reservation._id">
+              <v-list-item-content>
+                <v-list-item-title>
+                  <p>Reserva de espacio</p>
+                </v-list-item-title>
 
-                  <v-list-item-subtitle>
-                    {{ reservation.start }} - {{ reservation.end }}
-                  </v-list-item-subtitle>
-                </v-list-item-content>
-              </v-list-item>
-            </v-list>
-            <span class="ml-4" v-else type="info">No hay reservas para mostrar</span>
-            <v-card-actions class="d-flex justify-center">
-              <TonalButton 
-                color="blue"
-                @click="addReservation"
-                text="Añadir reserva"
-                block
-              />
-            </v-card-actions>
+                <v-list-item-subtitle>
+                  {{ reservation.start }} - {{ reservation.end }}
+                </v-list-item-subtitle>
+              </v-list-item-content>
+            </v-list-item>
+          </v-list>
+          <span class="ml-4" v-else type="info">No hay reservas para mostrar</span>
+          <v-card-actions class="d-flex justify-center">
+            <TonalButton color="blue" @click="addReservation" text="Añadir reserva" block />
+          </v-card-actions>
         </v-card>
       </v-col>
 
-      <v-col cols="12" lg="9">
-        <ScheduleXCalendar
-          :calendar-app="calendarApp"
-        />
+      <v-col cols="12" lg="9" md="9">
+        <ScheduleXCalendar :calendar-app="calendarApp" />
       </v-col>
 
     </v-row>
@@ -104,9 +93,9 @@ const calendarApp = createCalendar({
     timeAxisFormatOptions: { hour: '2-digit', minute: '2-digit' },
   },
   calendars: {
-    espacios:{
+    espacios: {
       colorName: 'espacios',
-      lightColors:{
+      lightColors: {
         main: '#1c7df9',
         container: '#d2e7ff',
         onContainer: '#002859',
@@ -134,11 +123,11 @@ const calendarApp = createCalendar({
       const event = {
         title: 'Evento día ' + date,
         description: 'Descripción ejemplo',
-        start : date,
+        start: date,
         end: date,
         calendarId: 'espacios'
       }
-      
+
       addEventMonth(event)
     },
 
@@ -149,9 +138,9 @@ const calendarApp = createCalendar({
       console.log('onClickDateTime', dateTime) // e.g. 2024-01-01 12:37
     },
   },
-  
+
 },
-[eventsServicePlugin]
+  [eventsServicePlugin]
 )
 
 function addEventMonth(event) {

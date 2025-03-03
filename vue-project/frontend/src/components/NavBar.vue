@@ -1,33 +1,79 @@
 <template>
-    <v-app-bar app :style="color_nav">
-        <v-app-bar-nav-icon @click.stop="rail = !rail"></v-app-bar-nav-icon>
+    <!-- Barra superior -->
+    <v-app-bar app :style="color_nav" density="compact">
         <v-toolbar-title>Co-Working Platform</v-toolbar-title>
         <v-spacer></v-spacer>
-        <v-btn class="ma-2" icon="mdi-account" @click="toProfile()"></v-btn>
+        <v-btn class="mx-4" icon="mdi-account-outline" @click="toProfile()"></v-btn>
     </v-app-bar>
 
-    <v-navigation-drawer :color="color_sidebar" permanent :rail="rail" v-model="drawer" app>
+    <!-- Sidebar permanente -->
+    <v-navigation-drawer app permanent :color="color_sidebar" :width="160">
         <v-list>
-            <v-list-item prepend-icon="mdi-home-outline" @click="toHome">
-                Vista principal
+            <v-list-item @click="toHome">
+                <v-row>
+                    <v-col cols="1" class="d-flex align-center">
+                        <v-icon size="small" icon="mdi-home-outline"></v-icon>
+                    </v-col>
+                    <v-col class="d-flex align-center">
+                        <span class="item">Vista principal</span>
+                    </v-col>
+                </v-row>
             </v-list-item>
-            <v-list-item prepend-icon="mdi-calendar-outline" @click="toCalendar">
-                Calendario
+
+            <v-list-item @click="toCalendar">
+                <v-row>
+                    <v-col cols="1" class="d-flex align-center">
+                        <v-icon size="small" icon="mdi-calendar-outline"></v-icon>
+                    </v-col>
+                    <v-col class="d-flex align-center">
+                        <span class="item">Calendario</span>
+                    </v-col>
+                </v-row>
             </v-list-item>
-            <v-list-item prepend-icon="mdi-newspaper-variant-outline" @click="toReservations">
-                Reservas
+
+            <v-list-item @click="toReservations">
+                <v-row>
+                    <v-col cols="1" class="d-flex align-center">
+                        <v-icon size="small" icon="mdi-newspaper-variant-outline"></v-icon>
+                    </v-col>
+                    <v-col class="d-flex align-center">
+                        <span class="item">Reservas</span>
+                    </v-col>
+                </v-row>
             </v-list-item>
-            <v-list-item prepend-icon="mdi-table-chair" @click="toSpaces">
-                Espacios
+
+            <v-list-item @click="toSpaces">
+                <v-row>
+                    <v-col cols="1" class="d-flex align-center">
+                        <v-icon size="small" icon="mdi-table-chair"></v-icon>
+                    </v-col>
+                    <v-col class="d-flex align-center">
+                        <span class="item">Espacios</span>
+                    </v-col>
+                </v-row>
             </v-list-item>
-            <!-- Mostramos el link a "Usuarios" solo si el usuario es admin -->
-            <v-list-item v-if="userStore.getIsAdmin" prepend-icon="mdi-account-group-outline" @click="toUsers">
-                Usuarios
+
+            <v-list-item v-if="userStore.getIsAdmin" @click="toUsers">
+                <v-row>
+                    <v-col cols="1" class="d-flex align-center">
+                        <v-icon size="small" icon="mdi-account-group-outline"></v-icon>
+                    </v-col>
+                    <v-col class="d-flex align-center">
+                        <span class="item">Usuarios</span>
+                    </v-col>
+                </v-row>
             </v-list-item>
-            <v-list-item :prepend-icon="userStore.getIsAdmin? 'mdi-close': 'mdi-check'" @click="changeAdmin">
-                <span v-if="userStore.getIsAdmin">Quitar</span>
-                <span v-else>Hacer</span>
-                Admin
+
+            <v-list-item @click="changeAdmin">
+                <v-row>
+                    <v-col cols="1" class="d-flex align-center">
+                        <v-icon size="small" :icon="userStore.getIsAdmin ? 'mdi-close' : 'mdi-check'"></v-icon>
+                    </v-col>
+                    <v-col class="d-flex align-center">
+                        <span class="item" v-if="userStore.getIsAdmin">Quitar Admin</span>
+                        <span class="item" v-else>Hacer Admin</span>
+                    </v-col>
+                </v-row>
             </v-list-item>
         </v-list>
     </v-navigation-drawer>
@@ -39,15 +85,14 @@ import { useUserStore } from '../store/userStore'
 export default {
     data() {
         return {
-            drawer: true,
-            rail: false,
+            // Eliminamos variables drawer y rail
             color_nav: 'color:white; background: rgb(0,45,98); background: linear-gradient(61deg, rgba(0,45,98,1) 75%, rgba(16,86,189,1) 75%);',
-            color_sidebar: '#002D62'            
+            color_sidebar: '#002D62'
         }
     },
     computed: {
         userStore() {
-            return useUserStore(); 
+            return useUserStore()
         }
     },
     methods: {
@@ -70,60 +115,15 @@ export default {
             this.$router.push('/reservations')
         },
         changeAdmin() {
-            this.userStore.setIsAdmin(!this.userStore.getIsAdmin);
-            localStorage.setItem('isAdmin', this.userStore.getIsAdmin);
+            this.userStore.setIsAdmin(!this.userStore.getIsAdmin)
+            localStorage.setItem('isAdmin', this.userStore.getIsAdmin)
         }
     }
 }
 </script>
 
 <style scoped>
-.hamburger {
-    font-size: 24px;
-    cursor: pointer;
-    background: none;
-    border: none;
-    position: fixed;
-    top: 10px;
-    left: 10px;
-    z-index: 1000;
-    color: black;
-    /* Color por defecto del icono */
-    transition: color 0.3s;
-    /* Transición suave para el cambio de color */
-}
-
-.white-icon {
-    color: white;
-    /* Color del icono cuando el menú está abierto */
-}
-
-.side-menu {
-    position: fixed;
-    top: 0;
-    left: -250px;
-    width: 250px;
-    height: 100%;
-    background-color: #333;
-    padding-top: 60px;
-    transition: 0.3s;
-    z-index: 999;
-}
-
-.side-menu a {
-    padding: 10px 15px;
-    text-decoration: none;
-    font-size: 18px;
-    color: white;
-    display: block;
-    transition: 0.3s;
-}
-
-.side-menu a:hover {
-    background-color: #575757;
-}
-
-.side-menu.open {
-    left: 0;
+.item {
+    font-size: clamp(8px, 1.2vw, 12px);
 }
 </style>
