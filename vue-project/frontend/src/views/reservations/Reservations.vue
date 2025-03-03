@@ -1,8 +1,13 @@
 <template>
     <v-container fluid class="container">
         <v-col>
-            <v-row>
-                <span class="text-h4">Reservas del usuario</span>
+            <v-row class="d-flex align-center ga-3">
+                <span class="text-h5">Reservas</span>
+                <v-tabs v-model="tab" class="tab-group" align-tabs="center" slider-color="#1056bd" height="40">
+                    <v-tab :ripple="false" value="calendar" class="no-hover text-none v-tab-text">Calendario</v-tab>
+                    <v-tab :ripple="false" value="next" class="no-hover text-none v-tab-text">Próximas</v-tab>
+                    <v-tab :ripple="false" value="past" class="no-hover text-none v-tab-text">Pasadas</v-tab>
+                </v-tabs>
                 <v-spacer></v-spacer>
                 <div class="d-flex align-center">
                     <TonalButton color="blue" text="Crear reserva" class="mr-3" @click="openCreateReservation" />
@@ -10,43 +15,55 @@
                         :icon="list ? 'mdi-view-grid-outline' : 'mdi-format-list-bulleted'" @click="list = !list" />
                 </div>
             </v-row>
-            <v-row v-if="reservations.length === 0" class="mt-8">
-                <span class="text-h5">No se encuentran datos</span>
-            </v-row>
-            <v-row v-else>
-                <v-col v-for="reservation in reservations" :key="reservation._id" lg="3" md="4" sm="12" xs="12">
-                    <v-card @click="infoEvent(reservation)" class="text-center" max-width="400" :ripple="false">
-                        <v-card-title>
-                            <span class="text-h5">Reserva de {{ reservation?.spaceId.name }}</span>
-                            <v-divider class="mt-1" />
-                        </v-card-title>
-                        <v-card-text>
-                            <v-col>
-                                <v-row>
-                                    <v-col>
-                                        <v-row>
-                                            <v-col style="color: grey"><span class="text-h6">Fecha: </span></v-col>
-                                        </v-row>
-                                        <v-row>
-                                            <v-col class="mt-n7"><span class="text-h6"> {{ twoDigitsDate(new
-                                                Date(reservation.startTime)) }}</span></v-col>
-                                        </v-row>
-                                    </v-col>
-                                    <v-col>
-                                        <v-row>
-                                            <v-col style="color: grey"><span class="text-h6">Horas: </span></v-col>
-                                        </v-row>
-                                        <v-row>
-                                            <v-col class="mt-n7"><span class="text-h6">{{
-                                                getHoursAndMinsFromDate(reservation.startTime) }}h-{{
-                                                        getHoursAndMinsFromDate(reservation.endTime) }}h</span></v-col>
-                                        </v-row>
-                                    </v-col>
-                                </v-row>
+
+            <v-row>
+                <v-tabs-window v-model="tab" style="width: 100%;">
+                    <v-tabs-window-item value="calendar">
+                        <ScheduleXCalendar class="mt-2" :calendar-app="calendarApp">
+                            <template #timeGridEvent="{ calendarEvent }">
+                                <div :style="eventStyles">
+                                    {{ calendarEvent.title }}
+                                </div>
+                            </template>
+
+                            <template #monthGridEvent="{ calendarEvent }">
+                                <div :style="eventStyles">
+                                    {{ calendarEvent.title }}
+                                </div>
+                            </template>
+
+                            <template #eventModal="{ calendarEvent }">
+                                <CustomEventCalendar :reservation="reservationStore.getReservation"
+                                    @see-event="openReservation" @close="closeModal" />
+                            </template>
+
+                        </ScheduleXCalendar>
+                    </v-tabs-window-item>
+
+                    <v-tabs-window-item value="next">
+                        <v-row>
+                            <v-col v-if="reservations.length === 0" class="mt-4 text-center">
+                                <span class="text-h5">No se encuentran datos</span>
                             </v-col>
-                        </v-card-text>
-                    </v-card>
-                </v-col>
+                            <v-col v-else v-for="reservation in reservations" :key="reservation._id" lg="3" md="4"
+                                sm="12" xs="12" class="ma-0 mt-1 pa-0">
+                                <ReservationCard :reservation="reservation" />
+                            </v-col>
+                        </v-row>
+                    </v-tabs-window-item>
+
+                    <v-tabs-window-item value="past">
+                        <v-row>
+                            <v-col v-if="reservations.length === 0" class="mt-4 text-center">
+                                <span class="text-h5">No se encuentran datos</span>
+                            </v-col>
+                            <v-col v-for="reservation in reservations" :key="reservation._id" lg="3" md="4" sm="12"
+                                xs="12" class="ma-0 mt-1 pa-0">
+                                <ReservationCard :reservation="reservation" />
+                            </v-col>
+                        </v-row>
+                    </v-tabs-window-item>
+                </v-tabs-window>
             </v-row>
         </v-col>
     </v-container>
@@ -55,60 +72,158 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { useUserStore } from '@/store/userStore';
-import { useRouter } from 'vue-router';
 import { useReservationStore } from '@/store/reservationStore';
+import { useRouter } from 'vue-router';
+import { useTime } from '@/composables/useTime';
 import TonalButton from '@/components/TonalButton.vue';
 import { reservationService } from '@/services/reservationService';
+import ReservationCard from '@/components/ReservationCard.vue';
 
-import { useTime } from '@/composables/useTime';
+/* ------------- Importación de librerías para el calendario ---------- */
+import { ScheduleXCalendar } from '@schedule-x/vue';
+import CustomEventCalendar from '@/components/CustomModalCalendar.vue';
+import { createEventsServicePlugin } from '@schedule-x/events-service';
+import { createEventModalPlugin } from "@schedule-x/event-modal";
+import {
+    createCalendar,
+    createViewDay,
+    createViewMonthGrid,
+    createViewWeek,
+} from '@schedule-x/calendar';
+import '@schedule-x/theme-default/dist/index.css';
+/* -------------------------------------------------------------------- */
 
-// Instancias de router y stores
+
+/* ------------------- Instancias de router, stores y plugins ------------------ */
 const userStore = useUserStore();
 const router = useRouter();
 const reservationStore = useReservationStore();
+const eventsServicePlugin = createEventsServicePlugin();
+const eventModal = createEventModalPlugin();
+/* ----------------------------------------------------------------------------- */
 
-// Variables reactivas
+
+/* ---------------- Instancias de composables --------------- */
+const { parseDateTo_YYYYMMDD_HHMM } = useTime();
+/* ---------------------------------------------------------- */
+
+
+/* ------------------- Variables reactivas ------------------ */
 const reservations = ref([]);
 const list = ref(false);
-
-// Extraemos funciones del composable useTime
-const {
-    getHoursAndMinsFromDate,
-    twoDigitsDate,
-} = useTime();
+const tab = ref(null);
+/* ---------------------------------------------------------- */
 
 
 /* ------------------------- Ciclo de vida ------------------------- */
 onMounted(() => {
-    getUserReservations();
     if (!reservations.value) {
         router.push('/reservations');
     }
 });
+/*------------------------------------------------------------------ */
+
+
+/* ------------------- Instancias del calendario ------------------ */
+const calendarApp = createCalendar({
+    locale: 'es-ES',
+    views: [
+        createViewDay(),
+        createViewWeek(),
+        createViewMonthGrid(),
+    ],
+    firstDayOfWeek: 1,
+    defaultView: createViewMonthGrid().name,
+    events: getAllEvents(),
+    weekOptions: {
+        gridHeight: 1300,
+        timeAxisFormatOptions: { hour: '2-digit', minute: '2-digit' },
+    },
+    callbacks: {
+        onEventClick(calendarEvent) {
+            const selectedReservation = reservations.value.find(reservation => reservation._id === calendarEvent.id);
+            reservationStore.setReservation(selectedReservation);
+            console.log('onEventClick', calendarEvent)
+        },
+        onClickDate(date) {
+            console.log('onClickDate', date) // e.g. 2024-01-01
+        },
+        onClickDateTime(dateTime) {
+            console.log('onClickDateTime', dateTime) // e.g. 2024-01-01 12:37
+        },
+    },
+    plugins: [
+        eventsServicePlugin,
+        eventModal,
+    ],
+
+})
+/* ---------------------------------------------------------------------------- */
+
 
 /* ------------------------- Funciones del componente ------------------------- */
-// Obtiene las reservas del usuario a través del servicio
-const getUserReservations = () => {
+function getAllEvents() {
     try {
         reservationService.getUserReservations(userStore.getId)
             .then(res => {
                 reservations.value = res.data.reservations;
+                const reserv = res.data.reservations.map(reservation => {
+                    // Usamos la función del composable useTime para transformar startTime y endTime
+                    const formattedStart = parseDateTo_YYYYMMDD_HHMM(reservation.startTime);
+                    const formattedEnd = parseDateTo_YYYYMMDD_HHMM(reservation.endTime);
+
+                    return {
+                        id: reservation._id, // Usar el ID de la reserva como identificador único
+                        title: `Reserva en ${reservation.spaceId.name}`,
+                        start: formattedStart,  // start: '2024-06-28 08:00',
+                        end: formattedEnd,      // end: '2024-06-28 10:00',
+                    };
+                });
+                eventsServicePlugin.set(reserv);
             })
             .catch(error => {
-                console.error(error);
+                console.error('Error al obtener reservas:', error);
             });
     } catch (error) {
         console.error(error);
     }
 }
 
-const infoEvent = (reservation) => {
-    reservationStore.setReservation(reservation);
+/* ------------------------- Funciones auxiliares ------------------------- */
+function openCreateReservation() {
+    router.push('/createReservation');
+};
+
+function openReservation() {
     router.push('/reservationInfo');
 }
 
-const openCreateReservation = () => {
-    router.push('/createReservation');
+const closeModal = () => {
+    eventModal.close();
 }
 
+const eventStyles = {
+    width: '100%',
+    height: '100%',
+    backgroundColor: '#1f66cd',
+    color: '#f8f9f9',
+    'border-left': '5px solid #333ca0',
+    borderRadius: '4px',
+    padding: '0 4px',
+}
+/* ------------------------------------------------------------------------- */
+
 </script>
+
+<style scoped>
+.sx-vue-calendar-wrapper {
+    max-width: 100vw;
+    height: 480px;
+    max-height: 90vh;
+}
+
+.v-tab-text {
+    font-size: clamp(8px, 1.2vw, 16px);
+    letter-spacing: 0.5px;
+}
+</style>

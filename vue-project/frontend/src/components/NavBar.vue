@@ -20,21 +20,10 @@
                 </v-row>
             </v-list-item>
 
-            <v-list-item @click="toCalendar">
-                <v-row>
-                    <v-col cols="1" class="d-flex align-center">
-                        <v-icon size="small" icon="mdi-calendar-outline"></v-icon>
-                    </v-col>
-                    <v-col class="d-flex align-center">
-                        <span class="item">Calendario</span>
-                    </v-col>
-                </v-row>
-            </v-list-item>
-
             <v-list-item @click="toReservations">
                 <v-row>
                     <v-col cols="1" class="d-flex align-center">
-                        <v-icon size="small" icon="mdi-newspaper-variant-outline"></v-icon>
+                        <v-icon size="small" icon="mdi-calendar-outline"></v-icon>
                     </v-col>
                     <v-col class="d-flex align-center">
                         <span class="item">Reservas</span>
@@ -107,9 +96,6 @@ export default {
         },
         toProfile() {
             this.$router.push('/profile')
-        },
-        toCalendar() {
-            this.$router.push('/calendar')
         },
         toReservations() {
             this.$router.push('/reservations')
