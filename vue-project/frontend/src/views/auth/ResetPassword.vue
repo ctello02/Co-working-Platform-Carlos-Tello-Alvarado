@@ -7,36 +7,14 @@
       <v-card-text>
         <v-col>
           <v-row>
-            <v-text-field
-              v-model="password"
-              variant="outlined"
-              label="Contraseña"
-              :type="show ? 'text' : 'password'"
-              prepend-icon="mdi-lock-outline"
-              :append-inner-icon="show ? 'mdi-eye' : 'mdi-eye-off'"  
-              @click:append-inner="show = !show"
-              required
-              class="my-1"
-              :rules="passwordRules"
-            />
+            <v-text-field v-model="password" variant="outlined" label="Contraseña" :type="show ? 'text' : 'password'"
+              prepend-icon="mdi-lock-outline" :append-inner-icon="show ? 'mdi-eye' : 'mdi-eye-off'"
+              @click:append-inner="show = !show" required class="my-1" :rules="passwordRules" />
           </v-row>
-          <v-row >
-            <TonalButton 
-              v-if="this.saveButton"
-              class="cta-btn custom-disabled-btn"
-              text="Guardar"
-              color="blue"
-              @click="submit" 
-              :disabled="camposVacios()"
-              block
-            />
-            <TonalButton 
-              v-else
-              @click="toLogin" 
-              color="blue" 
-              text="Iniciar sesión"
-              block
-            />
+          <v-row>
+            <TonalButton v-if="this.saveButton" class="cta-btn custom-disabled-btn" text="Guardar" color="blue"
+              @click="submit" :disabled="emptyFields()" block />
+            <TonalButton v-else @click="toLogin" color="blue" text="Iniciar sesión" block />
           </v-row>
         </v-col>
       </v-card-text>
@@ -64,11 +42,11 @@ export default {
       ],
     };
   },
-  components:{
+  components: {
     TonalButton
   },
   methods: {
-    camposVacios(){
+    emptyFields() {
       // Verificar que los campos no estén vacíos y que cumplan las reglas de validación
       const passwordValid = this.passwordRules.every(rule => rule(this.password) === true);
       return !(this.password && passwordValid);
@@ -100,10 +78,10 @@ export default {
 }
 
 .custom-disabled-btn:disabled {
-  background-color: #bfbfbf; 
-  color: white !important; 
-  cursor: not-allowed; 
-  opacity: 1; 
-  border: 1px solid #bbb; 
+  background-color: #bfbfbf;
+  color: white !important;
+  cursor: not-allowed;
+  opacity: 1;
+  border: 1px solid #bbb;
 }
 </style>

@@ -6,7 +6,7 @@
       </v-row>
 
       <v-row v-if="this.users.length === 0" class="mt-8">
-          <span class="text-h5">Aún no hay más usuarios en la plataforma</span>
+        <span class="text-h5">Aún no hay más usuarios en la plataforma</span>
       </v-row>
 
       <v-row v-else class="py-5">
@@ -42,14 +42,9 @@
       </v-row>
     </v-col>
 
-    <AskModal
-      v-model="deleteModal"
-      :title="'¿Borrar usuario?'"
-      :message="'¿Estás seguro de que quieres borrar este usuario?'"
-      :actionText="'Borrar usuario'"
-      :closeModal="closeDialog"
-      :action="deleteUser"
-    />
+    <AskModal v-model="deleteModal" :title="'¿Borrar usuario?'"
+      :message="'¿Estás seguro de que quieres borrar este usuario?'" :actionText="'Borrar usuario'"
+      :closeModal="closeDialog" :action="deleteUser" />
 
   </v-container>
 </template>
@@ -82,10 +77,10 @@ export default {
   mounted() {
     this.userStore = useUserStore();
     this.currentUserId = this.userStore.getId;
-    this.getUsers();    
+    this.getUsers();
 
     console.log(this.users);
-    
+
   },
   methods: {
     openUserInfo(user) {
@@ -130,35 +125,36 @@ export default {
 
 <style scoped>
 thead th {
-    text-align: left;
-    padding: 10px;
-    background-color: #f5f5f5;
+  text-align: left;
+  padding: 10px;
+  background-color: #f5f5f5;
 }
 
 tbody td {
-    padding: 10px;
+  padding: 10px;
 }
 
 tbody tr {
-    transition: background-color 0.3s ease;
+  transition: background-color 0.3s ease;
 }
 
 tbody tr:hover {
-    background-color: #efefef;
+  background-color: #efefef;
 }
 
 .v-table {
-    table-layout: fixed;
-    width: 100%;
+  table-layout: fixed;
+  width: 100%;
 }
 
-th, td {
-    /*width: 20%;  Ajusta este valor si es necesario */
-    text-align: left;
-    padding: 10px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+th,
+td {
+  /*width: 20%;  Ajusta este valor si es necesario */
+  text-align: left;
+  padding: 10px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 #info-container {
