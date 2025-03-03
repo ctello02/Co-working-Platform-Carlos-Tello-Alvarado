@@ -82,7 +82,7 @@ exports.getReservationsByDate = async (req, res) => {
         const reservations = await Reservation.find({
             startTime: { $lt: endOfDay },  
             endTime: { $gt: startOfDay }   
-        });
+        }).sort({ spaceId: 1, startTime: 1 });
 
         res.json({ reservations });
     } catch (error) {

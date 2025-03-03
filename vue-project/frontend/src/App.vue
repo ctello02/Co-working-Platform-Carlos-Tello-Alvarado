@@ -1,8 +1,8 @@
 <template>
   <v-app>
-    <NavBar v-if="isLogged"/>
-    <v-main :class="{'main-gradient': showGradient, 'main-background': !showGradient}">
-      <v-container fluid class="px-10" >
+    <NavBar v-if="isLogged" />
+    <v-main :class="{ 'main-gradient': showGradient, 'main-background': !showGradient }">
+      <v-container fluid class="px-10">
         <RouterView />
       </v-container>
     </v-main>
@@ -13,8 +13,10 @@
 import { RouterView } from 'vue-router'
 import NavBar from './components/NavBar.vue'
 import { useUserStore } from './store/userStore';
+import { authService } from './services/authService';
+
 export default {
-  data(){
+  data() {
     return {
       userStore: null,
       gradient_color: 'color: white; background: rgb(0,45,98); background: linear-gradient(61deg, rgba(0,45,98,1) 75%, rgba(16,86,189,1) 75%);',
@@ -27,15 +29,22 @@ export default {
   async beforeMount() {
     this.userStore = useUserStore();
 
-    //this.userStore.loadFromStorage();
     const isValidSession = await this.userStore.validateSession();
     if (!isValidSession) {
       this.$router.push("/login"); // Redirigir al login si la sesión es inválida
     }
+    authService.getUser()
+      .then(res => {
+        this.userStore.setSelectedUser(res.data.user);
+      })
+      .catch(error => {
+        console.log(error);
+      });
+
   },
   computed: {
     isLogged() {
-        return !['login', 'register', 'forgot_password', 'reset'].includes(this.$route.name);
+      return !['login', 'register', 'forgot_password', 'reset'].includes(this.$route.name);
     },
     showGradient() {
       return this.$route.meta.gradient;
@@ -46,13 +55,13 @@ export default {
 
 <style scoped>
 .main-background {
-  background-color: #f8f9f9; 
-  min-height: 100vh; 
+  background-color: #f8f9f9;
+  min-height: 100vh;
 }
 
 .main-gradient {
-  background: rgb(0,45,98);
-  background: linear-gradient(61deg, rgba(0,45,98,1) 75%, rgba(16,86,189,1) 75%);
+  background: rgb(0, 45, 98);
+  background: linear-gradient(61deg, rgba(0, 45, 98, 1) 75%, rgba(16, 86, 189, 1) 75%);
   min-height: 100vh;
 }
 </style>

@@ -6,19 +6,19 @@
       </v-row>
 
       <v-row v-if="this.users.length === 0" class="mt-8">
-          <span class="text-h5">Aún no hay más usuarios en la plataforma</span>
+        <span class="text-h5">Aún no hay más usuarios en la plataforma</span>
       </v-row>
 
       <v-row v-else class="py-5">
         <v-card style="width: 100%;">
-          <v-table class="full-width-table">
+          <v-table class="fixed-table">
             <thead>
               <tr>
-                <th>#</th>
-                <th>Nombre</th>
-                <th>E-mail</th>
-                <th>Administrador</th>
-                <th>Acciones</th>
+                <th style="width: 10%;">#</th>
+                <th style="width: 20%;">Nombre</th>
+                <th style="width: 20%;">E-mail</th>
+                <th style="width: 20%;">Administrador</th>
+                <th style="width: 10%;">Acciones</th>
               </tr>
             </thead>
             <tbody>
@@ -42,14 +42,9 @@
       </v-row>
     </v-col>
 
-    <AskModal
-      v-model="deleteModal"
-      :title="'¿Borrar usuario?'"
-      :message="'¿Estás seguro de que quieres borrar este usuario?'"
-      :actionText="'Borrar usuario'"
-      :closeModal="closeDialog"
-      :action="deleteUser"
-    />
+    <AskModal v-model="deleteModal" :title="'¿Borrar usuario?'"
+      :message="'¿Estás seguro de que quieres borrar este usuario?'" :actionText="'Borrar usuario'"
+      :closeModal="closeDialog" :action="deleteUser" />
 
   </v-container>
 </template>
@@ -82,10 +77,10 @@ export default {
   mounted() {
     this.userStore = useUserStore();
     this.currentUserId = this.userStore.getId;
-    this.getUsers();    
+    this.getUsers();
 
     console.log(this.users);
-    
+
   },
   methods: {
     openUserInfo(user) {
@@ -129,10 +124,6 @@ export default {
 </script>
 
 <style scoped>
-.full-width-table {
-  width: 100%;
-}
-
 thead th {
   text-align: left;
   padding: 10px;
@@ -149,6 +140,21 @@ tbody tr {
 
 tbody tr:hover {
   background-color: #efefef;
+}
+
+.v-table {
+  table-layout: fixed;
+  width: 100%;
+}
+
+th,
+td {
+  /*width: 20%;  Ajusta este valor si es necesario */
+  text-align: left;
+  padding: 10px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 #info-container {

@@ -7,12 +7,8 @@
             <v-row class="mt-12">
                 <div class="d-flex flex-column ga-4">
                     <span class="text-h5">Aún no tiene reservas</span>
-                    <TonalButton
-                    color="blue"
-                    text="Reservar"
-                    size="x-large"
-                    @click="this.$router.push('/createReservation')"
-                    />
+                    <TonalButton color="blue" text="Reservar" size="x-large"
+                        @click="this.$router.push('/createReservation')" />
                 </div>
             </v-row>
         </v-col>
