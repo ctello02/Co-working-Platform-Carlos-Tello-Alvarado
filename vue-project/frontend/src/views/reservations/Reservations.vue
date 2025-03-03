@@ -78,7 +78,7 @@ const {
 } = useTime();
 
 
-/* ------------------------- Funciones del componente ------------------------- */
+/* ------------------------- Ciclo de vida ------------------------- */
 onMounted(() => {
     getUserReservations();
     if (!reservations.value) {

@@ -128,7 +128,7 @@ onMounted(() => {
 
 /* ------------------------- Funciones del componente ------------------------- */
 // Obtiene los espacios a través del servicio
-const getSpaces = () => {
+function getSpaces() {
     spaceService.getSpaces()
         .then(res => {
             spaces.value = res.data.spaces;

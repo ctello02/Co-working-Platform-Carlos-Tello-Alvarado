@@ -23,7 +23,7 @@
                         </v-col>
                         <v-col cols="10">
                             <span class="text-h6" :class="isPreview ? 'overflow-text' : ''">{{ space.description
-                            }}</span>
+                                }}</span>
                         </v-col>
                     </v-row>
 
@@ -115,7 +115,6 @@
 
 <script setup>
 import { computed, ref } from 'vue';
-import { defineProps, defineEmits } from 'vue';
 import TonalButton from '@/components/TonalButton.vue';
 import AskModal from '@/components/AskModal.vue';
 import { useTime } from '@/composables/useTime';

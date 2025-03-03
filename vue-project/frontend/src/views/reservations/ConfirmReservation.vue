@@ -163,7 +163,7 @@ const repetitionOptions = [
 
 
 // ------------------------------------------------
-// Hook: onMounted (Inicialización)
+// onMounted
 // ------------------------------------------------
 onMounted(() => {
   space.value = spaceStore.getSelectedSpace;
