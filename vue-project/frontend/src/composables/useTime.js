@@ -99,6 +99,10 @@ export function useTime() {
     return `${year}-${month}-${day}`;
   };
 
+  /**
+   * Convierte una fecha en formato de string para el calendario de ScheduleX
+   * al formato "YYYY-MM-DD HH:mm". Se utiliza el año actual.
+   */
   function parseDateTo_YYYYMMDD_HHMM(dateString) {
     const date = new Date(dateString);
     const year = date.getFullYear();
@@ -111,6 +115,10 @@ export function useTime() {
     return `${year}-${month}-${day} ${hours}:${minutes}`;
   }
 
+  /**
+   * Convierte una fecha en formato de string para mostrarse en la vista preliminar de las reservas
+   * al formato "DD/MM/YYYY".
+   */
   const twoDigitsDate = (date) => {
     return new Intl.DateTimeFormat('es-ES', {
       day: '2-digit',
@@ -118,6 +126,43 @@ export function useTime() {
       year: 'numeric',
     }).format(date);
   };
+
+  /**
+   * Comprueba si el evento o la fecha pasada es posterior al día actual
+   * y devuelve true (si es una fecha pasada) o false (si es un evento futuro).
+   */
+  function calcPastDates(calendarEvent) {
+    const today = new Date();
+    let selectedDate;
+
+    if (calendarEvent.end) selectedDate = new Date(calendarEvent.end);
+    else selectedDate = new Date(calendarEvent);
+
+    if (today > selectedDate) {
+      return false;
+    }
+    return true;
+  }
+
+  /**
+   * Comprueba si la fecha pasada es igual o posterior al día actual
+   * y devuelve true si es >= al día actual o devuelve false en caso contrario.
+   */
+  function calcPastDays(date) {
+    const today = new Date();
+    const selectedDate = new Date(date);
+
+    if (
+      selectedDate.getDate() == today.getDate() &&
+      selectedDate.getMonth() == today.getMonth() &&
+      selectedDate.getFullYear() == today.getFullYear()
+    )
+      return true;
+    else if (today > selectedDate) {
+      return false;
+    }
+    return true;
+  }
 
   return {
     timeFrames,
@@ -129,5 +174,7 @@ export function useTime() {
     parseToYYYYMMDD,
     parseDateTo_YYYYMMDD_HHMM,
     twoDigitsDate,
+    calcPastDates,
+    calcPastDays,
   };
 }
