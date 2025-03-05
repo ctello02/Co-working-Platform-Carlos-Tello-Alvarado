@@ -2,33 +2,34 @@
     <v-dialog v-model="dialogVisible" max-width="450px">
         <v-card>
             <v-card-title class="ml-2 mt-3">
-                <span class="text-h4">{{ title }}</span>
+                <span class="text-h5">{{ title }}</span>
             </v-card-title>
 
             <v-card-text>
                 <v-row>
-                    <span class="ml-3 text-h6" style="color: #EF0107;">{{ message }}</span>
+                    <span class="ml-3" :style="style">{{ message }}</span>
                 </v-row>
             </v-card-text>
 
             <v-card-actions class="mt-n2 mb-3 mr-3 d-flex justify-end ga-3">
-                <v-btn
-                    color="#444444"
-                    variant="tonal"
-                    @click="handleClose"
-                ><b>Cancelar</b></v-btn>
-                <v-btn
-                    color="#EF0107"
-                    variant="tonal"
-                    @click="handleAction"
-                ><b>{{ actionText }}</b></v-btn>
+                <TonalButton color="grey" text="Cancelar" @click="handleClose" />
+                <TonalButton :color="colorButton" :text="actionText" @click="handleAction" />
             </v-card-actions>
         </v-card>
     </v-dialog>
 </template>
 
 <script>
+import TonalButton from './TonalButton.vue';
+
 export default {
+    data(){
+        return {
+            style: {
+                color: this.colorText,
+            }
+        }
+    },
     props: {
         title: {
             type: String,
@@ -40,7 +41,11 @@ export default {
         },
         actionText: {
             type: String,
-            default: "Aceptar" 
+            default: "Aceptar"
+        },
+        colorText: {
+            type: String,
+            default: "#EF0107"
         },
         modelValue: {
             type: Boolean,
@@ -53,7 +58,14 @@ export default {
         action: {
             type: Function,
             required: true
-        }
+        },
+        colorButton: {
+            type: String,
+            default: 'red'
+        },
+    },
+    components: {
+        TonalButton
     },
     computed: {
         dialogVisible: {
@@ -68,11 +80,11 @@ export default {
     methods: {
         handleClose() {
             this.closeModal();
-            this.dialogVisible = false; 
+            this.dialogVisible = false;
         },
         handleAction() {
             this.action();
-            this.dialogVisible = false;  
+            this.dialogVisible = false;
         }
     }
 };
