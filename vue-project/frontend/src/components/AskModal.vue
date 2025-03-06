@@ -7,7 +7,7 @@
 
             <v-card-text>
                 <v-row>
-                    <span class="ml-3" :style="style">{{ message }}</span>
+                    <span class="ml-3" :style="style" v-html="message"></span>
                 </v-row>
             </v-card-text>
 
