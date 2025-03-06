@@ -150,15 +150,14 @@ export function useTime() {
    */
   function calcPastDays(date) {
     const today = new Date();
-    const selectedDate = new Date(date);
 
     if (
-      selectedDate.getDate() == today.getDate() &&
-      selectedDate.getMonth() == today.getMonth() &&
-      selectedDate.getFullYear() == today.getFullYear()
+      date.getDate() == today.getDate() &&
+      date.getMonth() == today.getMonth() &&
+      date.getFullYear() == today.getFullYear()
     )
       return true;
-    else if (today > selectedDate) {
+    else if (today > date) {
       return false;
     }
     return true;

@@ -120,8 +120,10 @@ const currentTimePlugin = createCurrentTimePlugin();
 /* ---------------- Instancias de composables --------------- */
 const { 
     parseDateTo_YYYYMMDD_HHMM,
-         calcPastDates,
-         calcPastDays
+    parseToStringDate,
+    getHoursAndMinsFromDate,
+    calcPastDates,
+    calcPastDays
  } = useTime();
 /* ---------------------------------------------------------- */
 
@@ -168,12 +170,15 @@ const calendarApp = createCalendar({
         onClickDate(date) {
             console.log('onClickDate', date) // e.g. 2024-01-01
 
-            if(!calcPastDays(date)) return;
+            const selectedDate = new Date(date);
+
+            if(!calcPastDays(selectedDate)) return;
+
+            const stringDate = parseToStringDate(selectedDate);
 
             //parsear la fecha entrante y guardarla en una store
-            message.value = 'Hola, quiere reservar en esta fecha? ' + date;
+            message.value = `Desea reservar en esta fecha?<br> \n <b>${stringDate}</b>`;
             dialog.value = true;
-            
             
         },
         onClickDateTime(dateTime) {
@@ -181,7 +186,10 @@ const calendarApp = createCalendar({
 
             if(!calcPastDates(dateTime)) return;
 
-            message.value = 'Hola, quiere reservar en esta fecha? ' + dateTime;
+            let selectedDate = parseToStringDate(new Date(dateTime));
+
+            //parsear la fecha entrante y guardarla en una store
+            message.value = `Desea reservar en esta fecha?<br> \n <b>${selectedDate}</b> <br><b>Hora: ${getHoursAndMinsFromDate(dateTime)}</b>`;
             dialog.value = true;
         },
     },
@@ -239,7 +247,6 @@ const closeModal = () => {
 function closeDialog() {
     dialog.value = false;
 }
-
 
 /* ------------------------------------------------------------------------- */
 
