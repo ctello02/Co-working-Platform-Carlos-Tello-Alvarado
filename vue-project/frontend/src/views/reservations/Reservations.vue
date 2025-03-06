@@ -18,13 +18,13 @@
                         <ScheduleXCalendar class="mt-4" :calendar-app="calendarApp">
                             <template #timeGridEvent="{ calendarEvent }">
                                 <div
-                                    :style="calcPastDates(calendarEvent) ? timeGridEventStyles : timeGridPastEventStyles">
+                                    :style="calcPastEvents(calendarEvent) ? timeGridEventStyles : timeGridPastEventStyles">
                                     {{ calendarEvent.title }}
                                 </div>
                             </template>
 
                             <template #monthGridEvent="{ calendarEvent }">
-                                <div :style="calcPastDates(calendarEvent) ? eventStyles : pastEventStyles">
+                                <div :style="calcPastEvents(calendarEvent) ? eventStyles : pastEventStyles">
                                     {{ calendarEvent.title }}
                                 </div>
                             </template>
@@ -72,8 +72,8 @@
                     </v-tabs-window-item>
                 </v-tabs-window>
 
-                <AskModal title="Nueva reserva" :message="message" :modelValue="dialog" actionText="Ir a reservar" colorText="black" colorButton="blue"
-                    :closeModal="closeDialog" :action="openCreateReservation" />
+                <AskModal title="Nueva reserva" :message="message" :modelValue="dialog" actionText="Ir a reservar"
+                    colorText="black" colorButton="blue" :closeModal="closeDialog" :action="openCreateReservation" />
 
             </v-row>
         </v-col>
@@ -118,13 +118,14 @@ const currentTimePlugin = createCurrentTimePlugin();
 
 
 /* ---------------- Instancias de composables --------------- */
-const { 
+const {
+    makeMinutes,
+    makeHoursAndMinutes,
     parseDateTo_YYYYMMDD_HHMM,
     parseToStringDate,
-    getHoursAndMinsFromDate,
-    calcPastDates,
-    calcPastDays
- } = useTime();
+    calcPastEvents,
+    calcPastDates
+} = useTime();
 /* ---------------------------------------------------------- */
 
 
@@ -158,38 +159,48 @@ const calendarApp = createCalendar({
     defaultView: createViewMonthGrid().name,
     events: getAllEvents(),
     weekOptions: {
-        gridHeight: 1300,
+        gridHeight: 1600,
         timeAxisFormatOptions: { hour: '2-digit', minute: '2-digit' },
+    },
+    monthGridOptions: { //Número de eventos a mostrar en un día antes de mostrar '+ eventos'
+        nEventsPerDay: 2,
     },
     callbacks: {
         onEventClick(calendarEvent) {
             const selectedReservation = reservations.value.find(reservation => reservation._id === calendarEvent.id);
             reservationStore.setReservation(selectedReservation);
-            //console.log('onEventClick', calendarEvent)
         },
-        onClickDate(date) {
-            console.log('onClickDate', date) // e.g. 2024-01-01
+        onClickDate(date) { // p.e. YYYY-MM-DD
+            if (!calcPastDates(new Date(date))) return;      // Si se hace clic en una fecha pasada, se ignora
 
-            const selectedDate = new Date(date);
+            const stringDate = parseToStringDate(new Date(date));
 
-            if(!calcPastDays(selectedDate)) return;
+            reservationStore.setCalendarDate(date);
 
-            const stringDate = parseToStringDate(selectedDate);
-
-            //parsear la fecha entrante y guardarla en una store
-            message.value = `Desea reservar en esta fecha?<br> \n <b>${stringDate}</b>`;
+            // Mostramos el diálogo con la fecha seleccionada
+            message.value = `
+                Desea reservar en esta fecha?<br>
+                <b>${stringDate}</b>
+            `;
             dialog.value = true;
-            
         },
         onClickDateTime(dateTime) {
-            console.log('onClickDateTime', dateTime) // e.g. 2024-01-01 12:37
+            if (!calcPastEvents(dateTime)) return;      // Si se hace clic en una fecha pasada, se ignora
 
-            if(!calcPastDates(dateTime)) return;
+            // Se dividen las fechas y horas en partes separadas
+            let [datePart, timePart] = dateTime.split(" ");
 
-            let selectedDate = parseToStringDate(new Date(dateTime));
+            let roundedTimeString = roundToNearestQuarterHour(timePart); // Se redondean los minutos a 15 minutos arriba o abajo
+            const storeDate = datePart + ' ' + roundedTimeString;
+            reservationStore.setCalendarDate(storeDate);            // Se almacena la fecha en el store
 
-            //parsear la fecha entrante y guardarla en una store
-            message.value = `Desea reservar en esta fecha?<br> \n <b>${selectedDate}</b> <br><b>Hora: ${getHoursAndMinsFromDate(dateTime)}</b>`;
+            // Mostramos el diálogo con la fecha seleccionada
+            let selectedDateString = parseToStringDate(new Date(datePart));
+            message.value = `
+                ¿Desea reservar en esta fecha?<br>
+                <b>${selectedDateString}</b><br>
+                <b>Hora: ${roundedTimeString}</b>
+            `;
             dialog.value = true;
         },
     },
@@ -240,13 +251,20 @@ function openReservation() {
     router.push('/reservationInfo');
 };
 
+function roundToNearestQuarterHour(timeString) {
+    let totalMinutes = makeMinutes(timeString); // Convertir HH:MM a minutos totales
+    let roundedMinutes = Math.round(totalMinutes / 15) * 15; // Redondear a múltiplo de 15
+
+    return makeHoursAndMinutes(roundedMinutes); // Convertir de nuevo a HH:MM
+}
+
 const closeModal = () => {
     eventModal.close();
 };
 
 function closeDialog() {
     dialog.value = false;
-}
+};
 
 /* ------------------------------------------------------------------------- */
 

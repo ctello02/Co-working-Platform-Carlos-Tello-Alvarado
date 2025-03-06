@@ -90,11 +90,11 @@ export function useTime() {
       diciembre: '12',
     };
 
-    // Se asume que el formato es "weekday, day de month"
+    // Se asume que el formato es "día, número de mes de año"
     const parts = dateStr.split(',')[1].trim().split(' ');
     const day = parts[0].padStart(2, '0');
     const month = months[parts[2].toLowerCase()];
-    const year = new Date().getFullYear();
+    const year = parts[parts.length - 1];
 
     return `${year}-${month}-${day}`;
   };
@@ -131,7 +131,7 @@ export function useTime() {
    * Comprueba si el evento o la fecha pasada es posterior al día actual
    * y devuelve true (si es una fecha pasada) o false (si es un evento futuro).
    */
-  function calcPastDates(calendarEvent) {
+  function calcPastEvents(calendarEvent) {
     const today = new Date();
     let selectedDate;
 
@@ -148,7 +148,7 @@ export function useTime() {
    * Comprueba si la fecha pasada es igual o posterior al día actual
    * y devuelve true si es >= al día actual o devuelve false en caso contrario.
    */
-  function calcPastDays(date) {
+  function calcPastDates(date) {
     const today = new Date();
 
     if (
@@ -173,7 +173,7 @@ export function useTime() {
     parseToYYYYMMDD,
     parseDateTo_YYYYMMDD_HHMM,
     twoDigitsDate,
+    calcPastEvents,
     calcPastDates,
-    calcPastDays,
   };
 }

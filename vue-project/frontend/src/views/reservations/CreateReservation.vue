@@ -228,6 +228,19 @@ const isLoading = ref(false);
 onMounted(() => {
   // Llamamos a getSpaces para obtener los espacios al montar el componente
   getSpaces();
+
+  const calendarDate = reservationStore.getCalendarDate;
+
+  if (calendarDate) {                     // Comprueba si hay una fecha guardada
+    let [datePart, timePart] = calendarDate.split(" ");
+
+    if (!timePart) {                      // Si solo tiene la fecha, guardamos la parte de la fecha
+      date.value = new Date(datePart);
+    } else {                              // Si tiene la fecha y la hora, guardamos ambas partes
+      startTime.value = timePart;         // Guardar la hora en otra variable
+      date.value = new Date(datePart);    // Guardar solo la fecha
+    }
+  }
 });
 
 // Obtiene los espacios a través del servicio
@@ -606,10 +619,11 @@ const createReservation = async (space) => {
 watch(date, (newVal) => {
   formattedDate.value = parseToStringDate(newVal);
   reservationsByDate.value = [];
-  // Reiniciamos el objeto reservationTimes
-  for (const key in reservationTimes) {
+
+  for (const key in reservationTimes) {   // Reiniciamos el objeto reservationTimes
     delete reservationTimes[key];
   }
+
   reservationStore.clearStore();
   filterSpaces();
 });
