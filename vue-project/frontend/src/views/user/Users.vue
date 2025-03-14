@@ -11,33 +11,8 @@
 
       <v-row v-else class="py-5">
         <v-card style="width: 100%;">
-          <v-table class="fixed-table">
-            <thead>
-              <tr>
-                <th style="width: 10%;">#</th>
-                <th style="width: 20%;">Nombre</th>
-                <th style="width: 20%;">E-mail</th>
-                <th style="width: 20%;">Administrador</th>
-                <th style="width: 10%;">Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="(user, index) in users" :key="user._id">
-                <td>{{ index + 1 }}</td>
-                <td>{{ user.name }}</td>
-                <td>{{ user.email }}</td>
-                <td>{{ user.isAdmin ? 'Si' : 'No' }}</td>
-                <td>
-                  <v-form style="display: flex; gap: 10px;">
-                    <v-btn @click="openUserInfo(user)" icon="mdi-account-search-outline" variant="text">
-                    </v-btn>
-                    <v-btn @click="openDeleteModal(user)" color="error" icon="mdi-trash-can-outline" variant="text">
-                    </v-btn>
-                  </v-form>
-                </td>
-              </tr>
-            </tbody>
-          </v-table>
+          <Table :headers="tableHeaders" :fields="['name', 'email', 'isAdmin']" :items="users"
+            :buttons="actionButtons" />
         </v-card>
       </v-row>
     </v-col>
@@ -55,6 +30,7 @@ import { userService } from '@/services/userService';
 import { useToast } from 'vue-toastification';
 import TonalButton from '@/components/TonalButton.vue';
 import AskModal from '@/components/AskModal.vue';
+import Table from '@/components/Table.vue';
 
 export default {
   name: 'UsersTable',
@@ -65,12 +41,31 @@ export default {
       token: null,
       deleteModal: false,
       selectedUser: null,
-      currentUserId: null
+      currentUserId: null,
+
+      tableHeaders: [
+        { label: '#', width: '10%' },
+        { label: 'Nombre', width: '20%' },
+        { label: 'E-mail', width: '20%' },
+        { label: 'Administrador', width: '10%' }
+      ],
+      actionButtons: [
+        {
+          icon: 'mdi-account-search-outline',
+          action: (user) => this.openUserInfo(user)
+        },
+        {
+          icon: 'mdi-trash-can-outline',
+          color: 'error',
+          action: (user) => this.openDeleteModal(user)
+        }
+      ]
     };
   },
   components: {
     TonalButton,
-    AskModal
+    AskModal,
+    Table
   },
   computed: {
   },
@@ -78,9 +73,6 @@ export default {
     this.userStore = useUserStore();
     this.currentUserId = this.userStore.getId;
     this.getUsers();
-
-    console.log(this.users);
-
   },
   methods: {
     openUserInfo(user) {
@@ -97,8 +89,13 @@ export default {
     getUsers() {
       userService.getUsers()
         .then(res => {
-          //console.log(res.data);
-          this.users = res.data.users.filter(user => user._id !== this.currentUserId) || [];
+          this.users = (res.data.users || [])
+            .filter(user => user._id !== this.currentUserId)
+            .map(user => ({
+              ...user,
+              isAdmin: user.isAdmin ? 'Si' : 'No'
+            }));
+          // console.log(this.users);
         })
         .catch(error => {
           console.log(error);
