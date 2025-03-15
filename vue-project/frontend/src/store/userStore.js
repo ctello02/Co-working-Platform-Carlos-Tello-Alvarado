@@ -49,6 +49,7 @@ export const useUserStore = defineStore({
       this.token = null;
       this.isAdmin = null;
       this.selectedUser = null;
+      this.user = null;
 
       localStorage.removeItem('user_id');
       localStorage.removeItem('token');

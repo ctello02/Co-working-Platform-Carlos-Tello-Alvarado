@@ -52,8 +52,15 @@
                             <v-col v-if="reservations.length === 0" class="text-center">
                                 <span class="text-h5">No se encuentran datos</span>
                             </v-col>
-                            <v-col v-else-if="!list" v-for="reservation in reservations" :key="reservation._id" lg="3"
-                                md="4" sm="12" xs="12" class="ma-0 pa-0">
+                            <v-col v-else-if="list">
+                                <v-card class="ma-1">
+                                    <Table :headers="tableHeaders" :fields="['name', 'date', 'schedule']"
+                                        :items="tableItems" :buttons="actionButtons" @rowClick="handleRowClick"
+                                        :clickable="true" />
+                                </v-card>
+                            </v-col>
+                            <v-col v-else v-for="reservation in reservations" :key="reservation._id" lg="3" md="4"
+                                sm="12" xs="12" class="ma-0 pa-0">
                                 <ReservationCard :reservation="reservation" />
                             </v-col>
                         </v-row>
@@ -81,13 +88,14 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed, onUnmounted } from 'vue';
 import { useUserStore } from '@/store/userStore';
 import { useReservationStore } from '@/store/reservationStore';
 import { useRouter } from 'vue-router';
 import { useTime } from '@/composables/useTime';
 import TonalButton from '@/components/TonalButton.vue';
 import AskModal from '@/components/AskModal.vue';
+import Table from '@/components/Table.vue';
 import { reservationService } from '@/services/reservationService';
 import ReservationCard from '@/components/ReservationCard.vue';
 
@@ -124,7 +132,9 @@ const {
     parseDateTo_YYYYMMDD_HHMM,
     parseToStringDate,
     calcPastEvents,
-    calcPastDates
+    calcPastDates,
+    twoDigitsDate,
+    getHoursAndMinsFromDate
 } = useTime();
 /* ---------------------------------------------------------- */
 
@@ -149,7 +159,12 @@ onMounted(() => {
     if (!reservations.value) {
         router.push('/reservations');
     }
+    getWindowParams();
 });
+
+onUnmounted(() => {
+    setWindowParams();
+})
 /*------------------------------------------------------------------ */
 
 
@@ -257,6 +272,12 @@ function openReservation() {
     router.push('/reservationInfo');
 };
 
+// Cuando se hace click en una fila, abrimos la reserva
+function handleRowClick(item) {
+    reservationStore.setReservation(item.object)
+    router.push('/reservationInfo')
+};
+
 function roundToNearestQuarterHour(timeString) {
     let totalMinutes = makeMinutes(timeString); // Convertir HH:MM a minutos totales
     let roundedMinutes = Math.round(totalMinutes / 15) * 15; // Redondear a múltiplo de 15
@@ -272,10 +293,54 @@ function closeDialog() {
     dialog.value = false;
 };
 
+function getWindowParams() {
+    const window = reservationStore.getWindow;
+    console.log("ANTES:", window);
+    if (window) {
+        tab.value = window.tab;
+        list.value = window.list;
+        filter.value = window.filter;
+    }
+    console.log(window);
+
+}
+
+function setWindowParams() {
+    const window = {
+        tab: tab.value,
+        list: list.value,
+        filter: filter.value,
+    }
+    console.log(window);
+
+    reservationStore.setWindow(window);
+}
+
 /* ------------------------------------------------------------------------- */
 
-/* -------------------------------- Estilos -------------------------------- */
+/* ------------------------- Objetos de la tabla ------------------------- */
+// Encabezados
+let tableHeaders = [
+    { label: '#', width: '10%' },
+    { label: 'Nombre', width: '15%' },
+    { label: 'Fecha', width: '20%' },
+    { label: 'Horario', width: '20%' }
+];
 
+// Transformamos 'spaces' en 'tableItems'
+const tableItems = computed(() => {
+    return (reservations.value || []).map((reservation, i) => {
+        return {
+            id: reservation._id,        // key para v-for
+            date: `${twoDigitsDate(new Date(reservation.startTime))}`,
+            name: reservation.spaceId.name,
+            schedule: `${getHoursAndMinsFromDate(reservation.startTime)}h - ${getHoursAndMinsFromDate(reservation.endTime)}h`,
+            object: reservation,      // guardamos el objeto para usarlo en las acciones
+        }
+    })
+})
+
+/* -------------------------------- Estilos -------------------------------- */
 const baseEventStyles = {
     width: '100%',
     height: '100%',

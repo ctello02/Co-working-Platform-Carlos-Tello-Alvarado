@@ -6,12 +6,14 @@ export const useReservationStore = defineStore({
     reservation: null,
     hoursReservedBySpace: {},
     calendarDate: null,
+    window: null,
   }),
   getters: {
     getReservation: (state) => state.reservation,
     getHoursReservedBySpace: (state) => (spaceId) =>
       state.hoursReservedBySpace[spaceId],
     getCalendarDate: (state) => state.calendarDate,
+    getWindow: (state) => state.window,
   },
   actions: {
     setReservation(newReservation) {
@@ -23,10 +25,14 @@ export const useReservationStore = defineStore({
     setCalendarDate(calendarDate) {
       this.calendarDate = calendarDate;
     },
+    setWindow(window) {
+      this.window = window;
+    },
     clearStore() {
       this.reservation = null;
       this.hoursReservedBySpace = {};
       this.calendarDate = null;
+      // No ponemos window en null, porque se pierden los parámetros de la ventana Reservations
     },
   },
 });

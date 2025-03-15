@@ -134,7 +134,6 @@ export default {
         .then(res => {
           console.log(res.data);
           this.userStore.setUser(this.user);
-          this.user = this.userStore.getUser;
           // Mostrar la alerta de éxito y ocultarla después de 3 segundos
           this.successToastId = toast.success('¡Perfil editado con éxito!');
         })
@@ -143,7 +142,6 @@ export default {
         });
     },
     toChangePassword() {
-      this.userStore.setId(this.user._id);
       this.$router.push('/changePassword');
     },
   },
