@@ -44,12 +44,37 @@
                                 @click="list = !list" />
                             <v-select variant="outlined" density="compact" label="Filtros" v-model="filter"
                                 item-title="label" item-value="value" :items="filterItems" />
-                            <v-spacer></v-spacer>
-                            <!-- Me cago en todo puto width del select -->
 
                         </v-row>
                         <v-row>
-                            <v-col v-if="reservations.length === 0" class="text-center">
+                            <v-col v-if="nextReservations.length === 0" class="text-center mt-3">
+                                <span class="text-h5">No tiene reservas próximas</span>
+                            </v-col>
+                            <v-col v-else-if="list">
+                                <v-card class="ma-1">
+                                    <Table :headers="tableHeaders" :fields="['name', 'date', 'schedule']"
+                                        :items="tableItems" :buttons="actionButtons" @rowClick="handleRowClick"
+                                        :clickable="true" />
+                                </v-card>
+                            </v-col>
+                            <v-col v-else v-for="reservation in nextReservations" :key="reservation._id" lg="3" md="4"
+                                sm="12" xs="12" class="ma-0 pa-0">
+                                <ReservationCard :reservation="reservation" />
+                            </v-col>
+                        </v-row>
+                    </v-tabs-window-item>
+
+                    <v-tabs-window-item value="past">
+                        <v-row class="mt-4 mx-1 mb-n8 d-flex ga-3">
+                            <v-btn variant="text" :ripple="false" size="small"
+                                :icon="list ? 'mdi-view-grid-outline' : 'mdi-format-list-bulleted'"
+                                @click="list = !list" />
+                            <v-select variant="outlined" density="compact" label="Filtros" v-model="filter"
+                                item-title="label" item-value="value" :items="filterItems" />
+
+                        </v-row>
+                        <v-row>
+                            <v-col v-if="pastReservations.length === 0" class="mt-4 text-center">
                                 <span class="text-h5">No se encuentran datos</span>
                             </v-col>
                             <v-col v-else-if="list">
@@ -59,20 +84,8 @@
                                         :clickable="true" />
                                 </v-card>
                             </v-col>
-                            <v-col v-else v-for="reservation in reservations" :key="reservation._id" lg="3" md="4"
-                                sm="12" xs="12" class="ma-0 pa-0">
-                                <ReservationCard :reservation="reservation" />
-                            </v-col>
-                        </v-row>
-                    </v-tabs-window-item>
-
-                    <v-tabs-window-item value="past">
-                        <v-row>
-                            <v-col v-if="reservations.length === 0" class="mt-4 text-center">
-                                <span class="text-h5">No se encuentran datos</span>
-                            </v-col>
-                            <v-col v-for="reservation in reservations" :key="reservation._id" lg="3" md="4" sm="12"
-                                xs="12" class="ma-0 mt-1 pa-0">
+                            <v-col v-else v-for="reservation in pastReservations" :key="reservation._id" lg="3" md="4"
+                                sm="12" xs="12" class="ma-0 mt-1 pa-0">
                                 <ReservationCard :reservation="reservation" />
                             </v-col>
                         </v-row>
@@ -141,6 +154,8 @@ const {
 
 /* ------------------- Variables reactivas ------------------ */
 const reservations = ref([]);
+const nextReservations = ref([]);
+const pastReservations = ref([]);
 const list = ref(false);
 const tab = ref(null);
 const message = ref(null);
@@ -241,18 +256,14 @@ function getAllEvents() {
         reservationService.getUserReservations(userStore.getId)
             .then(res => {
                 reservations.value = res.data.reservations;
-                const reserv = res.data.reservations.map(reservation => {
-                    // Usamos la función del composable useTime para transformar startTime y endTime
-                    const formattedStart = parseDateTo_YYYYMMDD_HHMM(reservation.startTime);
-                    const formattedEnd = parseDateTo_YYYYMMDD_HHMM(reservation.endTime);
+                nextReservations.value = res.data.nextReservations;
+                pastReservations.value = res.data.pastReservations;
 
-                    return {
-                        id: reservation._id, // Usar el ID de la reserva como identificador único
-                        title: `Reserva en ${reservation.spaceId.name}`,
-                        start: formattedStart,  // start: '2024-06-28 08:00',
-                        end: formattedEnd,      // end: '2024-06-28 10:00',
-                    };
-                });
+                console.log("Siguientes", nextReservations.value);
+                console.log("Pasadas", pastReservations.value);
+
+
+                const reserv = transformReservations(reservations.value);
                 eventsServicePlugin.set(reserv);
             })
             .catch(error => {
@@ -261,6 +272,21 @@ function getAllEvents() {
     } catch (error) {
         console.error(error);
     }
+}
+
+function transformReservations(reservations) {
+    return reservations.map(reservation => {
+        // Usamos la función del composable useTime para transformar startTime y endTime
+        const formattedStart = parseDateTo_YYYYMMDD_HHMM(reservation.startTime);
+        const formattedEnd = parseDateTo_YYYYMMDD_HHMM(reservation.endTime);
+
+        return {
+            id: reservation._id, // Usar el ID de la reserva como identificador único
+            title: `Reserva en ${reservation.spaceId.name}`,
+            start: formattedStart,  // start: '2024-06-28 08:00',
+            end: formattedEnd,      // end: '2024-06-28 10:00',
+        };
+    });
 }
 
 /* ------------------------- Funciones auxiliares ------------------------- */
@@ -295,14 +321,11 @@ function closeDialog() {
 
 function getWindowParams() {
     const window = reservationStore.getWindow;
-    console.log("ANTES:", window);
     if (window) {
         tab.value = window.tab;
         list.value = window.list;
         filter.value = window.filter;
     }
-    console.log(window);
-
 }
 
 function setWindowParams() {
@@ -311,8 +334,6 @@ function setWindowParams() {
         list: list.value,
         filter: filter.value,
     }
-    console.log(window);
-
     reservationStore.setWindow(window);
 }
 

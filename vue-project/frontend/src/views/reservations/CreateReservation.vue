@@ -241,8 +241,6 @@ onMounted(() => {
       date.value = new Date(datePart);    // Guardar solo la fecha
     }
   }
-
-  console.log(reservationStore.getWindow);
 });
 
 // Obtiene los espacios a través del servicio
