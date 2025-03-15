@@ -16,7 +16,10 @@
                 :class="clickable ? 'cursor-pointer' : ''">
                 <td>{{ rowIndex + 1 }}</td>
                 <td v-for="(field, index) in fields" :key="index">
-                    {{ item[field] }}
+                    <span v-if="field === 'isAdmin'">
+                        {{ item[field] ? 'Si' : 'No' }}
+                    </span>
+                    <span v-else>{{ item[field] }}</span>
                 </td>
 
                 <td v-if="buttons && buttons.length">

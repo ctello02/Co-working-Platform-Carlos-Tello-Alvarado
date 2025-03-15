@@ -9,7 +9,7 @@
                     <v-tab :ripple="false" value="past" class="no-hover text-none v-tab-text">Anteriores</v-tab>
                 </v-tabs>
                 <v-spacer></v-spacer>
-                <TonalButton color="blue" text="Crear reserva" @click="openCreateReservation" />
+                <TonalButton class="mr-1" color="blue" text="Crear reserva" @click="openCreateReservation" />
             </v-row>
 
             <v-row class="">
@@ -38,22 +38,22 @@
                     </v-tabs-window-item>
 
                     <v-tabs-window-item value="next">
-                        <v-row class="mt-4 mx-1">
-                            <v-card class="pa-2 mb-n3" width="100%">
-                                <v-card-text class="d-flex justify-space-between flex-wrap ma-n3">
-                                    <v-btn variant="text" :ripple="false"
-                                        :icon="list ? 'mdi-view-grid-outline' : 'mdi-format-list-bulleted'"
-                                        @click="list = !list" />
-                                </v-card-text>
-                            </v-card>
+                        <v-row class="mt-4 mx-1 mb-n8 d-flex ga-3">
+                            <v-btn variant="text" :ripple="false" size="small"
+                                :icon="list ? 'mdi-view-grid-outline' : 'mdi-format-list-bulleted'"
+                                @click="list = !list" />
+                            <v-select variant="outlined" density="compact" label="Filtros" v-model="filter"
+                                item-title="label" item-value="value" :items="filterItems" />
+                            <v-spacer></v-spacer>
+                            <!-- Me cago en todo puto width del select -->
 
                         </v-row>
                         <v-row>
-                            <v-col v-if="reservations.length === 0" class="mt-4 text-center">
+                            <v-col v-if="reservations.length === 0" class="text-center">
                                 <span class="text-h5">No se encuentran datos</span>
                             </v-col>
-                            <v-col v-else v-for="reservation in reservations" :key="reservation._id" lg="3" md="4"
-                                sm="12" xs="12" class="ma-0 mt-1 pa-0">
+                            <v-col v-else-if="!list" v-for="reservation in reservations" :key="reservation._id" lg="3"
+                                md="4" sm="12" xs="12" class="ma-0 pa-0">
                                 <ReservationCard :reservation="reservation" />
                             </v-col>
                         </v-row>
@@ -135,6 +135,12 @@ const list = ref(false);
 const tab = ref(null);
 const message = ref(null);
 const dialog = ref(false);
+const filter = ref(null);
+const filterItems = ref([
+    { label: 'Todas las reservas', value: null },
+    { label: 'Por nombre de espacios', value: 'spacesName' },
+    { label: 'Por fecha', value: 'date' },
+]);
 /* ---------------------------------------------------------- */
 
 

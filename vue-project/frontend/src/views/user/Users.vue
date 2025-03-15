@@ -91,10 +91,6 @@ export default {
         .then(res => {
           this.users = (res.data.users || [])
             .filter(user => user._id !== this.currentUserId)
-            .map(user => ({
-              ...user,
-              isAdmin: user.isAdmin ? 'Si' : 'No'
-            }));
           // console.log(this.users);
         })
         .catch(error => {
