@@ -1,6 +1,6 @@
 <template>
     <v-container>
-        <v-card @click="infoEvent(reservation)" class="text-center" max-width="400" :ripple="false">
+        <v-card @click="infoEvent(reservation)" class="text-center main-container" :ripple="false" elevation="0">
             <v-card-title>
                 <span class="text-h6">Reserva de {{ reservation?.spaceId.name }}</span>
                 <v-divider class="mt-1" />
@@ -72,3 +72,13 @@ const infoEvent = (reservation) => {
     router.push('/reservationInfo');
 }
 </script>
+
+<style scoped>
+.main-container {
+    background-color: #f8f9f9;
+    color: black;
+    border: 0.5px solid #333ca0;
+    border-left: 5px solid #333ca0;
+    border-radius: 4px;
+}
+</style>

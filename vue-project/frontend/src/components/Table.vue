@@ -1,5 +1,5 @@
 <template>
-    <v-table class="fixed-table">
+    <v-table>
         <thead>
             <tr>
                 <th v-for="(header, index) in headers" :key="index" :style="{ width: header.width }">
@@ -81,13 +81,5 @@ td {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-}
-
-#info-container {
-    display: flex;
-    justify-content: center;
-    align-content: center;
-    flex-direction: column;
-    gap: 10px;
 }
 </style>
