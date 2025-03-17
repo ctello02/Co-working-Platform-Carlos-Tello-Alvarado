@@ -50,60 +50,26 @@
                         </v-row>
 
                         <v-tabs-window v-model="subTab" style="width: 100%;">
-
                             <v-tabs-window-item value="next">
-                                <v-row>
-                                    <v-col v-if="nextReservations.length === 0" class="text-center mt-3">
-                                        <span class="text-h5">No tiene reservas próximas</span>
-                                    </v-col>
-                                    <v-col v-else-if="list">
-                                        <v-card class="ma-1">
-                                            <Table :headers="tableHeaders" :fields="['name', 'date', 'schedule']"
-                                                :items="tableNextItems" :buttons="actionButtons"
-                                                @rowClick="handleRowClick" :clickable="true" />
-                                        </v-card>
-                                    </v-col>
-                                    <v-col v-else-if="!list && filter === null"
-                                        v-for="reservation in filteredNextReservations" :key="reservation._id" lg="3"
-                                        md="4" sm="12" xs="12" class="ma-0 pa-0">
-                                        <ReservationCard :reservation="reservation" />
-                                    </v-col>
-                                    <v-col v-if="!list && filter === 'spacesName'" class="ma-1">
-                                        <v-expansion-panels multiple v-model="panels">
-                                            <v-expansion-panel v-for="(reservations, spaceName) in groupedReservations"
-                                                :key="spaceName">
-                                                <v-expansion-panel-title>{{ spaceName }}</v-expansion-panel-title>
-                                                <v-expansion-panel-text>
-                                                    <!-- <ReservationCard v-for="reservation in reservations"
-                                                        :key="reservation._id" :reservation="reservation" /> -->
-                                                    <Table :headers="tableHeaders"
-                                                        :fields="['name', 'date', 'schedule']"
-                                                        :items="tableItems(reservations)" :buttons="actionButtons"
-                                                        @rowClick="handleRowClick" :clickable="true" />
-                                                </v-expansion-panel-text>
-                                            </v-expansion-panel>
-                                        </v-expansion-panels>
-                                    </v-col>
-                                </v-row>
+                                <SubTab :reservations="nextReservations"
+                                    no-reservations-message="No se han encontrado reservas próximas" :filter="filter"
+                                    :list="list" :filteredReservations="filteredNextReservations"
+                                    :groupedByName="groupedByName" :groupedByDate="groupedByDate"
+                                    :tableHeaders="tableHeaders" :tableItems="tableItems"
+                                    :tableDropdownItems="tableDropdownItems" :expandedSpaces="expandedSpaces"
+                                    :expandedDates="expandedDates" @toggleSpace="toggleSpace" @toggleDate="toggleDate"
+                                    @rowClick="handleRowClick" />
                             </v-tabs-window-item>
 
                             <v-tabs-window-item value="past">
-                                <v-row>
-                                    <v-col v-if="pastReservations.length === 0" class="mt-4 text-center">
-                                        <span class="text-h5">No se encuentran datos</span>
-                                    </v-col>
-                                    <v-col v-else-if="list">
-                                        <v-card class="ma-1">
-                                            <Table :headers="tableHeaders" :fields="['name', 'date', 'schedule']"
-                                                :items="tablePastItems" :buttons="actionButtons"
-                                                @rowClick="handleRowClick" :clickable="true" />
-                                        </v-card>
-                                    </v-col>
-                                    <v-col v-else v-for="reservation in filteredPastReservations" :key="reservation._id"
-                                        lg="3" md="4" sm="12" xs="12" class="ma-0 mt-1 pa-0">
-                                        <ReservationCard :reservation="reservation" />
-                                    </v-col>
-                                </v-row>
+                                <SubTab :reservations="pastReservations"
+                                    no-reservations-message="No se encuentran datos anteriores" :filter="filter"
+                                    :list="list" :filteredReservations="filteredPastReservations"
+                                    :groupedByName="groupedByName" :groupedByDate="groupedByDate"
+                                    :tableHeaders="tableHeaders" :tableItems="tableItems"
+                                    :tableDropdownItems="tableDropdownItems" :expandedDates="expandedDates"
+                                    :expandedSpaces="expandedSpaces" @toggleSpace="toggleSpace" @toggleDate="toggleDate"
+                                    @rowClick="handleRowClick" />
                             </v-tabs-window-item>
                         </v-tabs-window>
                     </v-tabs-window-item>
@@ -125,9 +91,8 @@ import { useRouter } from 'vue-router';
 import { useTime } from '@/composables/useTime';
 import TonalButton from '@/components/TonalButton.vue';
 import AskModal from '@/components/AskModal.vue';
-import Table from '@/components/Table.vue';
+import SubTab from '@/components/SubTab.vue';
 import { reservationService } from '@/services/reservationService';
-import ReservationCard from '@/components/ReservationCard.vue';
 
 /* ------------- Importación de librerías para el calendario ---------- */
 import { ScheduleXCalendar } from '@schedule-x/vue';
@@ -164,7 +129,7 @@ const {
     calcPastEvents,
     calcPastDates,
     twoDigitsDate,
-    getHoursAndMinsFromDate
+    getHoursAndMinsFromDate,
 } = useTime();
 /* ---------------------------------------------------------- */
 
@@ -177,7 +142,7 @@ const nextReservations = ref([]);
 const pastReservations = ref([]);
 const list = ref(false);
 const mainTab = ref(null);
-const subTab = ref(null);
+const subTab = ref('next');
 const message = ref(null);
 const dialog = ref(false);
 const filter = ref(null);
@@ -187,20 +152,52 @@ const filterItems = ref([
     { label: 'Por fecha', value: 'date' },
 ]);
 
-const panels = ref([0, 1, 2]);
+const expandedSpaces = ref({});    // Almacena el estado abierto/cerrado del desplegable de cada nombre del espacio. 
+const expandedDates = ref({});    // Almacena el estado abierto/cerrado del desplegable de cada fecha.
 
-const groupedReservations = computed(() => {
+const groupedByName = computed(() => {
     const groups = {};
-    filteredNextReservations.value.forEach(reservation => {
-        const spaceName = reservation.spaceId.name;
-        if (!groups[spaceName]) {
-            groups[spaceName] = [];
+    let reservationsToSearch = [];
+
+    if (subTab.value === 'next') reservationsToSearch = filteredNextReservations.value;
+    else if (subTab.value === 'past') reservationsToSearch = filteredPastReservations.value;
+
+    reservationsToSearch.forEach(reservation => {
+        const nameKey = reservation.spaceId.name;
+        if (!groups[nameKey]) {
+            groups[nameKey] = [];
         }
-        groups[spaceName].push(reservation);
+        groups[nameKey].push(reservation);
     });
     return groups;
 });
 
+const groupedByDate = computed(() => {
+    const groups = {};
+    let reservationsToSearch = [];
+
+    if (subTab.value === 'next') {
+        reservationsToSearch = filteredNextReservations.value;
+    } else if (subTab.value === 'past') {
+        reservationsToSearch = filteredPastReservations.value;
+    }
+
+    reservationsToSearch.forEach((reservation) => {
+        const dateKey = twoDigitsDate(new Date(reservation.startTime));
+
+        if (!groups[dateKey]) groups[dateKey] = [];
+        groups[dateKey].push(reservation);
+    });
+    return groups;
+});
+
+function toggleSpace(nameKey) {
+    expandedSpaces.value[nameKey] = !expandedSpaces.value[nameKey];
+};
+
+function toggleDate(dateKey) {
+    expandedDates.value[dateKey] = !expandedDates.value[dateKey];
+}
 /* ---------------------------------------------------------- */
 
 
@@ -324,41 +321,41 @@ function addCalendarEvents(reservations) {
 };
 
 /* ------------------------- Watchers ------------------------- */
-watch(filter, (newValue) => {
+watch(filter, () => {
     if (subTab.value === 'next') {
-        if (newValue == null) {
-            filteredNextReservations.value = nextReservations.value;
-            return;
-        }
-        filteredNextReservations.value = filterReservations(nextReservations.value, newValue);
+        filteredNextReservations.value = nextReservations.value;
     } else if (subTab.value === 'past') {
-        if (newValue == null) {
-            filteredPastReservations.value = pastReservations.value;
-            return;
-        }
-        filteredPastReservations.value = filterReservations(pastReservations.value, newValue);
+        filteredPastReservations.value = pastReservations.value;
     }
 });
 
-// watch(subTab, () => {
-//     clearFilters();
-// });
+watch(
+    groupedByName,
+    (newVal) => {
+        for (const nameKey in newVal) {
+            if (expandedSpaces.value[nameKey] === undefined) {
+                expandedSpaces.value[nameKey] = true;
+            }
+        }
+    },
+    { immediate: true }
+);
+
+watch(
+    groupedByDate,
+    (newVal) => {
+        for (const dateKey in newVal) {
+            if (expandedDates.value[dateKey] === undefined) {
+                expandedDates.value[dateKey] = false;
+            }
+        }
+    },
+    { immediate: false }
+);
 /* ------------------------------------------------------------ */
 
 
 /* ------------------------- Funciones auxiliares ------------------------- */
-function filterReservations(reservations, filter) {
-    let reservationsFiltered = nextReservations.value;
-
-    if (filter === 'spacesName') {
-        // Filtrar por nombre de espacio
-    } else if (filter === 'date') {
-        // Filtrar por fecha
-    }
-
-    return reservationsFiltered;
-}
-
 function roundToNearestQuarterHour(timeString) {
     let totalMinutes = makeMinutes(timeString); // Convertir HH:MM a minutos totales
     let roundedMinutes = Math.round(totalMinutes / 15) * 15; // Redondear a múltiplo de 15
@@ -368,30 +365,33 @@ function roundToNearestQuarterHour(timeString) {
 
 
 function getWindowParams() {
-    const window = reservationStore.getWindow;
-    if (window) {
-        mainTab.value = window.mainTab;
-        subTab.value = window.subTab;
-        list.value = window.list;
-        filter.value = window.filter;
+    const storedWindow = reservationStore.getWindow; // o localStorage, etc.
+    if (storedWindow) {
+        mainTab.value = storedWindow.mainTab;
+        subTab.value = storedWindow.subTab;
+        list.value = storedWindow.list;
+        filter.value = storedWindow.filter;
+        if (storedWindow.expandedSpaces) {
+            expandedSpaces.value = storedWindow.expandedSpaces;
+        }
+        if (storedWindow.expandedDates) {
+            expandedDates.value = storedWindow.expandedDates;
+        }
     }
-};
+}
 
 function setWindowParams() {
-    const window = {
+    const storedWindow = {
         mainTab: mainTab.value,
         subTab: subTab.value,
         list: list.value,
         filter: filter.value,
-    }
-    reservationStore.setWindow(window);
+        expandedSpaces: expandedSpaces.value,
+        expandedDates: expandedDates.value
+    };
+    reservationStore.setWindow(storedWindow);
 };
 
-function clearFilters() {
-    filter.value = null;
-    filteredNextReservations.value = nextReservations.value;
-    filteredPastReservations.value = pastReservations.value;
-};
 
 // Cuando se hace click en una fila, abrimos la reserva
 function handleRowClick(item) {
@@ -418,14 +418,37 @@ function closeDialog() {
 
 /* ------------------------- Objetos de la tabla ------------------------- */
 // Encabezados
-let tableHeaders = [
+const headers = [
     { label: '#', width: '10%' },
     { label: 'Nombre', width: '15%' },
     { label: 'Fecha', width: '20%' },
     { label: 'Horario', width: '20%' }
 ];
 
-function tableItems(reservations) {
+const tableHeaders = computed(() => {
+    if (filter.value === null) return headers;
+    return headers.filter(header => {
+        if (filter.value === 'spacesName') {
+            if (header.label === 'Nombre') return;
+            return {
+                label: header.label,
+                width: header.width,
+                sortable: false,
+            };
+        }
+        else if (filter.value === 'date') {
+            if (header.label === 'Fecha') return;
+            return {
+                label: header.label,
+                width: header.width,
+                sortable: false,
+            };
+        }
+
+    })
+})
+
+function tableDropdownItems(reservations) {
     return reservations.map((reservation, i) => {
         return {
             id: reservation._id,        // key para v-for
@@ -437,22 +460,14 @@ function tableItems(reservations) {
     })
 }
 
-// Transformamos 'nextReservations' en 'tableNextItems'
-const tableNextItems = computed(() => {
-    return (nextReservations.value || []).map((reservation, i) => {
-        return {
-            id: reservation._id,        // key para v-for
-            date: `${twoDigitsDate(new Date(reservation.startTime))}`,
-            name: reservation.spaceId.name,
-            schedule: `${getHoursAndMinsFromDate(reservation.startTime)}h - ${getHoursAndMinsFromDate(reservation.endTime)}h`,
-            object: reservation,      // guardamos el objeto para usarlo en las acciones
-        }
-    })
-})
+// Transformamos 'nextReservations o pastReservations' en 'tableItems'
+const tableItems = computed(() => {
+    let reservationsToSearch = [];
 
-// Transformamos 'pastReservations' en 'tablePastItems'
-const tablePastItems = computed(() => {
-    return (pastReservations.value || []).map((reservation, i) => {
+    if (subTab.value === 'next') reservationsToSearch = filteredNextReservations.value;
+    else if (subTab.value === 'past') reservationsToSearch = filteredPastReservations.value;
+
+    return reservationsToSearch.map((reservation, i) => {
         return {
             id: reservation._id,        // key para v-for
             date: `${twoDigitsDate(new Date(reservation.startTime))}`,
@@ -500,7 +515,6 @@ const pastEventStyles = {
     border: '2px dashed black',
 };
 /* ------------------------------------------------------------------------- */
-
 </script>
 
 <style scoped>
