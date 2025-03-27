@@ -520,8 +520,8 @@ const pastEventStyles = {
 <style scoped>
 .sx-vue-calendar-wrapper {
     max-width: 100vw;
-    height: 490px;
-    max-height: 90vh;
+    height: 550px;
+    max-height: 100vh;
 }
 
 .v-tab-text {

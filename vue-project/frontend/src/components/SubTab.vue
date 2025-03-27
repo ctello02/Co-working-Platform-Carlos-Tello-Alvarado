@@ -87,7 +87,6 @@
 </template>
 
 <script setup>
-import { defineProps, defineEmits } from 'vue';
 import Table from './Table.vue';
 import ReservationCard from './ReservationCard.vue';
 
