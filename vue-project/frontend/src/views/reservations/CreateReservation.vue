@@ -182,6 +182,7 @@ import { useSpaceStore } from '@/store/spaceStore';
 import { useReservationStore } from '@/store/reservationStore';
 import { useTime } from '@/composables/useTime';
 
+// -----------------------------------------------------------------------------------------------------
 // Instancias de router y stores
 const router = useRouter();
 const userStore = useUserStore();
@@ -218,15 +219,30 @@ const durationSearched = ref(null);
 
 const availableTimes = reactive({});
 const isLoading = ref(false);
+// -----------------------------------------------------------------------------------------------------
 
-/* ------------------------- Ciclo de vida ------------------------- */
+
+// -----------------------------------------------------------------------------------------------------
+// Hook onMounted
+// -----------------------------------------------------------------------------------------------------
 onMounted(() => {
   // Llamamos a getSpaces para obtener los espacios al montar el componente
   getSpaces();
+
+  const calendarDate = reservationStore.getCalendarDate;
+
+  if (calendarDate) {                     // Comprueba si hay una fecha guardada
+    let [datePart, timePart] = calendarDate.split(" ");
+
+    if (!timePart) {                      // Si solo tiene la fecha, guardamos la parte de la fecha
+      date.value = new Date(datePart);
+    } else {                              // Si tiene la fecha y la hora, guardamos ambas partes
+      startTime.value = timePart;         // Guardar la hora en otra variable
+      date.value = new Date(datePart);    // Guardar solo la fecha
+    }
+  }
 });
 
-
-/* ------------------------- Funciones del componente ------------------------- */
 // Obtiene los espacios a través del servicio
 const getSpaces = () => {
   spaceService.getSpaces()
@@ -237,6 +253,41 @@ const getSpaces = () => {
     .catch(error => {
       console.error(error);
     });
+};
+// -----------------------------------------------------------------------------------------------------
+
+
+// -----------------------------------------------------------------------------------------------------
+// Funciones para filtrar los espacios en el DOM.
+// Obtiene las reservas del día seleccionado, filtra las horas disponibles 
+// y calcula la duración disponible
+// -----------------------------------------------------------------------------------------------------
+// Filtra los espacios en función de varios criterios (horario, duración, asientos)
+const filterSpaces = async () => {
+  isLoading.value = true;
+  if (!reservationsByDate.value || reservationsByDate.value.length === 0) {
+    await getReservationsByDate(formattedDate.value);
+  }
+  updateAvailableTimes();
+
+  filteredSpaces.value = spaces.value.filter(space => {
+    const isAvailable = availableTimes[space._id] || [];
+    if (isAvailable.length === 0) return false;
+
+    const matchesStartTime = startTime.value == null ||
+      (makeHoursAndMinutes(space.opening) <= startTime.value &&
+        makeHoursAndMinutes(space.closing) > startTime.value &&
+        availableTimes[space._id].includes(startTime.value));
+
+    const matchesDuration = durationSearched.value == null ||
+      (space.duration <= durationSearched.value &&
+        calcDurationAvailable(durationSearched.value, availableTimes[space._id], space));
+
+    const matchesSeats = reservationSeats.value == null || space.seats >= reservationSeats.value;
+
+    return matchesStartTime && matchesDuration && matchesSeats;
+  });
+  isLoading.value = false;
 };
 
 // Obtiene las reservas para la fecha seleccionada
@@ -268,119 +319,7 @@ const updateAvailableTimes = () => {
   });
 };
 
-// Actualiza los datos de reserva para un espacio
-const updateReservation = (space, key, value) => {
-  if (!reservationTimes[space._id]) {
-    reservationTimes[space._id] = { reservationStartTime: null, reservationEndTime: null, seatsLeft: null, reservationNotAllowed: false };
-  }
 
-  reservationTimes[space._id][key] = value;
-
-  if (key === 'reservationStartTime') {
-    reservationTimes[space._id].reservationEndTime = null;
-    reservationTimes[space._id].reservationNotAllowed = false;
-  }
-
-  if (key === 'reservationEndTime' && value != null) {
-    calcSeatsAllowed(space);
-    calcReservationAllowed(space);
-  }
-
-  if (value == null) {
-    reservationTimes[space._id].seatsLeft = null;
-    reservationTimes[space._id].reservationNotAllowed = false;
-  }
-};
-
-// Calcula la cantidad de asientos disponibles según las reservas existentes
-const calcSeatsAllowed = (space) => {
-  let hoursReserved = reservationStore.getHoursReservedBySpace(space._id) || [];
-  if (!hoursReserved || hoursReserved.length === 0) {
-    reservationTimes[space._id].seatsLeft = space.seats;
-    return;
-  }
-
-  const start = makeMinutes(reservationTimes[space._id].reservationStartTime);
-  const end = makeMinutes(reservationTimes[space._id].reservationEndTime);
-  let max = 0;
-
-  hoursReserved.forEach(res => {
-    const startReservation = res.startMinutes;
-    const endReservation = res.endMinutes;
-    if (
-      (start < startReservation && end <= startReservation) ||
-      (start >= endReservation && end > endReservation)
-    ) {
-      return;
-    }
-    if (res.seatsReserved > max) {
-      max = res.seatsReserved;
-    }
-  });
-
-  reservationTimes[space._id].seatsLeft = space.seats - max;
-};
-
-// Valida si se permite la reserva según las reservas del usuario
-const calcReservationAllowed = (space) => {
-  const events = reservationsByDate.value.filter(reservation =>
-    reservation.spaceId === space._id && reservation.userId === userStore.getId
-  );
-
-  if (events && events.length > 0) {
-    const selectedDate = parseToYYYYMMDD(formattedDate.value);
-    const startTimeString = reservationTimes[space._id].reservationStartTime;
-    const endTimeString = reservationTimes[space._id].reservationEndTime;
-
-    const selectedStartTime = new Date(`${selectedDate}T${startTimeString}:00Z`).toUTCString();
-    const selectedEndTime = new Date(`${selectedDate}T${endTimeString}:00Z`).toUTCString();
-
-    for (let ev of events) {
-      const evStartTime = new Date(ev.startTime).toUTCString();
-      const evEndTime = new Date(ev.endTime).toUTCString();
-      if (
-        (selectedStartTime < evStartTime && selectedEndTime <= evStartTime) ||
-        (selectedStartTime >= evEndTime && selectedEndTime > evEndTime)
-      ) {
-        reservationTimes[space._id].reservationNotAllowed = false;
-      } else {
-        reservationTimes[space._id].reservationNotAllowed = true;
-        reservationTimes[space._id].seatsLeft = null;
-        return;
-      }
-    }
-  }
-
-  reservationTimes[space._id].reservationNotAllowed = false;
-};
-
-// Filtra los espacios en función de varios criterios (horario, duración, asientos)
-const filterSpaces = async () => {
-  isLoading.value = true;
-  if (!reservationsByDate.value || reservationsByDate.value.length === 0) {
-    await getReservationsByDate(formattedDate.value);
-  }
-  updateAvailableTimes();
-
-  filteredSpaces.value = spaces.value.filter(space => {
-    const isAvailable = availableTimes[space._id] || [];
-    if (isAvailable.length === 0) return false;
-
-    const matchesStartTime = startTime.value == null ||
-      (makeHoursAndMinutes(space.opening) <= startTime.value &&
-        makeHoursAndMinutes(space.closing) > startTime.value &&
-        availableTimes[space._id].includes(startTime.value));
-
-    const matchesDuration = durationSearched.value == null ||
-      (space.duration <= durationSearched.value &&
-        calcDurationAvailable(durationSearched.value, availableTimes[space._id], space));
-
-    const matchesSeats = reservationSeats.value == null || space.seats >= reservationSeats.value;
-
-    return matchesStartTime && matchesDuration && matchesSeats;
-  });
-  isLoading.value = false;
-};
 
 // Verifica si existe un intervalo de tiempo disponible para la duración solicitada
 const calcDurationAvailable = (duration, availableTimesForSpace, space) => {
@@ -433,7 +372,12 @@ const calcDurationAvailable = (duration, availableTimesForSpace, space) => {
   }
   return false;
 };
+// -----------------------------------------------------------------------------------------------------
 
+
+// -----------------------------------------------------------------------------------------------------
+// Cálculo de las horas disponibles en la hora de inicio y fin de un espacio
+// -----------------------------------------------------------------------------------------------------
 // Calcula el inicio de los intervalos disponibles para un espacio
 const calcStartTimeOfSpace = (space) => {
   return calcFrameTimesOfSpace(space, space.opening, space.closing, 15, space.duration, true);
@@ -547,9 +491,104 @@ const binarySearchReservation = (time, duration, hoursReserved) => {
   }
   return null;
 };
+// -----------------------------------------------------------------------------------------------------
 
 
-// Crea la reserva y redirige a la pantalla de confirmación
+// -----------------------------------------------------------------------------------------------------
+// Funciones auxiliares para la creación de espacios en el DOM.
+// Además, maneja las variables de la hora de inicio y fin
+// -----------------------------------------------------------------------------------------------------
+// Actualiza los datos de reserva para un espacio
+const updateReservation = (space, key, value) => {
+  if (!reservationTimes[space._id]) {
+    reservationTimes[space._id] = { reservationStartTime: null, reservationEndTime: null, seatsLeft: null, reservationNotAllowed: false };
+  }
+
+  reservationTimes[space._id][key] = value;
+
+  if (key === 'reservationStartTime') {
+    reservationTimes[space._id].reservationEndTime = null;
+    reservationTimes[space._id].reservationNotAllowed = false;
+  }
+
+  if (key === 'reservationEndTime' && value != null) {
+    calcSeatsAllowed(space);
+    calcReservationAllowed(space);
+  }
+
+  if (value == null) {
+    reservationTimes[space._id].seatsLeft = null;
+    reservationTimes[space._id].reservationNotAllowed = false;
+  }
+};
+
+// Calcula la cantidad de asientos disponibles según las reservas existentes
+const calcSeatsAllowed = (space) => {
+  let hoursReserved = reservationStore.getHoursReservedBySpace(space._id) || [];
+  if (!hoursReserved || hoursReserved.length === 0) {
+    reservationTimes[space._id].seatsLeft = space.seats;
+    return;
+  }
+
+  const start = makeMinutes(reservationTimes[space._id].reservationStartTime);
+  const end = makeMinutes(reservationTimes[space._id].reservationEndTime);
+  let max = 0;
+
+  hoursReserved.forEach(res => {
+    const startReservation = res.startMinutes;
+    const endReservation = res.endMinutes;
+    if (
+      (start < startReservation && end <= startReservation) ||
+      (start >= endReservation && end > endReservation)
+    ) {
+      return;
+    }
+    if (res.seatsReserved > max) {
+      max = res.seatsReserved;
+    }
+  });
+
+  reservationTimes[space._id].seatsLeft = space.seats - max;
+};
+
+// Valida si se permite la reserva según las reservas del usuario
+const calcReservationAllowed = (space) => {
+  const events = reservationsByDate.value.filter(reservation =>
+    reservation.spaceId === space._id && reservation.userId === userStore.getId
+  );
+
+  if (events && events.length > 0) {
+    const selectedDate = parseToYYYYMMDD(formattedDate.value);
+    const startTimeString = reservationTimes[space._id].reservationStartTime;
+    const endTimeString = reservationTimes[space._id].reservationEndTime;
+
+    const selectedStartTime = new Date(`${selectedDate}T${startTimeString}:00Z`).toUTCString();
+    const selectedEndTime = new Date(`${selectedDate}T${endTimeString}:00Z`).toUTCString();
+
+    for (let ev of events) {
+      const evStartTime = new Date(ev.startTime).toUTCString();
+      const evEndTime = new Date(ev.endTime).toUTCString();
+      if (
+        (selectedStartTime < evStartTime && selectedEndTime <= evStartTime) ||
+        (selectedStartTime >= evEndTime && selectedEndTime > evEndTime)
+      ) {
+        reservationTimes[space._id].reservationNotAllowed = false;
+      } else {
+        reservationTimes[space._id].reservationNotAllowed = true;
+        reservationTimes[space._id].seatsLeft = null;
+        return;
+      }
+    }
+  }
+
+  reservationTimes[space._id].reservationNotAllowed = false;
+};
+// -----------------------------------------------------------------------------------------------------
+
+
+// -----------------------------------------------------------------------------------------------------
+// Crea la reserva y redirige a la pantalla de confirmación de la reserva
+// -----------------------------------------------------------------------------------------------------
 const createReservation = async (space) => {
   const selectedDate = parseToYYYYMMDD(formattedDate.value);
   const startTimeString = reservationTimes[space._id].reservationStartTime;
@@ -570,17 +609,21 @@ const createReservation = async (space) => {
   spaceStore.setSelectedSpace(space);
   router.push("/confirmReservation");
 };
+// -----------------------------------------------------------------------------------------------------
 
-/* ------------------------- Watchers ------------------------- */
 
+// -----------------------------------------------------------------------------------------------------
+// Watchers
+// -----------------------------------------------------------------------------------------------------
 // Cuando cambia la fecha, se actualiza la fecha formateada, se reinician reservas y se filtran espacios
 watch(date, (newVal) => {
   formattedDate.value = parseToStringDate(newVal);
   reservationsByDate.value = [];
-  // Reiniciamos el objeto reservationTimes
-  for (const key in reservationTimes) {
+
+  for (const key in reservationTimes) {   // Reiniciamos el objeto reservationTimes
     delete reservationTimes[key];
   }
+
   reservationStore.clearStore();
   filterSpaces();
 });
@@ -596,6 +639,8 @@ watch(durationSearched, () => {
 watch(reservationSeats, () => {
   filterSpaces();
 });
+// -----------------------------------------------------------------------------------------------------
+
 </script>
 
 <style scoped>

@@ -1,18 +1,16 @@
 <template>
   <v-container class="container">
-    <v-card v-if="user" class="mx-auto px-2" max-width="550">
+    <v-card v-if="user" class="mx-auto px-2" max-width="500">
       <v-card-text>
         <v-col>
           <v-row cols="12">
             <v-col cols="1" class="d-flex align-center">
-              <v-icon
-                  size="x-large"
-                  :icon="user?.isCompany? 'mdi-office-building-outline': 'mdi-account-circle-outline'"
-              />
+              <v-icon size="x-large"
+                :icon="user?.isCompany ? 'mdi-office-building-outline' : 'mdi-account-circle-outline'" />
             </v-col>
             <v-col>
               <span class="ml-n1 text-h4">{{ user?.name }}</span>
-              <v-spacer/>
+              <v-spacer />
               <span v-if="user?.isCompany" style="color: grey;" class="text-h6">Empresa, CIF: {{ user?.cif }}</span>
               <span v-else style="color: grey;" class="text-h6">Usuario</span>
             </v-col>
@@ -20,10 +18,7 @@
 
           <v-row v-if="user?.isAdmin" cols="12">
             <v-col cols="1" class="d-flex align-center">
-              <v-icon
-                size="x-large"
-                icon="mdi-account-lock-outline"
-              ></v-icon>
+              <v-icon size="x-large" icon="mdi-account-lock-outline"></v-icon>
             </v-col>
             <v-col>
               <span class="text-h6">Administrador</span>
@@ -32,10 +27,7 @@
 
           <v-row cols="12">
             <v-col cols="1" class="d-flex align-center">
-              <v-icon
-                size="x-large"
-                icon="mdi-email-outline"
-              ></v-icon>
+              <v-icon size="x-large" icon="mdi-email-outline"></v-icon>
             </v-col>
             <v-col>
               <span class="text-h6">{{ user?.email }}</span>
@@ -44,10 +36,7 @@
 
           <v-row cols="12">
             <v-col cols="1" class="d-flex align-center">
-              <v-icon
-                size="x-large"
-                icon="mdi-phone-outline"
-              ></v-icon>
+              <v-icon size="x-large" icon="mdi-phone-outline"></v-icon>
             </v-col>
             <v-col>
               <span class="text-h6">{{ user?.phone }}</span>
@@ -56,11 +45,8 @@
 
           <v-row cols="12">
             <v-col cols="1" class="d-flex align-center">
-              <v-icon
-                size="x-large"
-                :icon="user?.isCompany? 'mdi-map-marker-outline': 'mdi-home-outline'"
-                icon="mdi-map-marker-outline"
-              ></v-icon>
+              <v-icon size="x-large" :icon="user?.isCompany ? 'mdi-map-marker-outline' : 'mdi-home-outline'"
+                icon="mdi-map-marker-outline"></v-icon>
             </v-col>
             <v-col>
               <span class="text-h6">{{ user?.address }}</span>
@@ -70,44 +56,19 @@
       </v-card-text>
 
       <v-card-actions class="mt-n3 mb-3 mr-2 d-flex justify-end ga-3">
-        <v-btn 
-          @click="openEditProfileInfo"
-          variant="tonal"
-          size="small"
-          icon="mdi-pencil" 
-        />
-        <TonalButton 
-          text="Borrar cuenta" 
-          prepend-icon="mdi-trash-can-outline"
-          color="red" 
-          @click="deleteModal = true" 
-        />
-        <TonalButton 
-          text="Cerrar sesión" 
-          color="red" 
-          prepend-icon="mdi-logout"
-          @click="logOutModal = true" 
-        />
+        <v-btn @click="openEditProfileInfo" variant="tonal" size="small" icon="mdi-pencil" />
+        <TonalButton text="Borrar cuenta" prepend-icon="mdi-trash-can-outline" color="red"
+          @click="deleteModal = true" />
+        <TonalButton text="Cerrar sesión" color="red" prepend-icon="mdi-logout" @click="logOutModal = true" />
       </v-card-actions>
     </v-card>
 
-    <AskModal
-      v-model="logOutModal"
-      :title="'¿Cerrar sesión?'"
-      :message="'¿Estás seguro de que quieres cerrar sesión?'"
-      :actionText="'Cerrar sesión'"
-      :closeModal="closeDialog"
-      :action="logOutUser"
-    />
+    <AskModal v-model="logOutModal" :title="'¿Cerrar sesión?'" :message="'¿Estás seguro de que quieres cerrar sesión?'"
+      :actionText="'Cerrar sesión'" :closeModal="closeDialog" :action="logOutUser" />
 
-    <AskModal
-      v-model="deleteModal"
-      :title="'¿Borrar cuenta?'"
-      :message="'¿Estás seguro de que quieres borrar tu cuenta de la plataforma?'"
-      :actionText="'Borrar cuenta'"
-      :closeModal="closeDialog"
-      :action="deleteUser"
-    />
+    <AskModal v-model="deleteModal" :title="'¿Borrar cuenta?'"
+      :message="'¿Estás seguro de que quieres borrar tu cuenta de la plataforma?'" :actionText="'Borrar cuenta'"
+      :closeModal="closeDialog" :action="deleteUser" />
 
   </v-container>
 </template>
@@ -126,7 +87,7 @@ export default {
     return {
       userStore: null,
       user: null,
-      payment_method: null, 
+      payment_method: null,
       logOutModal: false,
       deleteModal: false,
     };
@@ -136,14 +97,17 @@ export default {
     AskModal
   },
   mounted() {
-    this.getUser();
     this.userStore = useUserStore();
+    this.user = this.userStore.getUser;
+    if (!this.user) {
+      this.getUser(); // Redirigir al componente padre
+    }
   },
   methods: {
     getUser() {
       authService.getUser()
         .then(res => {
-          this.user = res.data.user;          
+          this.user = res.data.user;
         })
         .catch(error => {
           console.log(error);
@@ -158,7 +122,7 @@ export default {
       this.deleteModal = false;
     },
     logOutUser() {
-      this.userStore.clearUser();
+      this.userStore.clearUsers();
       this.logOutModal = false;
       this.$router.push("/login");
     },
@@ -166,7 +130,7 @@ export default {
       const toast = useToast();
       userService.deleteUser(this.user._id)
         .then(res => {
-          this.userStore.clearUser();
+          this.userStore.clearUsers();
           this.deleteModal = false;
           this.$router.push("/login");
           toast.error('Cuenta eliminada con éxito');

@@ -22,7 +22,7 @@
             </v-card-text>
             <v-card-actions class="mb-3 mr-2 mt-n5 d-flex justify-end ga-3">
                 <TonalButton text="Volver" color="grey" @click="routerBack" />
-                <TonalButton color="blue" text="Iniciar sesión" @click="submit" :disabled="emptyFields()" />
+                <TonalButton color="blue" text="Cambiar contraseña" @click="submit" :disabled="emptyFields()" />
             </v-card-actions>
         </v-card>
     </v-container>
@@ -78,7 +78,9 @@ export default {
             authService.changePassword(this.oldPassword, this.newPassword, this.userStore.getId)
                 .then(res => {
                     console.log(res.data);
-                    toast.success(res.data.message);
+                    toast.success("Contraseña cambiada correctamente");
+                    this.userStore.clearUsers();
+                    this.$router.push('/login');
                 })
                 .catch(error => {
                     if (error.response && error.response.status === 401) {

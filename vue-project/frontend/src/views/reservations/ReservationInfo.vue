@@ -109,8 +109,6 @@ const parseRepetition = (repetition) => {
         return 'Sin repetición';
     } else if (repetition === 'daily') {
         return 'Se repite todos los días';
-    } else if (repetition === 'workdays') {
-        return 'Se repite los días laborales';
     } else if (repetition === 'weekly') {
         return 'Se repite todas las semanas este día';
     } else if (repetition === 'monthly') {
