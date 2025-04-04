@@ -12,7 +12,7 @@
                             <span class="ml-n1 text-h4">{{ user?.name }}</span>
                             <v-spacer />
                             <span v-if="user?.isCompany" style="color: grey;" class="text-h6">Empresa, CIF: {{ user?.cif
-                                }}</span>
+                            }}</span>
                             <span v-else style="color: grey;" class="text-h6">Usuario</span>
                         </v-col>
                     </v-row>
@@ -46,7 +46,8 @@
 
                     <v-row cols="12">
                         <v-col cols="1" class="d-flex align-center">
-                            <v-icon size="x-large" :icon="user?.isCompany ? 'mdi-map-marker-outline' : 'mdi-home-outline'"
+                            <v-icon size="x-large"
+                                :icon="user?.isCompany ? 'mdi-map-marker-outline' : 'mdi-home-outline'"
                                 icon="mdi-map-marker-outline"></v-icon>
                         </v-col>
                         <v-col>

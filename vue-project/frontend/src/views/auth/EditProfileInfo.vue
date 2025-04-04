@@ -1,6 +1,6 @@
 <template>
   <v-container class="container">
-    <v-card v-if="user" class="mx-auto px-2" max-width="550">
+    <v-card v-if="user" class="mx-auto px-2" max-width="500">
       <v-card-title class="my-3">
         <span class="text-h4">Editar perfil</span>
       </v-card-title>
@@ -86,7 +86,10 @@ export default {
   },
   mounted() {
     this.userStore = useUserStore();
-    this.getUser();
+    this.user = this.userStore.getUser;
+    if (!this.user) {
+      this.getUser(); // Redirigir al componente padre
+    }
   },
   methods: {
     routerBack() {
@@ -130,8 +133,7 @@ export default {
       userService.updateUser(this.user)
         .then(res => {
           console.log(res.data);
-          this.userStore.setSelectedUser(this.user);
-          this.user = this.userStore.getSelectedUser;
+          this.userStore.setUser(this.user);
           // Mostrar la alerta de éxito y ocultarla después de 3 segundos
           this.successToastId = toast.success('¡Perfil editado con éxito!');
         })
@@ -140,7 +142,6 @@ export default {
         });
     },
     toChangePassword() {
-      this.userStore.setId(this.user._id);
       this.$router.push('/changePassword');
     },
   },

@@ -1,13 +1,20 @@
 <template>
     <v-container class="pa-5 container">
         <v-card v-if="space" class="mx-auto" :max-width="maxWidth" :class="isPreview ? 'spaceCardPreview' : ''">
-            <v-img :src="space.image" color="surface-variant" :height="isPreview ? '150px' : '300px'" cover />
+            <v-img :src="space.image" color="surface-variant" :height="isPreview ? '150px' : '300px'" cover
+                :gradient="isPreview ? 'to bottom, rgba(0,0,0,.1), rgba(0,0,0,.5)' : ''" class="align-end">
+                <v-card-title v-if="isPreview" class="overflow-text text-h5">
+                    {{ space.name }}
+                </v-card-title>
+            </v-img>
 
             <v-card-text v-if="space && openingTime && closingTime">
                 <v-col>
-                    <v-row class="mt-n5 mb-n3" cols="12">
-                        <v-col>
-                            <span :class="isPreview ? 'overflow-text text-h5' : 'text-h4'">{{ space.name }}</span>
+                    <v-row class="mt-n5 mb-n6" cols="12">
+                        <v-col v-if="!isPreview">
+                            <span class="text-h4">
+                                {{ space.name }}
+                            </span>
                         </v-col>
                         <v-col v-if="!isPreview" class="d-flex align-center justify-end ga-3">
                             <v-btn v-if="adminActions" @click="() => emit('edit-space')" variant="tonal" size="small"
@@ -17,13 +24,25 @@
                         </v-col>
                     </v-row>
 
-                    <v-row class="my-n3" cols="12">
-                        <v-col cols="1" class="d-flex align-center">
+                    <v-row cols="12">
+                        <v-col cols="1" class="d-flex align-center" :class="isPreview ? 'ml-n3 mt-2' : ''">
                             <v-icon icon="mdi-text" />
                         </v-col>
                         <v-col cols="10">
-                            <span class="text-h6" :class="isPreview ? 'overflow-text' : ''">{{ space.description
-                                }}</span>
+                            <span :class="isPreview ? 'overflow-text ml-2 mt-2' : 'text-h6'">
+                                {{ space.description }}
+                            </span>
+                        </v-col>
+                    </v-row>
+
+                    <v-row class="my-n3" cols="12" v-if="isPreview">
+                        <v-col cols="1" class="d-flex align-center ml-n3">
+                            <v-icon icon="mdi-clock-outline" />
+                        </v-col>
+                        <v-col cols="10">
+                            <span class="ml-2">
+                                {{ openingTime }}h - {{ closingTime }}h
+                            </span>
                         </v-col>
                     </v-row>
 

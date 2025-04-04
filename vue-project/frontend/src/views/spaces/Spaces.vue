@@ -8,7 +8,7 @@
                     <TonalButton color="blue" text="Crear espacio" class="mr-3" v-if="userStore.getIsAdmin"
                         @click="openCreateSpace" />
                     <v-btn variant="text" :ripple="false"
-                        :icon="list ? 'mdi-view-grid-outline' : 'mdi-format-list-bulleted'" @click="list = !list" />
+                        :icon="list ? 'mdi-format-list-bulleted' : 'mdi-view-grid-outline'" @click="list = !list" />
                 </div>
             </v-row>
 
@@ -20,44 +20,9 @@
                 <!-- Vista de lista -->
                 <v-col v-if="list">
                     <v-card style="width: 100%;">
-                        <v-table class="fixed-table">
-                            <thead>
-                                <tr>
-                                    <th style="width: 10%;">#</th>
-                                    <th style="width: 20%;">Nombre</th>
-                                    <th style="width: 20%;">Descripción</th>
-                                    <th style="width: 30%;">Horario de apertura y cierre</th>
-                                    <th v-if="userStore.getIsAdmin" style="width: 10%;">Acciones</th>
-                                    <th v-else style="width: 20%;">Duración de las reservas</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr v-for="(space, index) in spaces" :key="space._id" @click="openSpace(space)"
-                                    class="cursor-pointer">
-                                    <td>{{ index + 1 }}</td>
-                                    <td>{{ space.name }}</td>
-                                    <td>{{ space.description }}</td>
-                                    <td>{{ makeHoursAndMinutes(space.opening) }}h - {{
-                                        makeHoursAndMinutes(space.closing) }}h</td>
-                                    <td v-if="userStore.getIsAdmin">
-                                        <v-form class="d-flex align-center">
-                                            <v-btn icon="mdi-pencil" variant="text" size="small"
-                                                @click.stop="openEditSpaceInfo(space)" />
-                                            <v-btn color="error" icon="mdi-trash-can-outline" variant="text"
-                                                size="small" @click.stop="openDeleteModal(space)" />
-                                        </v-form>
-                                    </td>
-                                    <td v-else>
-                                        <span v-if="space.duration < 60">Reservas de {{ space.duration }} minutos</span>
-                                        <span v-if="space.duration == 60">Reservas de {{ space.duration / 60 }}
-                                            hora</span>
-                                        <span v-if="space.duration > 60">Reservas de {{ space.duration / 60 }}
-                                            horas</span>
-                                    </td>
-
-                                </tr>
-                            </tbody>
-                        </v-table>
+                        <Table :headers="tableHeaders" :fields="tableFields" :items="tableItems"
+                            :buttons="userStore.getIsAdmin ? actionButtons : ''" @rowClick="handleRowClick"
+                            :clickable="true" />
                     </v-card>
                 </v-col>
 
@@ -66,14 +31,9 @@
                     <v-container fluid>
                         <v-row>
                             <v-col cols="12" sm="6" md="4" lg="3" v-for="space in spaces" :key="space._id">
-                                <SpaceCard v-if="userStore.getIsAdmin" :space="space"
-                                    :adminActions="userStore.getIsAdmin" :reserveActions="false" :maxWidth="'300px'"
-                                    :isPreview="true" @edit-space="openEditSpaceInfo(space)"
-                                    @delete-space="deleteSpace(space._id)" @click="openSpace(space)" />
-                                <SpaceCard v-else :space="space" :adminActions="false" :reserveActions="false"
+                                <SpaceCard :space="space" :adminActions="userStore.getIsAdmin" :reserveActions="false"
                                     :maxWidth="'300px'" :isPreview="true" @edit-space="openEditSpaceInfo(space)"
                                     @delete-space="deleteSpace(space._id)" @click="openSpace(space)" />
-
                             </v-col>
                         </v-row>
                     </v-container>
@@ -98,6 +58,7 @@ import { useToast } from 'vue-toastification';
 import TonalButton from '@/components/TonalButton.vue'
 import SpaceCard from '@/components/SpaceCard.vue';
 import AskModal from '@/components/AskModal.vue';
+import Table from '@/components/Table.vue';
 import { useTime } from '@/composables/useTime';
 
 // Router, notificaciones y stores
@@ -107,12 +68,17 @@ const spaceStore = useSpaceStore();
 const userStore = computed(() => {
     return useUserStore();
 });
+// Computed para saber si el usuario es admin
+const isAdmin = computed(() => userStore.value.getIsAdmin)
+
 
 // Variables reactivas
 const list = ref(false);
 const spaces = ref(null);
 const selectedSpace = ref(null);
 const deleteModal = ref(false);
+
+//Variables para la Tabla
 
 // Extraemos función del composable useTime
 const {
@@ -174,6 +140,75 @@ const openDeleteModal = (space) => {
 const closeDialog = () => {
     deleteModal.value = false;
 };
+
+/* ------------------------- Objetos de la tabla ------------------------- */
+// Encabezados
+const tableHeaders = computed(() => {
+    let headers = [
+        { label: '#', width: '10%' },
+        { label: 'Nombre', width: '15%' },
+        { label: 'Descripción', width: '20%' },
+        { label: 'Horario', width: '20%' }
+    ]
+    if (!isAdmin.value) {
+        headers.push({ label: 'Duración de las reservas', width: '20%' })
+    }
+    return headers
+});
+
+// Campos que se mostrarán en cada fila
+const tableFields = computed(() => {
+    let fields = ['name', 'description', 'schedule']
+
+    if (!isAdmin.value) {
+        fields.push('duration')
+    }
+    return fields
+});
+
+// Transformamos 'spaces' en 'tableItems'
+const tableItems = computed(() => {
+    return (spaces.value || []).map((space, i) => {
+        const item = {
+            id: space._id,        // key para v-for
+            name: space.name,
+            description: space.description,
+            schedule: `${makeHoursAndMinutes(space.opening)}h - ${makeHoursAndMinutes(space.closing)}h`,
+            object: space,      // guardamos el objeto para usarlo en las acciones
+        }
+
+        // Si NO es admin, mostramos la duración en la última columna
+        if (!isAdmin.value) {
+            if (space.duration < 60) {
+                item.duration = `Reservas de ${space.duration} minutos`
+            } else if (space.duration === 60) {
+                item.duration = `Reservas de ${space.duration / 60} hora`
+            } else {
+                item.duration = `Reservas de ${space.duration / 60} horas`
+            }
+        }
+        return item
+    })
+})
+
+// Botones de acción si es admin
+const actionButtons = [
+    {
+        icon: 'mdi-pencil',
+        action: (item) => openEditSpaceInfo(item.object)
+    },
+    {
+        icon: 'mdi-trash-can-outline',
+        color: 'error',
+        action: (item) => openDeleteModal(item.object)
+    }
+];
+
+
+// Cuando se hace click en una fila, abrimos el espacio
+function handleRowClick(item) {
+    openSpace(item.object)
+}
 
 </script>
 

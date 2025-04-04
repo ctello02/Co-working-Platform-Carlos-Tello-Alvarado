@@ -155,7 +155,6 @@ const repetition = ref('no_repeat');
 const repetitionOptions = [
   { label: 'No repetir', value: 'no_repeat' },
   { label: 'Cada día', value: 'daily' },
-  { label: 'Todos los días laborales (de lunes a viernes)', value: 'workdays' },
   { label: 'Cada semana este día', value: 'weekly' },
   { label: 'Cada mes este día', value: 'monthly' },
 ];
@@ -221,6 +220,12 @@ const calcSeatsAllowed = () => {
 // Método: Confirmar Reserva
 // ------------------------------------------------
 const confirmReservation = async () => {
+
+  // Debo primero mandar los datos al servidor para que me mande información de si es posible reservar periódicamente
+  // Podría mandar datos como spaceId, startTime, endTime, repetition y seatsReserved(cuidao!)
+  // Tengo que ver ahora en el front que si hay asientos disponibles, se pueda reservar periódicamente o no
+  // Puedo poner una restricción para hacerlo más sencillo -> que se tenga que reservar toda la sala obligatoriamente si se quiere reservar periódicamente
+
   const formData = new FormData();
   formData.append('spaceId', reservation.value.spaceId);
   formData.append('userId', reservation.value.userId);

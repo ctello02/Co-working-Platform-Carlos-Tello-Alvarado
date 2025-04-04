@@ -17,27 +17,20 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
-import { useUserStore } from '@/store/userStore';
 import { authService } from '@/services/authService';
 import TonalButton from '@/components/TonalButton.vue'
 
-const userStore = useUserStore();
 const user = ref(null);
 
 onMounted(() => {
-    getUser();
-})
-
-function getUser() {
     authService.getUser()
         .then(res => {
-            userStore.setSelectedUser(res.data.user);
             user.value = res.data.user;
         })
         .catch(error => {
             console.log(error);
         });
-}
+})
 
 
 </script>

@@ -90,15 +90,35 @@ export function useTime() {
       diciembre: '12',
     };
 
-    // Se asume que el formato es "weekday, day de month"
+    // Se asume que el formato es "día, número de mes de año"
     const parts = dateStr.split(',')[1].trim().split(' ');
     const day = parts[0].padStart(2, '0');
     const month = months[parts[2].toLowerCase()];
-    const year = new Date().getFullYear();
+    const year = parts[parts.length - 1];
 
     return `${year}-${month}-${day}`;
   };
 
+  /**
+   * Convierte una fecha en formato de string para el calendario de ScheduleX
+   * al formato "YYYY-MM-DD HH:mm". Se utiliza el año actual.
+   */
+  function parseDateTo_YYYYMMDD_HHMM(dateString) {
+    const date = new Date(dateString);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getUTCHours()).padStart(2, '0');
+    const minutes = String(date.getUTCMinutes()).padStart(2, '0');
+
+    // Retornamos en el formato "YYYY-MM-DD HH:mm"
+    return `${year}-${month}-${day} ${hours}:${minutes}`;
+  }
+
+  /**
+   * Convierte una fecha en formato de string para mostrarse en la vista preliminar de las reservas
+   * al formato "DD/MM/YYYY".
+   */
   const twoDigitsDate = (date) => {
     return new Intl.DateTimeFormat('es-ES', {
       day: '2-digit',
@@ -106,6 +126,42 @@ export function useTime() {
       year: 'numeric',
     }).format(date);
   };
+
+  /**
+   * Comprueba si el evento o la fecha pasada es posterior al día actual
+   * y devuelve true (si es una fecha pasada) o false (si es un evento futuro).
+   */
+  function calcPastEvents(calendarEvent) {
+    const today = new Date();
+    let selectedDate;
+
+    if (calendarEvent.end) selectedDate = new Date(calendarEvent.end);
+    else selectedDate = new Date(calendarEvent);
+
+    if (today > selectedDate) {
+      return false;
+    }
+    return true;
+  }
+
+  /**
+   * Comprueba si la fecha pasada es igual o posterior al día actual
+   * y devuelve true si es >= al día actual o devuelve false en caso contrario.
+   */
+  function calcPastDates(date) {
+    const today = new Date();
+
+    if (
+      date.getDate() == today.getDate() &&
+      date.getMonth() == today.getMonth() &&
+      date.getFullYear() == today.getFullYear()
+    )
+      return true;
+    else if (today > date) {
+      return false;
+    }
+    return true;
+  }
 
   return {
     timeFrames,
@@ -115,6 +171,9 @@ export function useTime() {
     getHoursAndMinsFromDate,
     parseToStringDate,
     parseToYYYYMMDD,
+    parseDateTo_YYYYMMDD_HHMM,
     twoDigitsDate,
+    calcPastEvents,
+    calcPastDates,
   };
 }
