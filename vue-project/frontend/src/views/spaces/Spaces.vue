@@ -8,7 +8,7 @@
                     <TonalButton color="blue" text="Crear espacio" class="mr-3" v-if="userStore.getIsAdmin"
                         @click="openCreateSpace" />
                     <v-btn variant="text" :ripple="false"
-                        :icon="list ? 'mdi-view-grid-outline' : 'mdi-format-list-bulleted'" @click="list = !list" />
+                        :icon="list ? 'mdi-format-list-bulleted' : 'mdi-view-grid-outline'" @click="list = !list" />
                 </div>
             </v-row>
 

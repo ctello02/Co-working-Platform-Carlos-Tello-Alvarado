@@ -1,18 +1,13 @@
 const Reservation = require('../models/reservation');
 
 exports.createReservation = async (req, res) => {
-  console.log(req.body); // Esto debe mostrar los datos enviados desde el frontend
   try {
     const { spaceId, userId, startTime, endTime, seatsReserved, repetition } =
       req.body;
 
     if (!spaceId || !userId || !startTime || !endTime || !seatsReserved) {
-      return res
-        .status(400)
-        .json({ message: 'Todos los campos son obligatorios.' });
+      return res.status(400).json({ message: 'Missing required fields.' });
     }
-
-    //const calendarId = 'espacios';
 
     const newReservation = new Reservation({
       spaceId,
@@ -21,7 +16,6 @@ exports.createReservation = async (req, res) => {
       endTime,
       seatsReserved,
       repetition,
-      //calendarId,
     });
 
     const savedReservation = await newReservation.save();

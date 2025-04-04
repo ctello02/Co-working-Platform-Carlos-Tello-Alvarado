@@ -41,12 +41,19 @@
 
                     <v-tabs-window-item value="reservations">
                         <!-- Filtro -->
-                        <v-row class="mt-4 mx-1 d-flex ga-3">
+                        <v-row class="mt-4 mx-1 d-flex ga-3 ">
                             <v-btn variant="text" :ripple="false" size="small"
-                                :icon="list ? 'mdi-view-grid-outline' : 'mdi-format-list-bulleted'"
+                                :icon="list ? 'mdi-format-list-bulleted' : 'mdi-view-grid-outline'"
                                 @click="list = !list" />
+
                             <v-select variant="outlined" density="compact" label="Mostar reservas" v-model="filter"
                                 item-title="label" item-value="value" :items="filterItems" style="max-width: 250px;" />
+
+                            <v-btn v-if="filter === 'date'" variant="text" :ripple="false" size="small" class="mt-2"
+                                :prepend-icon="dateDesc ? 'mdi-arrow-down' : 'mdi-arrow-up'"
+                                @click="dateDesc = !dateDesc">
+                                {{ dateDesc ? 'Descendente' : 'Ascendente' }}
+                            </v-btn>
                         </v-row>
 
                         <v-tabs-window v-model="subTab" style="width: 100%;">
@@ -141,6 +148,7 @@ const filteredPastReservations = ref([]);
 const nextReservations = ref([]);
 const pastReservations = ref([]);
 const list = ref(false);
+const dateDesc = ref(true);
 const mainTab = ref(null);
 const subTab = ref('next');
 const message = ref(null);
@@ -180,6 +188,15 @@ const groupedByDate = computed(() => {
         reservationsToSearch = filteredNextReservations.value;
     } else if (subTab.value === 'past') {
         reservationsToSearch = filteredPastReservations.value;
+    }
+
+    if (dateDesc.value == true) {
+        //Filtrar por fecha descendente
+        reservationsToSearch.sort((a, b) => new Date(b.startTime) - new Date(a.startTime));
+    }
+    else {
+        //Filtrar por fecha ascendente
+        reservationsToSearch.sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
     }
 
     reservationsToSearch.forEach((reservation) => {

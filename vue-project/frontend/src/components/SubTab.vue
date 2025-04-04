@@ -1,7 +1,7 @@
 <template>
     <v-row>
         <!-- Mensaje si no hay reservas -->
-        <v-col v-if="reservations.length === 0" class="text-center mt-3">
+        <v-col cols="12" v-if="reservations.length === 0" class="text-center mt-3">
             <span class="text-h5">{{ noReservationsMessage }}</span>
         </v-col>
 
