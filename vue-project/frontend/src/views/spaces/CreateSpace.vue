@@ -142,7 +142,7 @@ const submit = async () => {
   formData.append('image', spaceImage.value);
   formData.append('seats', spaceSeats.value);
   formData.append('duration', selectedTimeFrame.value);
-  formData.append('repetition', spaceRepetition.value);
+  formData.append('admitsRepetition', spaceRepetition.value);
   formData.append('opening', openingTimeInMinutes);
   formData.append('closing', closingTimeInMinutes);
 

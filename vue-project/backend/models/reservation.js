@@ -7,10 +7,11 @@ const ReservationSchema = new Schema({
   startTime: { type: Date, required: true }, // Ejemplo: 2022-01-01T10:00:00.000Z
   endTime: { type: Date, required: true }, // Ejemplo: 2022-01-01T11:00:00.000Z
   seatsReserved: { type: Number, required: true, min: 1 },
-  repetition: {
-    type: String,
-    enum: ['no_repeat', 'daily', 'weekly', 'monthly'],
-    default: 'no_repeat',
+  periodicReservationId: {
+    type: Schema.Types.ObjectId,
+    ref: 'PeriodicReservation',
+    required: true,
+    default: null,
   },
 });
 

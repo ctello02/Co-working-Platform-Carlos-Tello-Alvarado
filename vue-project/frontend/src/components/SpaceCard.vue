@@ -104,7 +104,7 @@
                                 </v-col>
                                 <v-col>
                                     <span class="pt-2 text-h6">
-                                        {{ space.repetition ? 'Permite repetición' : 'No permite repetición' }}
+                                        {{ space.admitsRepetition ? 'Permite repetición' : 'No permite repetición' }}
                                     </span>
                                 </v-col>
                             </v-row>

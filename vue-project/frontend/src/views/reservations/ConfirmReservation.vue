@@ -60,7 +60,7 @@
                       prepend-icon="mdi-table-chair" type="number" variant="outlined" density="compact" required
                       @input="reservationSeats = Math.max(1, reservationSeats)" />
                   </v-col>
-                  <v-col v-if="space.repetition">
+                  <v-col v-if="space.admitsRepetition">
                     <v-select v-model="repetition" :items="repetitionOptions" item-title="label" item-value="value"
                       label="Repetición" prepend-icon="mdi-repeat" variant="outlined" density="compact" />
                   </v-col>
