@@ -1,9 +1,17 @@
 const Reservation = require('../models/reservation');
+const PeriodicReservation = require('../models/periodicReservation');
+const mongoose = require('mongoose');
 
 exports.createReservation = async (req, res) => {
   try {
-    const { spaceId, userId, startTime, endTime, seatsReserved, repetition } =
-      req.body;
+    const {
+      spaceId,
+      userId,
+      startTime,
+      endTime,
+      seatsReserved,
+      periodicReservationId,
+    } = req.body;
 
     if (!spaceId || !userId || !startTime || !endTime || !seatsReserved) {
       return res.status(400).json({ message: 'Missing required fields.' });
@@ -15,7 +23,7 @@ exports.createReservation = async (req, res) => {
       startTime,
       endTime,
       seatsReserved,
-      repetition,
+      periodicReservationId,
     });
 
     const savedReservation = await newReservation.save();
@@ -25,9 +33,126 @@ exports.createReservation = async (req, res) => {
   }
 };
 
+exports.createPeriodicReservation = async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  try {
+    const {
+      spaceId,
+      userId,
+      startTime,
+      endTime,
+      seatsReserved,
+      periodicity,
+      lastOccurrenceGenerated,
+    } = req.body;
+
+    //console.log(req.body);
+
+    if (
+      !spaceId ||
+      !userId ||
+      !startTime ||
+      !endTime ||
+      !seatsReserved ||
+      !periodicity ||
+      !lastOccurrenceGenerated
+    ) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(400).json({ message: 'Missing required fields.' });
+    }
+
+    const newPeriodicReservation = new PeriodicReservation({
+      spaceId,
+      userId,
+      startTime,
+      endTime,
+      seatsReserved,
+      periodicity,
+      lastOccurrenceGenerated,
+    });
+
+    const savedPeriodicReservation = await newPeriodicReservation.save({
+      session,
+    });
+
+    let currentStart = new Date(startTime);
+    let currentEnd = new Date(endTime);
+    const limitDate = new Date(lastOccurrenceGenerated);
+
+    // Establecemos el umbral de conflictos según la periodicidad
+    const conflictThreshold = periodicity === 'monthly' ? 6 : 15;
+    let conflictCounter = 0;
+
+    // Función para avanzar la fecha según la periodicidad
+    const incrementDates = () => {
+      if (periodicity === 'daily') {
+        currentStart.setDate(currentStart.getDate() + 1);
+        currentEnd.setDate(currentEnd.getDate() + 1);
+      } else if (periodicity === 'weekly') {
+        currentStart.setDate(currentStart.getDate() + 7);
+        currentEnd.setDate(currentEnd.getDate() + 7);
+      } else if (periodicity === 'monthly') {
+        currentStart.setMonth(currentStart.getMonth() + 1);
+        currentEnd.setMonth(currentEnd.getMonth() + 1);
+      }
+    };
+
+    // Bucle para generar las ocurrencias
+    while (currentStart <= limitDate) {
+      // Buscamos si existe alguna reserva que se solape en ese espacio y rango horario
+      const conflict = await Reservation.findOne({
+        spaceId,
+        $or: [
+          { startTime: { $lt: currentEnd }, endTime: { $gt: currentStart } },
+        ],
+      }).session(session);
+
+      if (conflict) {
+        conflictCounter++;
+        if (conflictCounter > conflictThreshold) {
+          // Si se supera el umbral de conflictos, abortamos la operación
+          await session.abortTransaction();
+          session.endSession();
+          return res.status(400).json({
+            message: 'Demasiados conflictos. Intente con otra franja horaria.',
+          });
+        }
+      } else {
+        // Crear la ocurrencia en Reservation y relacionarla con el periodicReservation
+        const newReservation = new Reservation({
+          spaceId,
+          userId,
+          startTime: new Date(currentStart),
+          endTime: new Date(currentEnd),
+          seatsReserved,
+          periodicReservationId: savedPeriodicReservation._id,
+        });
+        await newReservation.save({ session });
+      }
+
+      incrementDates();
+    }
+
+    await session.commitTransaction();
+    session.endSession();
+    return res.status(201).json({
+      message: 'Periodic reservation created successfully',
+      periodicReservation: savedPeriodicReservation,
+    });
+  } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
+    console.error(error);
+    return res.status(500).json({ message: error.message });
+  }
+};
+
 exports.getReservations = async (req, res) => {
   try {
-    const reservations = await Reservation.find();
+    const reservations = await Reservation.find().sort({ startTime: 1 });
     if (!reservations || reservations.length === 0) {
       return res.status(404).json({ message: 'No reservations found' });
     }

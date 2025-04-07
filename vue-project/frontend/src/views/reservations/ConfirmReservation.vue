@@ -153,10 +153,10 @@ const maxSeatsAllowed = ref(null);
 
 const repetition = ref('no_repeat');
 const repetitionOptions = [
-  { label: 'No repetir', value: 'no_repeat' },
-  { label: 'Cada día', value: 'daily' },
-  { label: 'Cada semana este día', value: 'weekly' },
-  { label: 'Cada mes este día', value: 'monthly' },
+  { label: 'No repetir', value: 'no_repeat', occurrences: 0 },
+  { label: 'Cada día', value: 'daily', occurrences: 60 },
+  { label: 'Cada semana este día', value: 'weekly', occurrences: 16 },
+  { label: 'Cada mes este día', value: 'monthly', occurrences: 12 },
 ];
 // ------------------------------------------------
 
@@ -221,21 +221,42 @@ const calcSeatsAllowed = () => {
 // ------------------------------------------------
 const confirmReservation = async () => {
 
-  // Debo primero mandar los datos al servidor para que me mande información de si es posible reservar periódicamente
-  // Podría mandar datos como spaceId, startTime, endTime, repetition y seatsReserved(cuidao!)
-  // Tengo que ver ahora en el front que si hay asientos disponibles, se pueda reservar periódicamente o no
-  // Puedo poner una restricción para hacerlo más sencillo -> que se tenga que reservar toda la sala obligatoriamente si se quiere reservar periódicamente
-
   const formData = new FormData();
   formData.append('spaceId', reservation.value.spaceId);
   formData.append('userId', reservation.value.userId);
   formData.append('startTime', reservation.value.startTime);
   formData.append('endTime', reservation.value.endTime);
   formData.append('seatsReserved', reservationSeats.value);
-  formData.append('repetition', repetition.value);
 
   try {
-    const res = await reservationService.createReservation(formData);
+    let res;
+
+    if (repetition.value === 'no_repeat') { // Si no selecciona repetición, creamos una reserva normal
+
+      res = await reservationService.createReservation(formData);
+
+    } else {      // Si selecciona repetición, creamos una periodicReservation
+
+      // Calculamos el campo lastOccurrenceGenerated. De momento se puede hacer en el front, pero a la hora de implementar la API, se debe hacer en el back
+      const selectedOption = repetitionOptions.find(option => option.value === repetition.value);
+      const lastOccurrenceGenerated = new Date(reservation.value.startTime);
+
+      if (repetition.value === 'daily') {
+        lastOccurrenceGenerated.setDate(lastOccurrenceGenerated.getDate() + selectedOption.occurrences);        // Para 'daily', se suman días 
+      } else if (repetition.value === 'weekly') {
+        lastOccurrenceGenerated.setDate(lastOccurrenceGenerated.getDate() + (selectedOption.occurrences * 7));  // Para 'weekly', son 16 semanas
+      } else if (repetition.value === 'monthly') {
+        lastOccurrenceGenerated.setMonth(lastOccurrenceGenerated.getMonth() + selectedOption.occurrences);      // Para 'monthly', se suman meses 
+      }
+
+      console.log(lastOccurrenceGenerated.toISOString());
+
+      formData.append('lastOccurrenceGenerated', lastOccurrenceGenerated.toISOString());
+      formData.append('periodicity', repetition.value);
+
+      res = await reservationService.createPeriodicReservation(formData);
+    }
+
     console.log(res.data);
     toast.success('Reserva creada con éxito');
     router.push('/reservations');

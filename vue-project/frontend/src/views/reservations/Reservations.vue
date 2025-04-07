@@ -21,13 +21,19 @@
                             <template #timeGridEvent="{ calendarEvent }">
                                 <div
                                     :style="calcPastEvents(calendarEvent) ? timeGridEventStyles : timeGridPastEventStyles">
-                                    {{ calendarEvent.title }}
+                                    <span>
+                                        <span v-if="calendarEvent.options === true">🔁</span>
+                                        {{ calendarEvent.title }}
+                                    </span>
                                 </div>
                             </template>
 
                             <template #monthGridEvent="{ calendarEvent }">
                                 <div :style="calcPastEvents(calendarEvent) ? eventStyles : pastEventStyles">
-                                    {{ calendarEvent.title }}
+                                    <span>
+                                        <span v-if="calendarEvent.options === true">🔁</span>
+                                        {{ calendarEvent.title }}
+                                    </span>
                                 </div>
                             </template>
 
@@ -49,7 +55,7 @@
                             <v-select variant="outlined" density="compact" label="Mostar reservas" v-model="filter"
                                 item-title="label" item-value="value" :items="filterItems" style="max-width: 250px;" />
 
-                            <v-btn v-if="filter === 'date'" variant="text" :ripple="false" size="small" class="mt-2"
+                            <v-btn variant="text" :ripple="false" size="small" class="mt-2"
                                 :prepend-icon="dateDesc ? 'mdi-arrow-down' : 'mdi-arrow-up'"
                                 @click="dateDesc = !dateDesc">
                                 {{ dateDesc ? 'Descendente' : 'Ascendente' }}
@@ -114,6 +120,7 @@ import {
     createViewWeek,
 } from '@schedule-x/calendar';
 import '@schedule-x/theme-default/dist/index.css';
+import { options } from 'preact';
 /* -------------------------------------------------------------------- */
 
 
@@ -148,7 +155,7 @@ const filteredPastReservations = ref([]);
 const nextReservations = ref([]);
 const pastReservations = ref([]);
 const list = ref(false);
-const dateDesc = ref(true);
+const dateDesc = ref(false);
 const mainTab = ref(null);
 const subTab = ref('next');
 const message = ref(null);
@@ -170,6 +177,11 @@ const groupedByName = computed(() => {
     if (subTab.value === 'next') reservationsToSearch = filteredNextReservations.value;
     else if (subTab.value === 'past') reservationsToSearch = filteredPastReservations.value;
 
+    if (dateDesc.value == true) //Filtrar por fecha descendente
+        reservationsToSearch.sort((a, b) => new Date(b.startTime) - new Date(a.startTime));
+    else //Filtrar por fecha ascendente
+        reservationsToSearch.sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
+
     reservationsToSearch.forEach(reservation => {
         const nameKey = reservation.spaceId.name;
         if (!groups[nameKey]) {
@@ -177,18 +189,25 @@ const groupedByName = computed(() => {
         }
         groups[nameKey].push(reservation);
     });
-    return groups;
+
+    //Ordenamos los nombres de los espacios
+    const orderedGroups = {};
+    Object.keys(groups).sort().forEach(key => {
+        orderedGroups[key] = groups[key];
+    });
+
+    return orderedGroups;
 });
 
 const groupedByDate = computed(() => {
     const groups = {};
     let reservationsToSearch = [];
 
-    if (subTab.value === 'next') {
+    if (subTab.value === 'next')
         reservationsToSearch = filteredNextReservations.value;
-    } else if (subTab.value === 'past') {
+    else if (subTab.value === 'past')
         reservationsToSearch = filteredPastReservations.value;
-    }
+
 
     if (dateDesc.value == true) {
         //Filtrar por fecha descendente
@@ -333,6 +352,7 @@ function addCalendarEvents(reservations) {
             title: `Reserva en ${reservation.spaceId.name}`,
             start: formattedStart,  // start: '2024-06-28 08:00',
             end: formattedEnd,      // end: '2024-06-28 10:00',
+            options: reservation.periodicReservationId ? true : false,
         };
     });
 };

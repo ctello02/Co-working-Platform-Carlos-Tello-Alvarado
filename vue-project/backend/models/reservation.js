@@ -10,7 +10,7 @@ const ReservationSchema = new Schema({
   periodicReservationId: {
     type: Schema.Types.ObjectId,
     ref: 'PeriodicReservation',
-    required: true,
+    required: false,
     default: null,
   },
 });
