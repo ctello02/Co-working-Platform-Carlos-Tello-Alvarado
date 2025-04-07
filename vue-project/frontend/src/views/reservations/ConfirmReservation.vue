@@ -90,7 +90,8 @@
             <v-card-actions>
               <v-row class="mt-n6 mb-3 mr-2 d-flex justify-end ga-3">
                 <TonalButton color="grey" text="Volver" @click="routerBack" />
-                <TonalButton color="blue" text="Reservar" @click="confirmReservation" />
+                <TonalButton color="blue" text="Reservar" :loading="isLoading" @click="confirmReservation">
+                </TonalButton>
               </v-row>
             </v-card-actions>
           </v-card>
@@ -147,6 +148,8 @@ const reservation = ref(null);
 const space = ref(null);
 const hoursReserved = ref(null);
 const showSpaceModal = ref(false);
+
+const isLoading = ref(false);
 
 const reservationSeats = ref(0);
 const maxSeatsAllowed = ref(null);
@@ -221,6 +224,8 @@ const calcSeatsAllowed = () => {
 // ------------------------------------------------
 const confirmReservation = async () => {
 
+  isLoading.value = true;
+
   const formData = new FormData();
   formData.append('spaceId', reservation.value.spaceId);
   formData.append('userId', reservation.value.userId);
@@ -258,10 +263,24 @@ const confirmReservation = async () => {
     }
 
     console.log(res.data);
+    isLoading.value = false;
     toast.success('Reserva creada con éxito');
     router.push('/reservations');
   } catch (error) {
+    isLoading.value = false;
     console.error(error);
+
+    // Verificamos si es el error de "too many conflicts"
+    if (
+      error.response &&
+      error.response.status === 409 &&
+      error.response.data?.errorCode === 'TOO_MANY_CONFLICTS'
+    ) {
+      toast.error(error.response.data.message);
+    } else {
+      // Cualquier otro error
+      toast.error('Error al crear la reserva');
+    }
   }
 };
 // ------------------------------------------------
@@ -299,5 +318,17 @@ const routerBack = () => {
 .slide-right-leave-to {
   opacity: 0;
   transform: translateX(100px);
+}
+
+.loader-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
 }
 </style>

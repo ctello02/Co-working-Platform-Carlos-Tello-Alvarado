@@ -116,7 +116,8 @@ exports.createPeriodicReservation = async (req, res) => {
           // Si se supera el umbral de conflictos, abortamos la operación
           await session.abortTransaction();
           session.endSession();
-          return res.status(400).json({
+          return res.status(409).json({
+            errorCode: 'TOO_MANY_CONFLICTS',
             message: 'Demasiados conflictos. Intente con otra franja horaria.',
           });
         }
