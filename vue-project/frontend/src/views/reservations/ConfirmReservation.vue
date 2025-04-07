@@ -262,9 +262,15 @@ const confirmReservation = async () => {
       res = await reservationService.createPeriodicReservation(formData);
     }
 
-    console.log(res.data);
     isLoading.value = false;
-    toast.success('Reserva creada con éxito');
+    toast.success(res.data.message);
+
+    const conflictObjects = res.data.conflictObjects;
+    //console.log(conflictObjects);
+    if (conflictObjects) {
+      toast.warning(`Se han producido ${conflictObjects.length} conflictos. Debe reservar manualmente los días donde ha habido un error.`);
+    }
+
     router.push('/reservations');
   } catch (error) {
     isLoading.value = false;

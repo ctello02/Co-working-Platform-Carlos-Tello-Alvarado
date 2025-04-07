@@ -27,7 +27,10 @@ exports.createReservation = async (req, res) => {
     });
 
     const savedReservation = await newReservation.save();
-    res.status(201).json(savedReservation);
+    res.status(201).json({
+      savedReservation,
+      message: 'Reserva creada con éxito',
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -85,6 +88,7 @@ exports.createPeriodicReservation = async (req, res) => {
     // Establecemos el umbral de conflictos según la periodicidad
     const conflictThreshold = periodicity === 'monthly' ? 6 : 15;
     let conflictCounter = 0;
+    let conflictObjects = [];
 
     // Función para avanzar la fecha según la periodicidad
     const incrementDates = () => {
@@ -110,8 +114,19 @@ exports.createPeriodicReservation = async (req, res) => {
         ],
       }).session(session);
 
+      const newObject = {
+        spaceId,
+        userId,
+        startTime: new Date(currentStart),
+        endTime: new Date(currentEnd),
+        seatsReserved,
+        periodicReservationId: savedPeriodicReservation._id,
+      };
+
       if (conflict) {
         conflictCounter++;
+        conflictObjects.push(newObject);
+
         if (conflictCounter > conflictThreshold) {
           // Si se supera el umbral de conflictos, abortamos la operación
           await session.abortTransaction();
@@ -122,15 +137,8 @@ exports.createPeriodicReservation = async (req, res) => {
           });
         }
       } else {
-        // Crear la ocurrencia en Reservation y relacionarla con el periodicReservation
-        const newReservation = new Reservation({
-          spaceId,
-          userId,
-          startTime: new Date(currentStart),
-          endTime: new Date(currentEnd),
-          seatsReserved,
-          periodicReservationId: savedPeriodicReservation._id,
-        });
+        // Si no hay conflictos, creamos la reserva
+        const newReservation = new Reservation(newObject);
         await newReservation.save({ session });
       }
 
@@ -139,9 +147,12 @@ exports.createPeriodicReservation = async (req, res) => {
 
     await session.commitTransaction();
     session.endSession();
+
     return res.status(201).json({
-      message: 'Periodic reservation created successfully',
+      message: 'Reserva periódica creada con éxito',
       periodicReservation: savedPeriodicReservation,
+      conflictCount: conflictCounter > 0 ? conflictCounter : null,
+      conflictObjects: conflictObjects.length > 0 ? conflictObjects : null,
     });
   } catch (error) {
     await session.abortTransaction();
