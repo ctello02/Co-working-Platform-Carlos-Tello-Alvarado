@@ -59,7 +59,9 @@
                             <v-icon icon="mdi-repeat" size="small" />
                         </v-col>
                         <v-col>
-                            <span class="pt-2 text-h6"> {{ parseRepetition(reservation.repetition) }}</span>
+                            <span class="pt-2 text-h6">
+                                {{ parseRepetition(reservation.periodicReservationId.periodicity) }}
+                            </span>
                         </v-col>
                     </v-row>
                 </v-col>

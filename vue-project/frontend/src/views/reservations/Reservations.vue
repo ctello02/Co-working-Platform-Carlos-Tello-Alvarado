@@ -21,19 +21,15 @@
                             <template #timeGridEvent="{ calendarEvent }">
                                 <div
                                     :style="calcPastEvents(calendarEvent) ? timeGridEventStyles : timeGridPastEventStyles">
-                                    <span>
-                                        <span v-if="calendarEvent.options === true">🔁</span>
-                                        {{ calendarEvent.title }}
-                                    </span>
+                                    <span v-if="calendarEvent.options === true">🔁</span>
+                                    {{ calendarEvent.title }}
                                 </div>
                             </template>
 
                             <template #monthGridEvent="{ calendarEvent }">
                                 <div :style="calcPastEvents(calendarEvent) ? eventStyles : pastEventStyles">
-                                    <span>
-                                        <span v-if="calendarEvent.options === true">🔁</span>
-                                        {{ calendarEvent.title }}
-                                    </span>
+                                    <span v-if="calendarEvent.options === true">🔁</span>
+                                    {{ calendarEvent.title }}
                                 </div>
                             </template>
 

@@ -254,8 +254,6 @@ const confirmReservation = async () => {
         lastOccurrenceGenerated.setMonth(lastOccurrenceGenerated.getMonth() + selectedOption.occurrences);      // Para 'monthly', se suman meses 
       }
 
-      console.log(lastOccurrenceGenerated.toISOString());
-
       formData.append('lastOccurrenceGenerated', lastOccurrenceGenerated.toISOString());
       formData.append('periodicity', repetition.value);
 
