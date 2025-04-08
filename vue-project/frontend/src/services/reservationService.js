@@ -27,6 +27,10 @@ export const reservationService = {
     return axiosInstance.get(`${API_URL}/getReservations`);
   },
 
+  getPeriodicReservations() {
+    return axiosInstance.get(`${API_URL}/getPeriodicReservations`);
+  },
+
   getUserReservations(id) {
     return axiosInstance.get(`${API_URL}/getUserReservations/${id}`);
   },

@@ -174,6 +174,22 @@ exports.getReservations = async (req, res) => {
   }
 };
 
+exports.getPeriodicReservations = async (req, res) => {
+  try {
+    const periodicReservations = await PeriodicReservation.find().sort({
+      startTime: 1,
+    });
+    if (!periodicReservations || periodicReservations.length === 0) {
+      return res
+        .status(404)
+        .json({ message: 'No periodic reservations found' });
+    }
+    res.json({ periodicReservations });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 exports.getUserReservations = async (req, res) => {
   try {
     const now = new Date();
@@ -181,6 +197,7 @@ exports.getUserReservations = async (req, res) => {
     // Obtenemos todas las reservas
     const reservations = await Reservation.find({ userId: req.params.id })
       .populate('spaceId')
+      .populate('periodicReservationId')
       .sort({ startTime: 1 });
 
     if (!reservations || reservations.length === 0) {
