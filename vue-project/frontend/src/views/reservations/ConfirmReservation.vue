@@ -82,6 +82,9 @@
                         variant="tonal">
                         No se pueden reservar más de {{ maxSeatsAllowed }} asientos.
                       </v-alert>
+                      <v-alert v-if="reservedModal" type="warning" density="compact" variant="tonal">
+                        No se puede reservar periódicamente, ya hay una reserva con el mismo horario.
+                      </v-alert>
                     </v-fade-transition>
                   </v-col>
                 </v-row>
@@ -145,9 +148,15 @@ const {
 // Variables Reactivas
 // ------------------------------------------------
 const reservation = ref(null);
+const startTime = ref(null);
+const endTime = ref(null);
+const reservationStartMinutes = ref(null);
+const reservationEndMinutes = ref(null);
+
 const space = ref(null);
 const hoursReserved = ref(null);
 const showSpaceModal = ref(false);
+const reservedModal = ref(false);
 
 const isLoading = ref(false);
 
@@ -155,6 +164,7 @@ const reservationSeats = ref(0);
 const maxSeatsAllowed = ref(null);
 
 const repetition = ref('no_repeat');
+const periodicReservations = ref([]);
 const repetitionOptions = [
   { label: 'No repetir', value: 'no_repeat', occurrences: 0 },
   { label: 'Cada día', value: 'daily', occurrences: 60 },
@@ -171,19 +181,45 @@ onMounted(() => {
   space.value = spaceStore.getSelectedSpace;
   reservation.value = reservationStore.getReservation;
 
+  getPeriodicReservations();
+
   if (!space.value || !reservation.value) {
     router.push('/createReservation');
   } else {
     hoursReserved.value = reservationStore.getHoursReservedBySpace(space.value._id);
     reservationSeats.value = reservation.value.seatsReserved;
+
+    startTime.value = getHoursAndMinsFromDate(reservation.value.startTime);
+    endTime.value = getHoursAndMinsFromDate(reservation.value.endTime);
+    reservationStartMinutes.value = makeMinutes(startTime.value);
+    reservationEndMinutes.value = makeMinutes(endTime.value);
+
     calcSeatsAllowed();
   }
 });
 // ------------------------------------------------
 
+// ------------------------------------------------
+// Obtener reservas periódicas
+// ------------------------------------------------
+async function getPeriodicReservations() {
+  try {
+    const response = await reservationService.getPeriodicReservations();
+    periodicReservations.value = response.data.periodicReservations;
+
+    periodicReservations.value = periodicReservations.value.filter(reservation =>
+      reservation.spaceId == space.value._id
+    );
+
+  } catch (error) {
+    console.error(error);
+  }
+};
+// ------------------------------------------------
+
 
 // ------------------------------------------------
-// Método: Calcular asientos permitidos
+// Calcular asientos permitidos
 // ------------------------------------------------
 const calcSeatsAllowed = () => {
   if (!hoursReserved.value || hoursReserved.value.length === 0) {
@@ -191,10 +227,6 @@ const calcSeatsAllowed = () => {
     return;
   }
 
-  const startTime = getHoursAndMinsFromDate(reservation.value.startTime);
-  const endTime = getHoursAndMinsFromDate(reservation.value.endTime);
-  const reservationStartTime = makeMinutes(startTime);
-  const reservationEndTime = makeMinutes(endTime);
   let max = 0;
 
   hoursReserved.value.forEach(res => {
@@ -203,8 +235,8 @@ const calcSeatsAllowed = () => {
 
     // Si la reserva actual está completamente antes o después de la existente, se ignora
     if (
-      (reservationStartTime < startMinutes && reservationEndTime <= startMinutes) ||
-      (reservationStartTime >= endMinutes && reservationEndTime > endMinutes)
+      (reservationStartMinutes.value < startMinutes && reservationEndMinutes.value <= startMinutes) ||
+      (reservationStartMinutes.value >= endMinutes && reservationEndMinutes.value > endMinutes)
     ) {
       return;
     }
@@ -220,7 +252,7 @@ const calcSeatsAllowed = () => {
 
 
 // ------------------------------------------------
-// Método: Confirmar Reserva
+// Confirmar Reserva
 // ------------------------------------------------
 const confirmReservation = async () => {
 
@@ -236,29 +268,25 @@ const confirmReservation = async () => {
   try {
     let res;
 
-    if (repetition.value === 'no_repeat') { // Si no selecciona repetición, creamos una reserva normal
+    // Comprobar si hay reservas periodicas
+    // Si hay:
+    //   - Comprobar cada una si es diaria, semanal o mensual
+    // Si no hay: 
+    //   - Sin restricciones
+    const hola = checkPeriodicReservations();
+    console.log("LA FUNCION DEVUELVE: ", hola);
 
-      res = await reservationService.createReservation(formData);
-
-    } else {      // Si selecciona repetición, creamos una periodicReservation
-
-      // Calculamos el campo lastOccurrenceGenerated. De momento se puede hacer en el front, pero a la hora de implementar la API, se debe hacer en el back
-      const selectedOption = repetitionOptions.find(option => option.value === repetition.value);
-      const lastOccurrenceGenerated = new Date(reservation.value.startTime);
-
-      if (repetition.value === 'daily') {
-        lastOccurrenceGenerated.setDate(lastOccurrenceGenerated.getDate() + selectedOption.occurrences);        // Para 'daily', se suman días 
-      } else if (repetition.value === 'weekly') {
-        lastOccurrenceGenerated.setDate(lastOccurrenceGenerated.getDate() + (selectedOption.occurrences * 7));  // Para 'weekly', son 16 semanas
-      } else if (repetition.value === 'monthly') {
-        lastOccurrenceGenerated.setMonth(lastOccurrenceGenerated.getMonth() + selectedOption.occurrences);      // Para 'monthly', se suman meses 
-      }
-
-      formData.append('lastOccurrenceGenerated', lastOccurrenceGenerated.toISOString());
-      formData.append('periodicity', repetition.value);
-
-      res = await reservationService.createPeriodicReservation(formData);
+    if (hola == true) {
+      reservedModal.value = true;
+      isLoading.value = false;
+      return;
     }
+    //---- Si llega hasta aquí es porque se puede reservar ----
+
+    // Comprobar qué tipo de repetición
+    //  - Sin repetición: se crea directamente
+    //  - Diaria, Semanal o Mensual: hay que meter cosas en el formData
+    res = await sendReservation(formData);
 
     isLoading.value = false;
     toast.success(res.data.message);
@@ -291,7 +319,140 @@ const confirmReservation = async () => {
 
 
 // ------------------------------------------------
-// Watcher: Validar número de asientos
+// Función para comprobar si hay reservas periodicas
+// ------------------------------------------------
+function checkPeriodicReservations() {
+
+  console.log("periodicReservations: ", periodicReservations.value);
+
+  if (periodicReservations.value.length > 0) {
+    // Antes que nada, hay que ver si podría crear la reserva periódica
+    // Hay que ver si hay algún periodicReservation con el mismo espacio y horario
+
+    let isReserved = true;
+
+    for (let periodicReservation of periodicReservations.value) {
+
+      console.log("periodicReservation: ", periodicReservation.startTime);
+      console.log("reservation: ", reservation.value.startTime);
+
+      const reservationDate = new Date(reservation.value.startTime);
+      const periodicReservationDate = new Date(periodicReservation.startTime);
+
+      console.log("reservationDate: ", reservationDate);
+      console.log("periodicReservationDate: ", periodicReservationDate);
+
+
+      // Tengo que comprobar los días de la reserva y de la periodicReservation
+      // Porque si coinciden, no se podrá reservar.
+      // Hay tres casos:
+      //   - Reserva diaria: tengo que comprobar la hora, porque como se repiten todos los días, con comprobar las horas es suficiente
+      //   - Reserva semanal: tengo que comprobar el día de la semana y la hora. Si coinciden las dos reservas en lunes, hay que ver si se puede hacer la nueva reserva y no coincide con el horario de la periódica
+      //   - Reserva mensual: tengo que comprobar el día del mes y la hora. Es similar a la semanal 
+
+      if (reservationDate < periodicReservationDate && repetition.value === 'no_repeat') {
+        console.log("La reserva es antes de la periodicReservation y no se quiere repetir");
+        return false;
+      }
+
+      if (periodicReservation.periodicity === 'weekly') {
+        if (periodicReservationDate.getDay() !== reservationDate.getDay()) {
+          // Si no coinciden los días de la reserva que se quiere crear y de la periodicReservation que existe, se puede reservar
+          console.log("Es semanal");
+          isReserved = false;
+          if (repetition.value === 'daily') {
+            console.log("Se quiere hacer una reserva diaria");
+            isReserved = true;
+          }
+          continue;
+        }
+      } else if (periodicReservation.periodicity === 'monthly') {
+        if (periodicReservationDate.getDate() !== reservationDate.getDate()) {
+          // Si no coinciden los días de la reserva que se quiere crear y de la periodicReservation que existe, se puede reservar
+          console.log("Es mensual");
+          isReserved = false;
+          if (repetition.value === 'daily') {
+            console.log("Se quiere hacer una reserva diaria");
+            isReserved = true;
+          }
+          continue;
+        }
+      }
+
+      console.log("SE van a checkear las horas");
+
+      const periodicStartTime = getHoursAndMinsFromDate(periodicReservation.startTime);
+      const periodicEndTime = getHoursAndMinsFromDate(periodicReservation.endTime);
+      const periodicReservationStartMinutes = makeMinutes(periodicStartTime);
+      const periodicReservationEndMinutes = makeMinutes(periodicEndTime);
+
+      if (reservationStartMinutes.value < periodicReservationStartMinutes &&
+        reservationEndMinutes.value <= periodicReservationStartMinutes) {
+        console.log("entra aquí");
+        isReserved = false;
+      }
+      else
+        if (reservationStartMinutes.value >= periodicReservationEndMinutes &&
+          reservationEndMinutes.value > periodicReservationEndMinutes) {
+          console.log("entra aquí");
+          isReserved = false;
+        }
+        else {
+          // console.log("Retorna true");
+          // console.log("reservationStartMinutes.value: ", reservationStartMinutes.value);
+          // console.log("periodicReservationStartMinutes: ", periodicReservationStartMinutes);
+          // console.log("reservationEndMinutes.value: ", reservationEndMinutes.value);
+          // console.log("periodicReservationEndMinutes: ", periodicReservationEndMinutes);
+
+          return true;
+        }
+    };
+
+    console.log("Se va a devolver: ", isReserved);
+
+    return isReserved;
+  }
+  console.log("No se ha encontrado reserva");
+
+  return false;
+};
+// ------------------------------------------------
+
+// ------------------------------------------------
+// Función para comprobar si hay reservas periodicas
+// ------------------------------------------------
+async function sendReservation(formData) {
+  let res;
+  if (repetition.value === 'no_repeat')
+    res = await reservationService.createReservation(formData);     // Si no selecciona repetición, creamos una reserva normal
+  else {
+    // Si selecciona repetición, creamos una periodicReservation
+    // Calculamos el campo lastOccurrenceGenerated. De momento se puede hacer en el front, pero a la hora de implementar la API, se debe hacer en el back
+    const selectedOption = repetitionOptions.find(option => option.value === repetition.value);
+    const lastOccurrenceGenerated = new Date(reservation.value.startTime);
+
+    if (repetition.value === 'daily') {
+      lastOccurrenceGenerated.setDate(lastOccurrenceGenerated.getDate() + selectedOption.occurrences);        // Para 'daily', se suman días 
+    } else if (repetition.value === 'weekly') {
+      lastOccurrenceGenerated.setDate(lastOccurrenceGenerated.getDate() + (selectedOption.occurrences * 7));  // Para 'weekly', son 16 semanas
+    } else if (repetition.value === 'monthly') {
+      lastOccurrenceGenerated.setMonth(lastOccurrenceGenerated.getMonth() + selectedOption.occurrences);      // Para 'monthly', se suman meses 
+    }
+
+    formData.append('lastOccurrenceGenerated', lastOccurrenceGenerated.toISOString());
+    formData.append('periodicity', repetition.value);
+
+    res = await reservationService.createPeriodicReservation(formData);
+  }
+
+  return res;
+
+};
+// ------------------------------------------------
+
+
+// ------------------------------------------------
+// Watcher validar número de asientos
 // ------------------------------------------------
 watch(reservationSeats, (newValue) => {
   if (newValue > maxSeatsAllowed.value) {

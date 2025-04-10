@@ -49,11 +49,13 @@ export function useTime() {
   /**
    * Obtiene la hora y los minutos de una fecha (usando UTC) en formato "HH:MM".
    */
-  const getHoursAndMinsFromDate = (date) => {
-    const dateObj = new Date(date);
-    const hours = String(dateObj.getUTCHours()).padStart(2, '0');
-    const mins = String(dateObj.getUTCMinutes()).padStart(2, '0');
-    return `${hours}:${mins}`;
+  const getHoursAndMinsFromDate = (dateString) => {
+    const date = parseDateTo_YYYYMMDD_HHMM(dateString);
+
+    const [datePart, hourPart] = date.split(' ');
+
+    // Se envía con el formato "HH:mm"
+    return hourPart;
   };
 
   /**
