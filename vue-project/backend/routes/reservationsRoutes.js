@@ -6,6 +6,8 @@ const {
   getPeriodicReservations,
   getUserReservations,
   getReservationsByDate,
+  deleteReservation,
+  deletePeriodicReservation,
 } = require('../controllers/reservationsController');
 const verifyToken = require('../middleware/verify_tokens');
 const upload = require('../utils/multerConfig');
@@ -28,6 +30,11 @@ router.get('/getPeriodicReservations', verifyToken, getPeriodicReservations);
 router.get('/getUserReservations/:id', verifyToken, getUserReservations);
 router.get('/getReservationsByDate/:date', verifyToken, getReservationsByDate);
 // router.put('/updateReservation', verifyToken, updateReservation);
-// router.delete('/deleteReservation/:id', verifyToken, deleteReservation);
+router.delete('/deleteReservation/:id', verifyToken, deleteReservation);
+router.delete(
+  '/deletePeriodicReservation/:id',
+  verifyToken,
+  deletePeriodicReservation
+);
 
 module.exports = router;

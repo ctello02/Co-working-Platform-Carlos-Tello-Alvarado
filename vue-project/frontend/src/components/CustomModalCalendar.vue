@@ -6,7 +6,7 @@
                     <v-btn @click="() => emit('see-event')" variant="text" size="x-small"
                         icon="mdi-information-outline" />
                     <v-btn @click="() => emit('edit-event')" variant="text" size="x-small" icon="mdi-pencil" />
-                    <v-btn @click="() => emit('edit-event')" variant="text" size="x-small" color="error"
+                    <v-btn @click="() => emit('delete-event')" variant="text" size="x-small" color="error"
                         icon="mdi-trash-can-outline" />
                     <v-btn @click="() => emit('close')" variant="text" size="x-small" icon="mdi-close" />
                 </v-col>

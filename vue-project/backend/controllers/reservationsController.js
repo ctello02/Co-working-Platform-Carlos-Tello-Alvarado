@@ -263,3 +263,41 @@ exports.getReservationsByDate = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+exports.deleteReservation = async (req, res) => {
+  try {
+    const reservation = await Reservation.findOne({ _id: req.params.id });
+    if (!reservation) {
+      return res.status(404).json({ message: 'Reservation not found' });
+    } else {
+      await Reservation.deleteOne({ _id: req.params.id });
+      res.json({ message: 'Reservation deleted successfully' });
+    }
+  } catch (error) {
+    console.error('Error al eliminar la reserva:', error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+exports.deletePeriodicReservation = async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+  try {
+    await Reservation.deleteMany({
+      periodicReservationId: req.params.id,
+    }).session(session);
+    await PeriodicReservation.deleteOne({ _id: req.params.id }).session(
+      session
+    );
+    await session.commitTransaction();
+    res
+      .status(200)
+      .json({ message: 'Periodic Reservation deleted successfully' });
+  } catch (error) {
+    await session.abortTransaction();
+    console.log('Error al eliminar la reserva periódica:', error);
+    res.status(500).json({ message: error.message });
+  } finally {
+    session.endSession();
+  }
+};

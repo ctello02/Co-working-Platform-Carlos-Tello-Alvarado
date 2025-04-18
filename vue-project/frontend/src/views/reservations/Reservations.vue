@@ -35,7 +35,8 @@
 
                             <template #eventModal="{ calendarEvent }">
                                 <CustomEventCalendar :reservation="reservationStore.getReservation"
-                                    @see-event="openReservation" @close="closeModal" />
+                                    @see-event="openReservation" @delete-event="openDeleteReservation"
+                                    @close="closeModal" />
                             </template>
 
                         </ScheduleXCalendar>
@@ -87,6 +88,10 @@
                 <AskModal title="Nueva reserva" :message="message" :modelValue="dialog" actionText="Ir a reservar"
                     colorText="black" colorButton="blue" :closeModal="closeDialog" :action="openCreateReservation" />
 
+                <AskModal v-model="deleteModal" :title="'¿Borrar reserva?'"
+                    :message="'¿Estás seguro de que quieres borrar esta reserva?'" :actionText="'Borrar reserva'"
+                    :closeModal="closeDialog" :action="deleteReservation"
+                    :checkboxAction="reservationStore.getReservation?.periodicReservationId ? toggleCheckbox : null" />
             </v-row>
         </v-col>
     </v-container>
@@ -156,6 +161,8 @@ const mainTab = ref(null);
 const subTab = ref('next');
 const message = ref(null);
 const dialog = ref(false);
+const deleteAllReservations = ref(false);
+const deleteModal = ref(false);
 const filter = ref(null);
 const filterItems = ref([
     { label: 'Todas', value: null },
@@ -330,6 +337,7 @@ function getAllEvents() {
                 eventsServicePlugin.set(addCalendarEvents(allReservations.value));
             })
             .catch(error => {
+                eventsServicePlugin.set([]);
                 console.error('Error al obtener reservas:', error);
             });
     } catch (error) {
@@ -438,6 +446,38 @@ function openCreateReservation() {
 
 function openReservation() {
     router.push('/reservationInfo');
+};
+
+function openDeleteReservation() {
+    deleteModal.value = true;
+};
+
+function deleteReservation() {
+    const reservation = reservationStore.getReservation;
+    if (reservation.periodicReservationId && deleteAllReservations.value) {
+        reservationService.deletePeriodicReservation(reservation.periodicReservationId._id)
+            .then(res => {
+                closeModal();
+                getAllEvents();
+            })
+            .catch(error => {
+                console.error('Error al borrar reserva:', error);
+            });
+
+    } else {
+        reservationService.deleteReservation(reservation._id)
+            .then(res => {
+                closeModal();
+                getAllEvents();
+            })
+            .catch(error => {
+                console.error('Error al borrar reserva:', error);
+            });
+    }
+};
+
+function toggleCheckbox() {
+    deleteAllReservations.value = !deleteAllReservations.value;
 };
 
 const closeModal = () => {
