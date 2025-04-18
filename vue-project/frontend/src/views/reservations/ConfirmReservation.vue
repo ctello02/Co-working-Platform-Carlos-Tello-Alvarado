@@ -273,10 +273,8 @@ const confirmReservation = async () => {
     //   - Comprobar cada una si es diaria, semanal o mensual
     // Si no hay: 
     //   - Sin restricciones
-    const hola = checkPeriodicReservations();
-    console.log("LA FUNCION DEVUELVE: ", hola);
 
-    if (hola == true) {
+    if (checkPeriodicReservations() == true) {
       reservedModal.value = true;
       isLoading.value = false;
       return;
@@ -292,7 +290,6 @@ const confirmReservation = async () => {
     toast.success(res.data.message);
 
     const conflictObjects = res.data.conflictObjects;
-    //console.log(conflictObjects);
     if (conflictObjects) {
       toast.warning(`Se han producido ${conflictObjects.length} conflictos. Debe reservar manualmente los días donde ha habido un error.`);
     }
@@ -322,46 +319,26 @@ const confirmReservation = async () => {
 // Función para comprobar si hay reservas periodicas
 // ------------------------------------------------
 function checkPeriodicReservations() {
-
-  console.log("periodicReservations: ", periodicReservations.value);
-
   if (periodicReservations.value.length > 0) {
-    // Antes que nada, hay que ver si podría crear la reserva periódica
-    // Hay que ver si hay algún periodicReservation con el mismo espacio y horario
-
     let isReserved = true;
 
     for (let periodicReservation of periodicReservations.value) {
-
-      console.log("periodicReservation: ", periodicReservation.startTime);
-      console.log("reservation: ", reservation.value.startTime);
-
       const reservationDate = new Date(reservation.value.startTime);
       const periodicReservationDate = new Date(periodicReservation.startTime);
-
-      console.log("reservationDate: ", reservationDate);
-      console.log("periodicReservationDate: ", periodicReservationDate);
-
-
-      // Tengo que comprobar los días de la reserva y de la periodicReservation
-      // Porque si coinciden, no se podrá reservar.
       // Hay tres casos:
       //   - Reserva diaria: tengo que comprobar la hora, porque como se repiten todos los días, con comprobar las horas es suficiente
       //   - Reserva semanal: tengo que comprobar el día de la semana y la hora. Si coinciden las dos reservas en lunes, hay que ver si se puede hacer la nueva reserva y no coincide con el horario de la periódica
       //   - Reserva mensual: tengo que comprobar el día del mes y la hora. Es similar a la semanal 
 
       if (reservationDate < periodicReservationDate && repetition.value === 'no_repeat') {
-        console.log("La reserva es antes de la periodicReservation y no se quiere repetir");
         return false;
       }
 
       if (periodicReservation.periodicity === 'weekly') {
         if (periodicReservationDate.getDay() !== reservationDate.getDay()) {
           // Si no coinciden los días de la reserva que se quiere crear y de la periodicReservation que existe, se puede reservar
-          console.log("Es semanal");
           isReserved = false;
           if (repetition.value === 'daily') {
-            console.log("Se quiere hacer una reserva diaria");
             isReserved = true;
           }
           continue;
@@ -369,17 +346,13 @@ function checkPeriodicReservations() {
       } else if (periodicReservation.periodicity === 'monthly') {
         if (periodicReservationDate.getDate() !== reservationDate.getDate()) {
           // Si no coinciden los días de la reserva que se quiere crear y de la periodicReservation que existe, se puede reservar
-          console.log("Es mensual");
           isReserved = false;
           if (repetition.value === 'daily') {
-            console.log("Se quiere hacer una reserva diaria");
             isReserved = true;
           }
           continue;
         }
       }
-
-      console.log("SE van a checkear las horas");
 
       const periodicStartTime = getHoursAndMinsFromDate(periodicReservation.startTime);
       const periodicEndTime = getHoursAndMinsFromDate(periodicReservation.endTime);
@@ -388,32 +361,19 @@ function checkPeriodicReservations() {
 
       if (reservationStartMinutes.value < periodicReservationStartMinutes &&
         reservationEndMinutes.value <= periodicReservationStartMinutes) {
-        console.log("entra aquí");
         isReserved = false;
       }
       else
         if (reservationStartMinutes.value >= periodicReservationEndMinutes &&
           reservationEndMinutes.value > periodicReservationEndMinutes) {
-          console.log("entra aquí");
           isReserved = false;
         }
         else {
-          // console.log("Retorna true");
-          // console.log("reservationStartMinutes.value: ", reservationStartMinutes.value);
-          // console.log("periodicReservationStartMinutes: ", periodicReservationStartMinutes);
-          // console.log("reservationEndMinutes.value: ", reservationEndMinutes.value);
-          // console.log("periodicReservationEndMinutes: ", periodicReservationEndMinutes);
-
           return true;
         }
     };
-
-    console.log("Se va a devolver: ", isReserved);
-
     return isReserved;
   }
-  console.log("No se ha encontrado reserva");
-
   return false;
 };
 // ------------------------------------------------

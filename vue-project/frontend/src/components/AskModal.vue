@@ -23,11 +23,11 @@
 import TonalButton from './TonalButton.vue';
 
 export default {
-    data(){
+    data() {
         return {
             style: {
                 color: this.colorText,
-            }
+            },
         }
     },
     props: {
@@ -85,7 +85,7 @@ export default {
         handleAction() {
             this.action();
             this.dialogVisible = false;
-        }
+        },
     }
 };
 </script>

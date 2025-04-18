@@ -410,11 +410,6 @@ const calcFrameTimesOfSpace = (space, startingTime, endingTime, interval, durati
   const availableHours = [];
   let hoursReserved = [];
 
-  console.log("----------------------------------------------");
-
-  //console.log(periodicReservations.value);
-  //console.log(reservationsByDate.value);
-
   // Si hay reservas periódicas
   if (periodicReservations.value.length > 0) {
     hoursReserved = checkPeriodicReservations(hoursReserved, space);
@@ -459,8 +454,6 @@ const calcFrameTimesOfSpace = (space, startingTime, endingTime, interval, durati
   }
 
   if (hoursReserved.length > 0) {
-    console.log("En el espacio: ", space._id + ". Horas reservadas: ", hoursReserved);
-
     reservationStore.setHoursReservedBySpace(space._id, hoursReserved);
   }
 
@@ -502,24 +495,20 @@ function checkPeriodicReservations(hoursReserved, space) {
         periodicReservationDate.setHours(0, 0, 0, 0);
 
         if (selectedDate < periodicReservationDate) {
-          //console.log("La reserva es antes de la periodicReservation, se permite reservar todo");
           return false;
         }
 
         if (periodicReservation.periodicity === 'weekly') {
           if (periodicReservationDate.getDay() !== selectedDate.getDay()) {
             // Si no coinciden los días de la reserva que se quiere crear y de la periodicReservation que existe, se puede reservar
-            //console.log("Es distinto día, se puede reservar todo");
             return false;
           }
         } else if (periodicReservation.periodicity === 'monthly') {
           if (periodicReservationDate.getDate() !== selectedDate.getDate()) {
             // Si no coinciden los días de la reserva que se quiere crear y de la periodicReservation que existe, se puede reservar
-            //console.log("Es distinto día, se puede reservar todo");
             return false;
           }
         }
-        console.log("Se va a incluir la reserva periódica porque o bien es una reserva diaria o coinciden los días");
         return true;
       } return false;
     }).flatMap(periodicReservation => {
@@ -542,8 +531,6 @@ function checkPeriodicReservations(hoursReserved, space) {
     const event = periodicEvents[i];
     if (event.time !== currentTime) {
       if (currentSeats !== 0) {
-        console.log(event.userId);
-
         hoursReserved.push({
           start: makeHoursAndMinutes(currentTime),
           end: makeHoursAndMinutes(event.time),
@@ -661,9 +648,6 @@ const calcSeatsAllowed = (space) => {
 
 // Valida si se permite la reserva según las reservas del usuario
 const calcReservationAllowed = (space) => {
-
-  console.log("hoursReserved: ", reservationStore.getHoursReservedBySpace(space._id));
-
   if (reservationStore.getHoursReservedBySpace(space._id) == null) {
     reservationTimes[space._id].reservationNotAllowed = false; // Se puede reservar
     return;
@@ -686,9 +670,6 @@ const calcReservationAllowed = (space) => {
 
     if (selectedDate < reservationDate) return false;
 
-    console.log(reservationDate);
-    console.log(selectedDate);
-
     let matchPeriodicity;
 
     if (reservation.periodicity === 'weekly') {
@@ -703,44 +684,19 @@ const calcReservationAllowed = (space) => {
 
   events.push(...periodicEvents);
 
-  //console.log("events: ", events);
-
   if (events && events.length > 0) {
-    // const selectedDate = parseToYYYYMMDD(formattedDate.value);
-
     const startTimeString = reservationTimes[space._id].reservationStartTime;
     const endTimeString = reservationTimes[space._id].reservationEndTime;
 
-    // const selectedStartTime = new Date(`${selectedDate}T${startTimeString}:00Z`).toUTCString();
-    // const selectedEndTime = new Date(`${selectedDate}T${endTimeString}:00Z`).toUTCString();
-
-    console.log("************************************");
-
     for (let ev of events) {
-      console.log(ev);
-
-
-      console.log(makeMinutes(startTimeString));
-      console.log(makeMinutes(endTimeString));
-
-      // const evStartTime = new Date(ev.startTime).toUTCString();
-      // const evEndTime = new Date(ev.endTime).toUTCString();
-
       const evStartTime = makeMinutes(getHoursAndMinsFromDate(ev.startTime));
       const evEndTime = makeMinutes(getHoursAndMinsFromDate(ev.endTime));
-
-      console.log(evStartTime);
-      console.log(evEndTime);
       if (   // Si se quiere reservar antes o después de la reserva periódica, se puede
         (makeMinutes(startTimeString) < evStartTime && makeMinutes(endTimeString) <= evStartTime) ||
         (makeMinutes(startTimeString) >= evEndTime && makeMinutes(endTimeString) > evEndTime)
       ) {
-        console.log("Entra en SE PUEDE");
-
         reservationTimes[space._id].reservationNotAllowed = false; // Se puede reservar
       } else {
-        console.log("Entra en NO se puede");
-
         reservationTimes[space._id].reservationNotAllowed = true;  // NO se puede reservar
         reservationTimes[space._id].seatsLeft = null;
         return;
