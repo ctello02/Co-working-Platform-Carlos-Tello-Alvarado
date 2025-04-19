@@ -11,8 +11,24 @@ export const reservationService = {
     });
   },
 
+  createPeriodicReservation(formData) {
+    return axiosInstance.post(
+      `${API_URL}/createPeriodicReservation`,
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      }
+    );
+  },
+
   getReservations() {
     return axiosInstance.get(`${API_URL}/getReservations`);
+  },
+
+  getPeriodicReservations() {
+    return axiosInstance.get(`${API_URL}/getPeriodicReservations`);
   },
 
   getUserReservations(id) {
