@@ -35,8 +35,8 @@
 
                             <template #eventModal="{ calendarEvent }">
                                 <CustomEventCalendar :reservation="reservationStore.getReservation"
-                                    @see-event="openReservation" @delete-event="openDeleteReservation"
-                                    @close="closeModal" />
+                                    @see-event="openReservation" @edit-event="editReservation"
+                                    @delete-event="openDeleteReservation" @close="closeModal" />
                             </template>
 
                         </ScheduleXCalendar>
@@ -101,6 +101,7 @@
 import { ref, onMounted, computed, onUnmounted, watch } from 'vue';
 import { useUserStore } from '@/store/userStore';
 import { useReservationStore } from '@/store/reservationStore';
+import { useSpaceStore } from '@/store/spaceStore';
 import { useRouter } from 'vue-router';
 import { useTime } from '@/composables/useTime';
 import TonalButton from '@/components/TonalButton.vue';
@@ -129,6 +130,7 @@ import { options } from 'preact';
 const userStore = useUserStore();
 const router = useRouter();
 const reservationStore = useReservationStore();
+const spaceStore = useSpaceStore();
 const eventsServicePlugin = createEventsServicePlugin();
 const eventModal = createEventModalPlugin();
 const currentTimePlugin = createCurrentTimePlugin();
@@ -446,6 +448,12 @@ function openCreateReservation() {
 
 function openReservation() {
     router.push('/reservationInfo');
+};
+
+function editReservation() {
+    const reservation = reservationStore.getReservation;
+    spaceStore.setSelectedSpace(reservation.spaceId);
+    router.push('/editReservationInfo');
 };
 
 function openDeleteReservation() {

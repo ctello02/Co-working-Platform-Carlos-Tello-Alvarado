@@ -264,6 +264,23 @@ exports.getReservationsByDate = async (req, res) => {
   }
 };
 
+exports.updateReservation = async (req, res) => {
+  try {
+    let reservation = await Reservation.findOne({ _id: req.body._id });
+    if (!reservation) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    //Hacer el mismo proceso de createReservation
+
+    await reservation.save();
+    res.json({ message: 'Reservation updated successfully' });
+  } catch (error) {
+    console.error('Error al actualizar la reserva:', error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
 exports.deleteReservation = async (req, res) => {
   try {
     const reservation = await Reservation.findOne({ _id: req.params.id });
