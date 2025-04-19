@@ -32,7 +32,7 @@
           </v-row>
 
           <v-row class="mt-1">
-            <v-radio-group inline prepend-icon="mdi-repeat" v-model="newSpace.repetition"
+            <v-radio-group inline prepend-icon="mdi-repeat" v-model="newSpace.admitsRepetition"
               label="¿Permite repetición de reservas?">
               <v-radio label="Si" :value="true" />
               <v-radio label="No" :value="false" />
@@ -168,7 +168,7 @@ const submit = async () => {
   formData.append('name', newSpace.value.name);
   formData.append('description', newSpace.value.description);
   formData.append('seats', newSpace.value.seats);
-  formData.append('repetition', newSpace.value.repetition);
+  formData.append('admitsRepetition', newSpace.value.admitsRepetition);
   formData.append('opening', newSpace.value.opening);
   formData.append('closing', newSpace.value.closing);
   formData.append('duration', newSpace.value.duration);
@@ -181,6 +181,7 @@ const submit = async () => {
     const res = await spaceService.updateSpace(formData);
     console.log(res.data);
     toast.success('¡Espacio actualizado con éxito!');
+    router.go(-1);
     spaceStore.setSelectedSpace(newSpace);
   } catch (error) {
     console.error(error);

@@ -21,19 +21,22 @@
                             <template #timeGridEvent="{ calendarEvent }">
                                 <div
                                     :style="calcPastEvents(calendarEvent) ? timeGridEventStyles : timeGridPastEventStyles">
+                                    <span v-if="calendarEvent.options === true">🔁</span>
                                     {{ calendarEvent.title }}
                                 </div>
                             </template>
 
                             <template #monthGridEvent="{ calendarEvent }">
                                 <div :style="calcPastEvents(calendarEvent) ? eventStyles : pastEventStyles">
+                                    <span v-if="calendarEvent.options === true">🔁</span>
                                     {{ calendarEvent.title }}
                                 </div>
                             </template>
 
                             <template #eventModal="{ calendarEvent }">
                                 <CustomEventCalendar :reservation="reservationStore.getReservation"
-                                    @see-event="openReservation" @close="closeModal" />
+                                    @see-event="openReservation" @delete-event="openDeleteReservation"
+                                    @close="closeModal" />
                             </template>
 
                         </ScheduleXCalendar>
@@ -49,7 +52,7 @@
                             <v-select variant="outlined" density="compact" label="Mostar reservas" v-model="filter"
                                 item-title="label" item-value="value" :items="filterItems" style="max-width: 250px;" />
 
-                            <v-btn v-if="filter === 'date'" variant="text" :ripple="false" size="small" class="mt-2"
+                            <v-btn variant="text" :ripple="false" size="small" class="mt-2"
                                 :prepend-icon="dateDesc ? 'mdi-arrow-down' : 'mdi-arrow-up'"
                                 @click="dateDesc = !dateDesc">
                                 {{ dateDesc ? 'Descendente' : 'Ascendente' }}
@@ -85,6 +88,10 @@
                 <AskModal title="Nueva reserva" :message="message" :modelValue="dialog" actionText="Ir a reservar"
                     colorText="black" colorButton="blue" :closeModal="closeDialog" :action="openCreateReservation" />
 
+                <AskModal v-model="deleteModal" :title="'¿Borrar reserva?'"
+                    :message="'¿Estás seguro de que quieres borrar esta reserva?'" :actionText="'Borrar reserva'"
+                    :closeModal="closeDialog" :action="deleteReservation"
+                    :checkboxAction="reservationStore.getReservation?.periodicReservationId ? toggleCheckbox : null" />
             </v-row>
         </v-col>
     </v-container>
@@ -114,6 +121,7 @@ import {
     createViewWeek,
 } from '@schedule-x/calendar';
 import '@schedule-x/theme-default/dist/index.css';
+import { options } from 'preact';
 /* -------------------------------------------------------------------- */
 
 
@@ -148,11 +156,13 @@ const filteredPastReservations = ref([]);
 const nextReservations = ref([]);
 const pastReservations = ref([]);
 const list = ref(false);
-const dateDesc = ref(true);
+const dateDesc = ref(false);
 const mainTab = ref(null);
 const subTab = ref('next');
 const message = ref(null);
 const dialog = ref(false);
+const deleteAllReservations = ref(false);
+const deleteModal = ref(false);
 const filter = ref(null);
 const filterItems = ref([
     { label: 'Todas', value: null },
@@ -170,6 +180,11 @@ const groupedByName = computed(() => {
     if (subTab.value === 'next') reservationsToSearch = filteredNextReservations.value;
     else if (subTab.value === 'past') reservationsToSearch = filteredPastReservations.value;
 
+    if (dateDesc.value == true) //Filtrar por fecha descendente
+        reservationsToSearch.sort((a, b) => new Date(b.startTime) - new Date(a.startTime));
+    else //Filtrar por fecha ascendente
+        reservationsToSearch.sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
+
     reservationsToSearch.forEach(reservation => {
         const nameKey = reservation.spaceId.name;
         if (!groups[nameKey]) {
@@ -177,18 +192,25 @@ const groupedByName = computed(() => {
         }
         groups[nameKey].push(reservation);
     });
-    return groups;
+
+    //Ordenamos los nombres de los espacios
+    const orderedGroups = {};
+    Object.keys(groups).sort().forEach(key => {
+        orderedGroups[key] = groups[key];
+    });
+
+    return orderedGroups;
 });
 
 const groupedByDate = computed(() => {
     const groups = {};
     let reservationsToSearch = [];
 
-    if (subTab.value === 'next') {
+    if (subTab.value === 'next')
         reservationsToSearch = filteredNextReservations.value;
-    } else if (subTab.value === 'past') {
+    else if (subTab.value === 'past')
         reservationsToSearch = filteredPastReservations.value;
-    }
+
 
     if (dateDesc.value == true) {
         //Filtrar por fecha descendente
@@ -315,6 +337,7 @@ function getAllEvents() {
                 eventsServicePlugin.set(addCalendarEvents(allReservations.value));
             })
             .catch(error => {
+                eventsServicePlugin.set([]);
                 console.error('Error al obtener reservas:', error);
             });
     } catch (error) {
@@ -333,6 +356,7 @@ function addCalendarEvents(reservations) {
             title: `Reserva en ${reservation.spaceId.name}`,
             start: formattedStart,  // start: '2024-06-28 08:00',
             end: formattedEnd,      // end: '2024-06-28 10:00',
+            options: reservation.periodicReservationId ? true : false,
         };
     });
 };
@@ -422,6 +446,38 @@ function openCreateReservation() {
 
 function openReservation() {
     router.push('/reservationInfo');
+};
+
+function openDeleteReservation() {
+    deleteModal.value = true;
+};
+
+function deleteReservation() {
+    const reservation = reservationStore.getReservation;
+    if (reservation.periodicReservationId && deleteAllReservations.value) {
+        reservationService.deletePeriodicReservation(reservation.periodicReservationId._id)
+            .then(res => {
+                closeModal();
+                getAllEvents();
+            })
+            .catch(error => {
+                console.error('Error al borrar reserva:', error);
+            });
+
+    } else {
+        reservationService.deleteReservation(reservation._id)
+            .then(res => {
+                closeModal();
+                getAllEvents();
+            })
+            .catch(error => {
+                console.error('Error al borrar reserva:', error);
+            });
+    }
+};
+
+function toggleCheckbox() {
+    deleteAllReservations.value = !deleteAllReservations.value;
 };
 
 const closeModal = () => {

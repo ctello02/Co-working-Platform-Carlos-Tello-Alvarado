@@ -9,9 +9,12 @@
                 <v-row>
                     <span class="ml-3" :style="style" v-html="message"></span>
                 </v-row>
+                <v-row v-if="checkboxAction" class="mb-n4">
+                    <v-checkbox label="Borrar todas las reservas periódicas" @click="handleCheckboxAction" />
+                </v-row>
             </v-card-text>
 
-            <v-card-actions class="mt-n2 mb-3 mr-3 d-flex justify-end ga-3">
+            <v-card-actions :class="checkboxAction ? 'mt-n7' : 'mt-n2'" class="mb-3 mr-3 d-flex justify-end ga-3">
                 <TonalButton color="grey" text="Cancelar" @click="handleClose" />
                 <TonalButton :color="colorButton" :text="actionText" @click="handleAction" />
             </v-card-actions>
@@ -23,11 +26,11 @@
 import TonalButton from './TonalButton.vue';
 
 export default {
-    data(){
+    data() {
         return {
             style: {
                 color: this.colorText,
-            }
+            },
         }
     },
     props: {
@@ -59,6 +62,10 @@ export default {
             type: Function,
             required: true
         },
+        checkboxAction: {
+            type: Function,
+            required: false,
+        },
         colorButton: {
             type: String,
             default: 'red'
@@ -85,7 +92,10 @@ export default {
         handleAction() {
             this.action();
             this.dialogVisible = false;
-        }
+        },
+        handleCheckboxAction() {
+            this.checkboxAction();
+        },
     }
 };
 </script>

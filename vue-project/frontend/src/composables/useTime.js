@@ -49,11 +49,13 @@ export function useTime() {
   /**
    * Obtiene la hora y los minutos de una fecha (usando UTC) en formato "HH:MM".
    */
-  const getHoursAndMinsFromDate = (date) => {
-    const dateObj = new Date(date);
-    const hours = String(dateObj.getUTCHours()).padStart(2, '0');
-    const mins = String(dateObj.getUTCMinutes()).padStart(2, '0');
-    return `${hours}:${mins}`;
+  const getHoursAndMinsFromDate = (dateString) => {
+    const date = parseDateTo_YYYYMMDD_HHMM(dateString);
+
+    const [datePart, hourPart] = date.split(' ');
+
+    // Se envía con el formato "HH:mm"
+    return hourPart;
   };
 
   /**
@@ -104,15 +106,23 @@ export function useTime() {
    * al formato "YYYY-MM-DD HH:mm". Se utiliza el año actual.
    */
   function parseDateTo_YYYYMMDD_HHMM(dateString) {
-    const date = new Date(dateString);
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    const hours = String(date.getUTCHours()).padStart(2, '0');
-    const minutes = String(date.getUTCMinutes()).padStart(2, '0');
+    // Partir la fecha manualmente
+    const [datePart, timePart] = dateString.split('T');
+    const [year, month, day] = datePart.split('-').map(Number);
+    const [hours, minutes] = timePart.split(':').map(Number);
 
-    // Retornamos en el formato "YYYY-MM-DD HH:mm"
-    return `${year}-${month}-${day} ${hours}:${minutes}`;
+    // Crear la fecha en horario local (ignora offset UTC)
+    const date = new Date(year, month - 1, day, hours, minutes);
+
+    // Formatear
+    const y = date.getFullYear();
+    const M = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    const h = String(date.getHours()).padStart(2, '0');
+    const m = String(date.getMinutes()).padStart(2, '0');
+
+    // Se envía con el formato "YYYY-MM-DD HH:mm"
+    return `${y}-${M}-${d} ${h}:${m}`;
   }
 
   /**

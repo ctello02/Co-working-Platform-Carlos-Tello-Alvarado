@@ -59,7 +59,14 @@
                             <v-icon icon="mdi-repeat" size="small" />
                         </v-col>
                         <v-col>
-                            <span class="pt-2 text-h6"> {{ parseRepetition(reservation.repetition) }}</span>
+                            <span class="pt-2 text-h6">
+                                <span v-if="reservation.periodicReservationId">
+                                    {{ parseRepetition(reservation.periodicReservationId.periodicity) }}
+                                </span>
+                                <span v-else>
+                                    No se repite
+                                </span>
+                            </span>
                         </v-col>
                     </v-row>
                 </v-col>
@@ -97,6 +104,8 @@ const {
 // Al montar el componente, se asigna la reserva y se redirige si no existe
 onMounted(() => {
     reservation.value = reservationStore.getReservation;
+    console.log(reservation.value);
+
     if (!reservation.value) {
         router.push('/reservations');
     }
