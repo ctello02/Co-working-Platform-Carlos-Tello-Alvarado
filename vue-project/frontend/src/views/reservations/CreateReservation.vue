@@ -133,8 +133,8 @@
                       <v-col>
                         <v-select :model-value="reservationTimes[space._id]?.reservationEndTime || null"
                           @update:model-value="val => updateReservation(space, 'reservationEndTime', val)"
-                          :items="calcEndTimeOfSpace(space)" item-title="label" item-value="value" label="Final"
-                          prepend-icon="mdi-timer-sand-complete" variant="outlined" density="compact" clearable
+                          :items="calcEndTimeOfSpace(space)" label="Final" prepend-icon="mdi-timer-sand-complete"
+                          variant="outlined" density="compact" clearable
                           :disabled="!reservationTimes[space._id]?.reservationStartTime" />
                       </v-col>
                     </v-row>
@@ -172,7 +172,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, watch, onMounted } from 'vue';
+import { ref, watch, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import TonalButton from '@/components/TonalButton.vue';
 import { spaceService } from '@/services/spaceService';
@@ -181,6 +181,7 @@ import { useUserStore } from '@/store/userStore';
 import { useSpaceStore } from '@/store/spaceStore';
 import { useReservationStore } from '@/store/reservationStore';
 import { useTime } from '@/composables/useTime';
+import { useSpaceReservation } from '@/composables/useSpaceReservation'
 
 // -----------------------------------------------------------------------------------------------------
 // Instancias de router y stores
@@ -195,7 +196,6 @@ const {
   generateAllTimes,
   makeMinutes,
   makeHoursAndMinutes,
-  getHoursAndMinsFromDate,
   parseToStringDate,
   parseToYYYYMMDD,
 } = useTime();
@@ -204,32 +204,40 @@ const {
 timeFrames[timeFrames.length - 1].label = '3 horas o más';
 
 
-// Variables reactivas
-const spaces = ref([]);
-const filteredSpaces = ref([]);
-const reservationTimes = reactive({});
-const reservationSeats = ref(1);
-const reservationsByDate = ref([]);
-const periodicReservations = ref([]);
+// Reactive state
+const spaces = ref([])
+const filteredSpaces = ref([])
+const reservationSeats = ref(1)
+const date = ref(new Date())
+const today = ref(new Date())
+const formattedDate = ref(parseToStringDate(date.value))
+const startTime = ref(null)
+const durationSearched = ref(null)
+const isLoading = ref(false)
+const reservationsByDate = ref([])
+const periodicReservations = ref([])
 
-const date = ref(new Date());
-const today = ref(new Date());
-const formattedDate = ref(parseToStringDate(new Date()));
-
-const startTime = ref(null);
-const durationSearched = ref(null);
-
-const availableTimes = reactive({});
-const isLoading = ref(false);
+// Composable de lógica de reserva por espacio
+const {
+  reservationTimes,
+  availableTimes,
+  updateAvailableTimes,
+  calcEndTimeOfSpace,
+  updateReservation,
+} = useSpaceReservation(reservationsByDate, periodicReservations, date)
 // -----------------------------------------------------------------------------------------------------
 
 
 // -----------------------------------------------------------------------------------------------------
 // Hook onMounted
 // -----------------------------------------------------------------------------------------------------
-onMounted(() => {
+onMounted(async () => {
   // Llamamos a getSpaces para obtener los espacios al montar el componente
-  getSpaces();
+  await fetchSpaces();
+  await fetchReservationsByDate();
+  await fetchPeriodicReservations();
+  updateAvailableTimes(spaces.value);
+  filterSpaces();
 
   const calendarDate = reservationStore.getCalendarDate;
 
@@ -245,95 +253,56 @@ onMounted(() => {
   }
 });
 
-// Obtiene los espacios a través del servicio
-const getSpaces = () => {
-  spaceService.getSpaces()
-    .then(res => {
-      spaces.value = res.data.spaces;
-      filterSpaces();
-    })
-    .catch(error => {
-      console.error(error);
-    });
-};
-// -----------------------------------------------------------------------------------------------------
-
-
-// -----------------------------------------------------------------------------------------------------
-// Funciones para filtrar los espacios en el DOM.
-// Obtiene las reservas del día seleccionado, filtra las horas disponibles 
-// y calcula la duración disponible
-// -----------------------------------------------------------------------------------------------------
-// Filtra los espacios en función de varios criterios (horario, duración, asientos)
-const filterSpaces = async () => {
+// Fetch de espacios
+async function fetchSpaces() {
   isLoading.value = true;
-  if (!reservationsByDate.value || reservationsByDate.value.length === 0) {
-    await getReservationsByDate(formattedDate.value);
+  try {
+    const res = await spaceService.getSpaces();
+    spaces.value = res.data.spaces;
+    //updateAvailableTimes(spaces.value)
+  } finally {
+    isLoading.value = false;
   }
+}
 
-  if (!periodicReservations.value || periodicReservations.value.length === 0) {
-    await getPeriodicReservations();
-  }
+// Fetch de reservas por fecha
+async function fetchReservationsByDate() {
+  const parsed = parseToYYYYMMDD(formattedDate.value);
+  const res = await reservationService.getReservationsByDate(parsed);
+  reservationsByDate.value = res.data.reservations;
+}
 
-  updateAvailableTimes();
+// Fetch de reservas periódicas
+async function fetchPeriodicReservations() {
+  const res = await reservationService.getPeriodicReservations();
+  periodicReservations.value = res.data.periodicReservations;
+}
 
+// Filtra espacios según filtros globales
+function filterSpaces() {
+  isLoading.value = true;
   filteredSpaces.value = spaces.value.filter(space => {
-    const isAvailable = availableTimes[space._id] || [];
-    if (isAvailable.length === 0) return false;
+    const slots = availableTimes[space._id] || [];
+    if (!slots.length) return false;
 
-    const matchesStartTime = startTime.value == null ||
-      (makeHoursAndMinutes(space.opening) <= startTime.value &&
-        makeHoursAndMinutes(space.closing) > startTime.value &&
-        availableTimes[space._id].includes(startTime.value));
+    const okStart = !startTime.value || (
+      makeHoursAndMinutes(space.opening) <= startTime.value &&
+      makeHoursAndMinutes(space.closing) > startTime.value &&
+      slots.includes(startTime.value)
+    );
 
-    const matchesDuration = durationSearched.value == null ||
-      (space.duration <= durationSearched.value &&
-        calcDurationAvailable(durationSearched.value, availableTimes[space._id], space));
+    const okDuration = !durationSearched.value || (
+      space.duration <= durationSearched.value &&
+      calcDurationAvailable(durationSearched.value, availableTimes[space._id], space));
 
-    const matchesSeats = reservationSeats.value == null || space.seats >= reservationSeats.value;
-
-    return matchesStartTime && matchesDuration && matchesSeats;
+    const okSeats = !reservationSeats.value || space.seats >= reservationSeats.value
+    return okStart && okDuration && okSeats
   });
+
   isLoading.value = false;
-};
+}
+// -----------------------------------------------------------------------------------------------------
 
-// Obtiene las reservas para la fecha seleccionada
-const getReservationsByDate = async (dateParam) => {
-  const parsedDate = parseToYYYYMMDD(dateParam);
-  try {
-    const response = await reservationService.getReservationsByDate(parsedDate);
-    reservationsByDate.value = response.data.reservations;
-  } catch (error) {
-    console.error(error);
-  }
-};
-
-// Obtiene las reservas periódicas
-async function getPeriodicReservations() {
-  try {
-    const response = await reservationService.getPeriodicReservations();
-    periodicReservations.value = response.data.periodicReservations;
-  } catch (error) {
-    console.error(error);
-  }
-};
-
-// Actualiza los horarios disponibles de cada espacio
-const updateAvailableTimes = () => {
-  const todayInMinutes = today.value.getHours() * 60 + today.value.getMinutes();
-
-  const dateSelected = new Date(date.value);
-  dateSelected.setHours(0, 0, 0, 0);
-
-  spaces.value.forEach(space => {
-    const temp = calcStartTimeOfSpace(space);
-    if (dateSelected > today.value) {
-      availableTimes[space._id] = temp;
-    } else {
-      availableTimes[space._id] = temp.filter(spaceTime => makeMinutes(spaceTime) > todayInMinutes);
-    }
-  });
-};
 
 // Verifica si existe un intervalo de tiempo disponible para la duración solicitada
 const calcDurationAvailable = (duration, availableTimesForSpace, space) => {
@@ -390,326 +359,6 @@ const calcDurationAvailable = (duration, availableTimesForSpace, space) => {
 
 
 // -----------------------------------------------------------------------------------------------------
-// Cálculo de las horas disponibles en la hora de inicio y fin de un espacio
-// -----------------------------------------------------------------------------------------------------
-// Calcula el inicio de los intervalos disponibles para un espacio
-const calcStartTimeOfSpace = (space) => {
-  return calcFrameTimesOfSpace(space, space.opening, space.closing, 15, space.duration, true);
-};
-
-// Calcula el final de los intervalos disponibles a partir del inicio seleccionado
-const calcEndTimeOfSpace = (space) => {
-  if (reservationTimes[space._id] != null && reservationTimes[space._id].reservationStartTime != undefined) {
-    const start = makeMinutes(reservationTimes[space._id].reservationStartTime);
-    return calcFrameTimesOfSpace(space, start + space.duration, space.closing, space.duration, space.duration, false);
-  }
-};
-
-// Calcula los intervalos (frames) de tiempo disponibles para un espacio
-const calcFrameTimesOfSpace = (space, startingTime, endingTime, interval, duration, needsVerification) => {
-  const availableHours = [];
-  let hoursReserved = [];
-
-  // Si hay reservas periódicas
-  if (periodicReservations.value.length > 0) {
-    hoursReserved = checkPeriodicReservations(hoursReserved, space);
-  }
-
-  if (reservationsByDate.value.length > 0) {
-    const events = reservationsByDate.value
-      .filter(reservation => reservation.spaceId === space._id && reservation.periodicReservationId == null)
-      .flatMap(reservation => {
-        const startTimeStr = getHoursAndMinsFromDate(reservation.startTime);
-        const endTimeStr = getHoursAndMinsFromDate(reservation.endTime);
-        const seats = reservation.seatsReserved;
-        const startMinutes = makeMinutes(startTimeStr);
-        const endMinutes = makeMinutes(endTimeStr);
-        return [
-          { time: startMinutes, change: seats },
-          { time: endMinutes, change: -seats },
-        ];
-      });
-    events.sort((a, b) => a.time - b.time);
-
-    let currentSeats = 0;
-    let currentTime = events[0] ? events[0].time : 0;
-
-    for (let i = 0; i < events.length; i++) {
-      const event = events[i];
-      if (event.time !== currentTime) {
-        if (currentSeats !== 0) {
-          hoursReserved.push({
-            start: makeHoursAndMinutes(currentTime),
-            end: makeHoursAndMinutes(event.time),
-            startMinutes: currentTime,
-            endMinutes: event.time,
-            seatsReserved: currentSeats,
-            userId: event.userId,
-          });
-        }
-        currentTime = event.time;
-      }
-      currentSeats += event.change;
-    }
-  }
-
-  if (hoursReserved.length > 0) {
-    reservationStore.setHoursReservedBySpace(space._id, hoursReserved);
-  }
-
-  for (let time = startingTime; time <= endingTime; time += interval) {
-    if (needsVerification && time + duration > endingTime) break;
-    const currentTimeFormatted = makeHoursAndMinutes(time);
-
-    if (hoursReserved.length > 0) {
-      const { reserved, isEnd } = isTimeReserved(time, duration, hoursReserved, space, needsVerification);
-      if (reserved) continue;
-      if (isEnd) {
-        availableHours.push(currentTimeFormatted);
-        break;
-      }
-    }
-    availableHours.push(currentTimeFormatted);
-  }
-  return availableHours;
-};
-
-
-// ------------------------------------------------
-// Función para comprobar si hay reservas periodicas
-// ------------------------------------------------
-function checkPeriodicReservations(hoursReserved, space) {
-
-  // Antes que nada, hay que ver si podría crear la reserva periódica
-  // Hay que ver si hay algún periodicReservation con el mismo espacio y horario
-  const periodicEvents = periodicReservations.value
-    .filter(periodicReservation => {
-      if (periodicReservation.spaceId == space._id) {
-        let selectedDate = new Date();
-        if (date.value) {
-          selectedDate = new Date(date.value);
-        }
-        selectedDate.setHours(0, 0, 0, 0);
-
-        const periodicReservationDate = new Date(periodicReservation.startTime);
-        periodicReservationDate.setHours(0, 0, 0, 0);
-
-        if (selectedDate < periodicReservationDate) {
-          return false;
-        }
-
-        if (periodicReservation.periodicity === 'weekly') {
-          if (periodicReservationDate.getDay() !== selectedDate.getDay()) {
-            // Si no coinciden los días de la reserva que se quiere crear y de la periodicReservation que existe, se puede reservar
-            return false;
-          }
-        } else if (periodicReservation.periodicity === 'monthly') {
-          if (periodicReservationDate.getDate() !== selectedDate.getDate()) {
-            // Si no coinciden los días de la reserva que se quiere crear y de la periodicReservation que existe, se puede reservar
-            return false;
-          }
-        }
-        return true;
-      } return false;
-    }).flatMap(periodicReservation => {
-      const startTimeStr = getHoursAndMinsFromDate(periodicReservation.startTime);
-      const endTimeStr = getHoursAndMinsFromDate(periodicReservation.endTime);
-      const seats = periodicReservation.seatsReserved;
-      const startMinutes = makeMinutes(startTimeStr);
-      const endMinutes = makeMinutes(endTimeStr);
-      return [
-        { time: startMinutes, change: seats },
-        { time: endMinutes, change: -seats },
-      ];
-    });
-  periodicEvents.sort((a, b) => a.time - b.time);
-
-  let currentSeats = 0;
-  let currentTime = periodicEvents[0] ? periodicEvents[0].time : 0;
-
-  for (let i = 0; i < periodicEvents.length; i++) {
-    const event = periodicEvents[i];
-    if (event.time !== currentTime) {
-      if (currentSeats !== 0) {
-        hoursReserved.push({
-          start: makeHoursAndMinutes(currentTime),
-          end: makeHoursAndMinutes(event.time),
-          startMinutes: currentTime,
-          endMinutes: event.time,
-          seatsReserved: currentSeats,
-          userId: event.userId,
-        });
-      }
-      currentTime = event.time;
-    }
-    currentSeats += event.change;
-  }
-
-  return hoursReserved;
-};
-
-// Determina si un intervalo de tiempo se encuentra reservado
-const isTimeReserved = (time, duration, hoursReserved, space, needsVerification) => {
-  const reservationInterval = binarySearchReservation(time, duration, hoursReserved);
-  if (!reservationInterval) return { reserved: false, isEnd: false };
-
-  if (!needsVerification && time + duration > reservationInterval.startMinutes && reservationInterval.seatsReserved >= space.seats) {
-    return { reserved: false, isEnd: true };
-  }
-  if (!needsVerification && time >= reservationInterval.startMinutes && reservationInterval.seatsReserved >= space.seats) {
-    return { reserved: false, isEnd: true };
-  }
-  if (time + duration > reservationInterval.startMinutes && time + duration < reservationInterval.endMinutes && reservationInterval.seatsReserved >= space.seats) {
-    return { reserved: true, isEnd: false };
-  }
-  if (time === reservationInterval.startMinutes && reservationInterval.seatsReserved < space.seats) {
-    return { reserved: false, isEnd: false };
-  }
-  if (time >= reservationInterval.startMinutes && reservationInterval.seatsReserved >= space.seats) {
-    return { reserved: true, isEnd: false };
-  }
-  return { reserved: false, isEnd: false };
-};
-
-// Búsqueda binaria para encontrar un intervalo que contenga el tiempo
-const binarySearchReservation = (time, duration, hoursReserved) => {
-  let low = 0;
-  let high = hoursReserved.length - 1;
-  while (low <= high) {
-    const mid = Math.floor((low + high) / 2);
-    const interval = hoursReserved[mid];
-    if (time >= interval.startMinutes && time < interval.endMinutes) return interval;
-    if (time + duration >= interval.startMinutes && time + duration < interval.endMinutes) return interval;
-    if (time < interval.startMinutes) {
-      high = mid - 1;
-    } else {
-      low = mid + 1;
-    }
-  }
-  return null;
-};
-// -----------------------------------------------------------------------------------------------------
-
-
-// -----------------------------------------------------------------------------------------------------
-// Funciones auxiliares para la creación de espacios en el DOM.
-// Además, maneja las variables de la hora de inicio y fin
-// -----------------------------------------------------------------------------------------------------
-// Actualiza los datos de reserva para un espacio
-const updateReservation = (space, key, value) => {
-  if (!reservationTimes[space._id]) {
-    reservationTimes[space._id] = { reservationStartTime: null, reservationEndTime: null, seatsLeft: null, reservationNotAllowed: false };
-  }
-
-  reservationTimes[space._id][key] = value;
-
-  if (key === 'reservationStartTime') {
-    reservationTimes[space._id].reservationEndTime = null;
-    reservationTimes[space._id].reservationNotAllowed = false;
-  }
-
-  if (key === 'reservationEndTime' && value != null) {
-    calcSeatsAllowed(space);
-    calcReservationAllowed(space);
-  }
-
-  if (value == null) {
-    reservationTimes[space._id].seatsLeft = null;
-    reservationTimes[space._id].reservationNotAllowed = false;
-  }
-};
-
-// Calcula la cantidad de asientos disponibles según las reservas existentes
-const calcSeatsAllowed = (space) => {
-  let hoursReserved = reservationStore.getHoursReservedBySpace(space._id) || [];
-  if (!hoursReserved || hoursReserved.length === 0) {
-    reservationTimes[space._id].seatsLeft = space.seats;
-    return;
-  }
-
-  const start = makeMinutes(reservationTimes[space._id].reservationStartTime);
-  const end = makeMinutes(reservationTimes[space._id].reservationEndTime);
-  let max = 0;
-
-  hoursReserved.forEach(res => {
-    const startReservation = res.startMinutes;
-    const endReservation = res.endMinutes;
-
-    if ((start < startReservation && end <= startReservation) ||
-      (start >= endReservation && end > endReservation))
-      return;
-
-    if (res.seatsReserved > max)
-      max = res.seatsReserved;
-  });
-
-  reservationTimes[space._id].seatsLeft = space.seats - max;
-};
-
-// Valida si se permite la reserva según las reservas del usuario
-const calcReservationAllowed = (space) => {
-  if (reservationStore.getHoursReservedBySpace(space._id) == null) {
-    reservationTimes[space._id].reservationNotAllowed = false; // Se puede reservar
-    return;
-  }
-
-  let events = [];
-
-  events = reservationsByDate.value.filter(reservation => {
-    return reservation.spaceId === space._id && reservation.userId === userStore.getId
-  });
-
-  const periodicEvents = periodicReservations.value.filter(reservation => {
-    const reservationDate = new Date(reservation.startTime);
-    let selectedDate = new Date();
-    if (date.value) {
-      selectedDate = new Date(date.value);
-    }
-    selectedDate.setHours(0, 0, 0, 0);
-    reservationDate.setHours(0, 0, 0, 0);
-
-    if (selectedDate < reservationDate) return false;
-
-    let matchPeriodicity;
-
-    if (reservation.periodicity === 'weekly') {
-      matchPeriodicity = reservationDate.getDay() === selectedDate.getDay() // Solo entran las que son el mismo día de la semana
-    } else if (reservation.periodicity === 'monthly') {
-      matchPeriodicity = reservationDate.getDate() === selectedDate.getDate()   // Solo entran las que son el mismo día del mes
-    } else if (reservation.periodicity === 'daily') {
-      matchPeriodicity = true;    // Como es diariamente, entra todo
-    }
-    return (reservation.spaceId === space._id) && (reservation.userId === userStore.getId) && matchPeriodicity;
-  });
-
-  events.push(...periodicEvents);
-
-  if (events && events.length > 0) {
-    const startTimeString = reservationTimes[space._id].reservationStartTime;
-    const endTimeString = reservationTimes[space._id].reservationEndTime;
-
-    for (let ev of events) {
-      const evStartTime = makeMinutes(getHoursAndMinsFromDate(ev.startTime));
-      const evEndTime = makeMinutes(getHoursAndMinsFromDate(ev.endTime));
-      if (   // Si se quiere reservar antes o después de la reserva periódica, se puede
-        (makeMinutes(startTimeString) < evStartTime && makeMinutes(endTimeString) <= evStartTime) ||
-        (makeMinutes(startTimeString) >= evEndTime && makeMinutes(endTimeString) > evEndTime)
-      ) {
-        reservationTimes[space._id].reservationNotAllowed = false; // Se puede reservar
-      } else {
-        reservationTimes[space._id].reservationNotAllowed = true;  // NO se puede reservar
-        reservationTimes[space._id].seatsLeft = null;
-        return;
-      }
-    }
-  }
-
-  reservationTimes[space._id].reservationNotAllowed = false;
-};
-// -----------------------------------------------------------------------------------------------------
-
-
-// -----------------------------------------------------------------------------------------------------
 // Crea la reserva y redirige a la pantalla de confirmación de la reserva
 // -----------------------------------------------------------------------------------------------------
 const createReservation = async (space) => {
@@ -738,30 +387,18 @@ const createReservation = async (space) => {
 // -----------------------------------------------------------------------------------------------------
 // Watchers
 // -----------------------------------------------------------------------------------------------------
-// Cuando cambia la fecha, se actualiza la fecha formateada, se reinician reservas y se filtran espacios
-watch(date, (newVal) => {
+watch(date, async (newVal) => {
   formattedDate.value = parseToStringDate(newVal);
+  await fetchReservationsByDate();
+  await fetchPeriodicReservations();
+  updateAvailableTimes(spaces.value);
   filterSpaces();
   reservationStore.clearStore();
-
-  reservationsByDate.value = [];
-
-  for (const key in reservationTimes) {   // Reiniciamos el objeto reservationTimes
-    delete reservationTimes[key];
-  }
-});
-
-watch(startTime, () => {
-  filterSpaces();
-});
-
-watch(durationSearched, () => {
-  filterSpaces();
-});
-
-watch(reservationSeats, () => {
-  filterSpaces();
-});
+  Object.keys(reservationTimes).forEach(id => delete reservationTimes[id]);
+})
+watch(startTime, filterSpaces)
+watch(durationSearched, filterSpaces)
+watch(reservationSeats, filterSpaces)
 // -----------------------------------------------------------------------------------------------------
 
 </script>

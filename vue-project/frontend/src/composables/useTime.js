@@ -13,6 +13,25 @@ export function useTime() {
   ];
 
   /**
+   * Función para normalizar y verificar si ocurre un evento en una fecha
+   */
+  function occursOn(pr, date) {
+    const s = new Date(pr.startTime);
+    const e = new Date(pr.endTime);
+    if (date < s || date > e) return false;
+    switch (pr.periodicity) {
+      case 'daily':
+        return true;
+      case 'weekly':
+        return date.getDay() === s.getDay();
+      case 'monthly':
+        return date.getDate() === s.getDate();
+      default:
+        return false;
+    }
+  }
+
+  /**
    * Genera un array con todos los horarios en formato "HH:MM"
    * en intervalos de 15 minutos para un día completo.
    */
@@ -45,6 +64,16 @@ export function useTime() {
     const mins = minutes % 60;
     return `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}`;
   };
+
+  /**
+   * Devuelve los minutos totales de una fecha de tipo ISO.
+   */
+  function makeMinutesFromIsoLocal(isoString) {
+    // isoString === "2025-04-27T09:00:00.000Z"
+    const timePart = isoString.split('T')[1]; // "09:00:00.000Z"
+    const [hh, mm] = timePart.split(':'); // ["09","00","00.000Z"]
+    return Number(hh) * 60 + Number(mm);
+  }
 
   /**
    * Obtiene la hora y los minutos de una fecha (usando UTC) en formato "HH:MM".
@@ -175,9 +204,11 @@ export function useTime() {
 
   return {
     timeFrames,
+    occursOn,
     generateAllTimes,
     makeMinutes,
     makeHoursAndMinutes,
+    makeMinutesFromIsoLocal,
     getHoursAndMinsFromDate,
     parseToStringDate,
     parseToYYYYMMDD,

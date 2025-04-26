@@ -41,13 +41,13 @@
                 <v-divider class="mt-6" />
                 <v-row class="d-flex align-center my-2">
                   <v-col cols="1">
-                    <v-icon size="small" icon="mdi-weather-sunny" />
+                    <v-icon size="small" icon="mdi-timer-sand" />
                   </v-col>
                   <v-col class="ml-n4 mr-7">
                     <span class="text-h6">Hora de inicio: {{ getHoursAndMinsFromDate(reservation.startTime) }}</span>
                   </v-col>
                   <v-col cols="1">
-                    <v-icon size="small" icon="mdi-weather-night" />
+                    <v-icon size="small" icon="mdi-timer-sand-complete" />
                   </v-col>
                   <v-col class="ml-n7 mr-7">
                     <span class="text-h6">Hora de fin: {{ getHoursAndMinsFromDate(reservation.endTime) }}</span>
@@ -76,12 +76,14 @@
                   </v-col>
                 </v-row>
                 <v-row class="mt-n3 mb-n4">
-                  <v-col>
+                  <v-col class="" style="display: flex; flex-direction: column; gap: 15px;">
                     <v-fade-transition>
                       <v-alert v-if="reservationSeats >= maxSeatsAllowed" type="warning" density="compact"
                         variant="tonal">
                         No se pueden reservar más de {{ maxSeatsAllowed }} asientos.
                       </v-alert>
+                    </v-fade-transition>
+                    <v-fade-transition>
                       <v-alert v-if="reservedModal" type="warning" density="compact" variant="tonal">
                         No se puede reservar periódicamente, ya hay una reserva con el mismo horario.
                       </v-alert>
@@ -101,7 +103,7 @@
         </v-col>
 
         <transition name="slide-right" mode="out-in">
-          <v-col v-if="space && showSpaceModal">
+          <v-col v-if="space && showSpaceModal" class="mt-n5">
             <SpaceCard :space="space" :adminActions="false" :reserveActions="false" />
           </v-col>
         </transition>
@@ -207,9 +209,9 @@ async function getPeriodicReservations() {
     const response = await reservationService.getPeriodicReservations();
     periodicReservations.value = response.data.periodicReservations;
 
-    periodicReservations.value = periodicReservations.value.filter(reservation =>
-      reservation.spaceId == space.value._id
-    );
+    periodicReservations.value = periodicReservations.value.filter(reservation => {
+      return reservation.spaceId == space.value._id
+    }) || [];
 
   } catch (error) {
     console.error(error);
@@ -369,6 +371,16 @@ function checkPeriodicReservations() {
           isReserved = false;
         }
         else {
+          // Comprobamos los asientos de la reserva periódica
+          if (reservationSeats.value <= (space.value.seats - periodicReservation.seatsReserved)) {
+            console.log("Retorna false");
+            return false;
+          }
+          console.log("Retorna true");
+          console.log(reservationSeats.value);
+          console.log(space.value.seats - periodicReservation.seatsReserved);
+
+
           return true;
         }
     };

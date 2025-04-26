@@ -104,7 +104,6 @@ const {
 // Al montar el componente, se asigna la reserva y se redirige si no existe
 onMounted(() => {
     reservation.value = reservationStore.getReservation;
-    console.log(reservation.value);
 
     if (!reservation.value) {
         router.push('/reservations');
