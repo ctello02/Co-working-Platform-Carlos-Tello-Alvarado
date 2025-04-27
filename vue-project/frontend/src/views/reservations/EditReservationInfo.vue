@@ -116,7 +116,7 @@
                             </v-col>
                         </v-card-text>
                         <v-card-actions>
-                            <v-row class="mb-3 mr-2 d-flex justify-end ga-3"
+                            <v-row class="mb-6 mr-5 d-flex justify-end ga-3"
                                 :class="reservation.periodicReservationId ? 'mt-n5' : 'mt-0'">
                                 <TonalButton color="grey" text="Volver" @click="routerBack" />
                                 <TonalButton color="blue" text="Actualizar" :loading="isLoading"

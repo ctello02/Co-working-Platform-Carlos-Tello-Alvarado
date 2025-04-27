@@ -1,5 +1,6 @@
-import { reactive, computed, isRef, watchEffect, ref } from 'vue';
+import { reactive, computed, isRef, watch, ref } from 'vue';
 import { useTime } from '@/composables/useTime';
+import { useUserStore } from '@/store/userStore';
 
 /**
  * Composable unificado para manejo de franjas y asientos de reserva,
@@ -19,6 +20,7 @@ export function useReservationSlots({
   periodicReservations,
   initialReservation = null,
 }) {
+  const userStore = useUserStore();
   const {
     makeMinutesFromIsoLocal,
     makeMinutes,
@@ -34,13 +36,17 @@ export function useReservationSlots({
 
   const reservationTimes = reactive({ start: null, end: null });
 
-  watchEffect(() => {
-    if (initRef.value) {
-      reservationTimes.start = getHoursAndMinsFromDate(initRef.value.startTime);
-      reservationTimes.end = getHoursAndMinsFromDate(initRef.value.endTime);
-      ignoreId = initRef?.value._id;
-    }
-  });
+  watch(
+    initRef,
+    (newInit) => {
+      if (newInit) {
+        reservationTimes.start = getHoursAndMinsFromDate(newInit.startTime);
+        reservationTimes.end = getHoursAndMinsFromDate(newInit.endTime);
+        ignoreId = newInit._id;
+      }
+    },
+    { immediate: true }
+  );
 
   // Combina reservas normales y periódicas en un array plano
   const allReservations = computed(() => {
@@ -82,7 +88,7 @@ export function useReservationSlots({
     const { opening, closing, seats: capacity } = space.value;
     const interval = 15;
     const res = allReservations.value;
-    const reservationUserId = initRef.value?.userId;
+    const reservationUserId = initRef.value?.userId || userStore.getId;
 
     const list = [];
 
@@ -176,7 +182,9 @@ export function useReservationSlots({
     if (!slice.length) return space.value.seats;
     // si ya hay una reserva propia en ese gap, bloqueo
     if (
-      slice.some((s) => s.otherReservationByUser === true && s.id !== ignoreId)
+      slice.some(
+        (s) => s.otherReservationByUser === true && s.id !== (ignoreId || null)
+      )
     )
       return 0;
 
