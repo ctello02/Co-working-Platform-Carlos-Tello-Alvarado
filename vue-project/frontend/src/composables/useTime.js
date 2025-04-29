@@ -17,8 +17,7 @@ export function useTime() {
    */
   function occursOn(pr, date) {
     const s = new Date(pr.startTime);
-    const e = new Date(pr.endTime);
-    if (date < s || date > e) return false;
+
     switch (pr.periodicity) {
       case 'daily':
         return true;
@@ -97,7 +96,7 @@ export function useTime() {
       day: 'numeric',
       month: 'long',
       year: 'numeric',
-    }).format(date);
+    }).format(new Date(date));
   };
 
   /**
@@ -167,25 +166,43 @@ export function useTime() {
   };
 
   /**
-   * Comprueba si el evento o la fecha pasada es posterior al día actual
+   * Comprueba si el evento o la fecha pasada es anterior al día actual
    * y devuelve true (si es una fecha pasada) o false (si es un evento futuro).
    */
   function calcPastEvents(calendarEvent) {
     const today = new Date();
     let selectedDate;
 
-    if (calendarEvent.end) selectedDate = new Date(calendarEvent.end);
-    else selectedDate = new Date(calendarEvent);
+    selectedDate = new Date(calendarEvent.end || calendarEvent);
 
-    if (today > selectedDate) {
+    if (selectedDate < today) {
+      return true;
+    }
+    return false;
+  }
+
+  /**
+   * Comprueba si el evento o la fecha pasada es igual al día actual
+   * y devuelve true si lo es o false en caso contrario.
+   */
+  function isToday(date) {
+    const today = new Date();
+    date = new Date(date);
+
+    if (
+      date.getDate() == today.getDate() &&
+      date.getMonth() == today.getMonth() &&
+      date.getFullYear() == today.getFullYear()
+    )
+      return true;
+    else {
       return false;
     }
-    return true;
   }
 
   /**
    * Comprueba si la fecha pasada es igual o posterior al día actual
-   * y devuelve true si es >= al día actual o devuelve false en caso contrario.
+   * y devuelve true si es < al día actual o devuelve false en caso contrario.
    */
   function calcPastDates(date) {
     const today = new Date();
@@ -195,11 +212,11 @@ export function useTime() {
       date.getMonth() == today.getMonth() &&
       date.getFullYear() == today.getFullYear()
     )
-      return true;
-    else if (today > date) {
       return false;
+    else if (date < today) {
+      return true;
     }
-    return true;
+    return false;
   }
 
   return {
@@ -215,6 +232,7 @@ export function useTime() {
     parseDateTo_YYYYMMDD_HHMM,
     twoDigitsDate,
     calcPastEvents,
+    isToday,
     calcPastDates,
   };
 }

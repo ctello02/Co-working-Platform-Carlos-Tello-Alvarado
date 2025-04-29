@@ -1,4 +1,4 @@
-import { reactive, computed, isRef, watch, ref } from 'vue';
+import { reactive, computed, isRef, watch, ref, toRaw } from 'vue';
 import { useTime } from '@/composables/useTime';
 import { useUserStore } from '@/store/userStore';
 
@@ -27,6 +27,7 @@ export function useReservationSlots({
     makeHoursAndMinutes,
     occursOn,
     getHoursAndMinsFromDate,
+    isToday,
   } = useTime();
 
   const initRef = isRef(initialReservation)
@@ -69,9 +70,17 @@ export function useReservationSlots({
     // Periódicas
     periodicReservations.value.forEach((pr) => {
       if (pr.spaceId !== space.value._id) return;
-      if (!occursOn(pr, reservationDate.value)) return;
+      if (!occursOn(pr, new Date(reservationDate.value))) return;
       const start = makeMinutesFromIsoLocal(pr.startTime);
       const end = makeMinutesFromIsoLocal(pr.endTime);
+      if (
+        // Si hay reserva con el mismo usuario y horario, significa que hay ocurrencias de la periodicReservation
+        arr.some(
+          (x) => x.user === pr.userId && x.start === start && x.end === end
+        )
+      )
+        return;
+
       arr.push({
         id: pr._id,
         user: pr.userId,
@@ -118,8 +127,6 @@ export function useReservationSlots({
         otherReservationByUser,
       });
     }
-    console.log(list);
-
     return list;
   });
 
@@ -130,14 +137,11 @@ export function useReservationSlots({
     const slots = allSlots.value;
     const today = new Date();
     const nowMin = today.getHours() * 60 + today.getMinutes();
-    // fecha a cero para comparar fechas
-    const zeroToday = new Date(today.setHours(0, 0, 0, 0));
 
     return slots
       .filter((s, idx) => {
         if (s.minutes + dur > space.value.closing) return false; // Que no se pase del cierre
-        if (reservationDate.value <= zeroToday && s.minutes < nowMin)
-          return false; // Solo puede devolver los slots de fechas siguientes y de minutos siguientes (teniendo como referencia a la fecha de hoy)
+        if (isToday(reservationDate.value) && s.minutes < nowMin) return false; // Solo puede devolver los slots de fechas siguientes y de minutos siguientes (teniendo como referencia a la fecha de hoy)
 
         // A continuación, se comprueba si hay un slot que no esté reservado y tenga asientos libres
         for (let k = 0; k < dur / interval; k++) {
@@ -210,5 +214,6 @@ export function useReservationSlots({
     availableEndTimes,
     maxSeatsAllowed,
     updateReservation,
+    allSlots,
   };
 }

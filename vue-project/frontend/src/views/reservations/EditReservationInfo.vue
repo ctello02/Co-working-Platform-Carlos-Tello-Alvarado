@@ -101,8 +101,8 @@
                                 <v-row :class="reservation.periodicReservationId ? 'mt-n5 mb-n4' : 'mt-7 mb-n9'">
                                     <v-col>
                                         <v-fade-transition>
-                                            <v-alert v-if="reservationTimes.end && maxSeatsAllowed === 0" type="warning"
-                                                density="compact" variant="tonal">
+                                            <v-alert v-if="reservationTimes.end && maxSeatsAllowed === 0" type="error"
+                                                variant="tonal" density="compact">
                                                 Ya tienes una reserva en ese horario.
                                             </v-alert>
                                             <v-alert
@@ -146,6 +146,7 @@ import { reservationService } from '@/services/reservationService';
 import { useTime } from '@/composables/useTime';
 import { useReservationSlots } from '@/composables/useReservationSlots';
 import TonalButton from '@/components/TonalButton.vue';
+import SpaceCard from '@/components/SpaceCard.vue';
 
 
 const router = useRouter();
@@ -206,16 +207,15 @@ onMounted(async () => {
     reservationDate.value.setHours(0, 0, 0, 0);
 
     // fetch de reservas puntuales y periódicas…
-    const [
-        { data: { reservations } },
-        { data: { periodicReservations } }
-    ] = await Promise.all([
+    const [rawRes, rawPerRes] = await Promise.all([
         reservationService.getReservationsByDate(reservationDate.value),
         reservationService.getPeriodicReservations()
     ]);
+    const res = rawRes.data.reservations;
+    const perRes = rawPerRes.data.periodicReservations;
 
-    reservationsByDate.value = reservations.filter(r => r.spaceId === space.value._id);
-    periodicReservations.value = periodicReservations.filter(pr => pr.spaceId === space.value._id);
+    reservationsByDate.value = res.filter(r => r.spaceId === space.value._id);
+    periodicReservations.value = perRes.filter(pr => pr.spaceId === space.value._id);
 });
 
 async function submitUpdate() {

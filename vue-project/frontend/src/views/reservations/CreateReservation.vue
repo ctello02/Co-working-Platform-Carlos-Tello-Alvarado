@@ -95,6 +95,17 @@
                   Capacidad: {{ spc.seats }} asientos
                 </span>
               </div>
+              <div class="d-flex align-center ga-2">
+                <v-icon style="color: #4f5b66">mdi-timer-outline</v-icon>
+                <span class="text-h6" style="color: #4f5b66" v-if="spc.duration < 60">Tiempos de: {{ spc.duration }}
+                  minutos</span>
+                <span class="text-h6" style="color: #4f5b66" v-if="spc.duration == 60">Tiempos de: {{ spc.duration / 60
+                }}
+                  hora</span>
+                <span class="text-h6" style="color: #4f5b66" v-if="spc.duration > 60">Tiempos de: {{ spc.duration / 60
+                }}
+                  horas</span>
+              </div>
             </v-card-text>
 
             <v-divider />
@@ -168,6 +179,7 @@ const {
   generateAllTimes,
   parseToStringDate,
   parseToYYYYMMDD,
+  makeMinutes,
   makeHoursAndMinutes
 } = useTime();
 
@@ -186,16 +198,24 @@ const periodicReservations = ref([]);
 // Diccionario de slots por espacio
 const slotsBySpace = reactive({});
 
-
 // Cada vez que cambiamos fecha, recargamos datos y slots
 watch(date, () => {
   formattedDate.value = parseToStringDate(date.value);
+  startTime.value = null;
   loadDayData();
 });
 
 onMounted(async () => {
   spaces.value = (await spaceService.getSpaces()).data.spaces;
   await loadDayData();
+
+  const calendarDate = reservationStore.getCalendarDate;
+
+  if (calendarDate) {                     // Comprueba si hay una fecha guardada
+    let [datePart, timePart] = calendarDate.split(" ");
+    if (timePart) startTime.value = timePart;         // Guardar la hora en otra variable
+    date.value = new Date(datePart);    // Guardamos la fecha
+  }
 });
 
 // Cada vez que cambian filtros, actualizamos lista
@@ -234,23 +254,113 @@ function filterSpaces() {
     if (!startTime.value && !durationSearched.value && !reservationSeats.value) {
       return true;
     }
-    const openMin = spc.opening;
-    const closeMin = spc.closing;
-    const dur = durationSearched.value || spc.duration;
+    // const openMin = spc.opening;
+    // const closeMin = spc.closing;
+    // const dur = durationSearched.value || spc.duration;
+
+    //---------------------------------------------------------------------------------
     const st = startTime.value
-      ? +startTime.value.slice(0, 2) * 60 + +startTime.value.slice(3)
+      ? makeMinutes(startTime.value)
       : null;
-    const seatsOk = !reservationSeats.value || spc.seats >= reservationSeats.value;
 
     const startOk = st == null
       ? true
-      : st >= openMin && st + dur <= closeMin;
+      : slotsBySpace[spc._id].availableStartTimes.some(s => s === startTime.value);
+    //---------------------------------------------------------------------------------
 
-    return startOk && seatsOk;
+    //---------------------------------------------------------------------------------
+    const seatsOk = !reservationSeats.value || spc.seats >= reservationSeats.value;
+    //---------------------------------------------------------------------------------
+
+    //---------------------------------------------------------------------------------
+    const slots = slotsBySpace[spc._id].allSlots;
+    const durationOk = !durationSearched.value ||
+      (spc.duration <= durationSearched.value &&
+        calcDurationAvailable(slots, durationSearched.value));
+
+    //---------------------------------------------------------------------------------
+
+    return startOk && seatsOk && durationOk;
   });
+};
+
+function calcDurationAvailable(slots, duration) {
+  const interval = 15;                          // Cada slot es de 15 min
+  const needed = Math.ceil(duration / interval);// Cuántos slots consecutivos hacen falta para cubrir la duración
+
+  // Recorremos todos los posibles inicios de bloque
+  // hasta slots.length - needed, para que quepa needed slots y no sobrepase el array cuando i = slots.length - needed
+  for (let i = 0; i <= slots.length - needed; i++) {
+    // Extraemos un bloque de tamaño needed
+    // slots[i], slots[i+1], ..., slots[i+needed-1]
+    const block = slots.slice(i, i + needed);
+
+    // Verificamos que todos los slots del bloque tengan asientos libres
+    const allFree = block.every(slot => slot.seatsLeft > 0);
+    if (allFree) return true; // Si este bloque tiene asientos y es válido, devolvemos true
+
+    // Si no, seguimos buscando en el siguiente índice
+  }
+
+  // Si hemos recorrido todo sin encontrar bloque, devolvemos false
+  return false;
 }
 
+// const calcDurationAvailable = (availableTimesForSpace, space) => {
+//   let hoursReserved = reservationStore.getHoursReservedBySpace(space._id) || [];
+//   const first = makeMinutes(availableTimesForSpace[0]);
+//   const duration = durationSearched.value;
+
+//   hoursReserved = hoursReserved?.filter(hour => hour.seatsReserved >= space.seats);
+
+//   if (!hoursReserved || hoursReserved.length === 0) {
+//     const total = space.closing - first;
+//     return total >= duration;
+//   }
+
+//   const allTimes = [];
+
+//   for (let minute = first; minute <= space.closing; minute += 15) {
+//     allTimes.push(minute);
+//   }
+
+//   let flag = false;
+//   for (let time of allTimes) {
+//     for (let hourReserved of hoursReserved) {
+//       if ((time + duration > space.closing)) {
+//         flag = false;
+//         break;
+//       }
+//       if (time >= hourReserved.startMinutes && time < hourReserved.endMinutes) {
+//         flag = false;
+//         break;
+//       }
+//       if (time >= hourReserved.endMinutes && time + duration >= hourReserved.endMinutes) {
+//         flag = true;
+//         continue;
+//       }
+
+//       if (time < hourReserved.startMinutes && time + duration <= hourReserved.startMinutes) {
+//         flag = true;
+//         break;
+//       }
+//       if (time < hourReserved.startMinutes && time + duration > hourReserved.startMinutes) {
+//         flag = false;
+//         break;
+//       }
+//       if (time === hourReserved.startMinutes && time + duration === hourReserved.endMinutes) {
+//         flag = false;
+//         break;
+//       }
+//     }
+//     if (flag) return true;
+//   }
+//   return false;
+// };
+
+
 // Crea y guarda la reserva, y redirige
+
 async function createReservation(spc) {
   const day = parseToYYYYMMDD(formattedDate.value);
   const start = slotsBySpace[spc._id].reservationTimes.start;

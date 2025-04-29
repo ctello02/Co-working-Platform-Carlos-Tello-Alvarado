@@ -20,14 +20,14 @@
                         <ScheduleXCalendar class="mt-4 mx-1" :calendar-app="calendarApp">
                             <template #timeGridEvent="{ calendarEvent }">
                                 <div
-                                    :style="calcPastEvents(calendarEvent) ? timeGridEventStyles : timeGridPastEventStyles">
+                                    :style="calcPastEvents(calendarEvent) ? timeGridPastEventStyles : timeGridEventStyles">
                                     <span v-if="calendarEvent.options === true">🔁</span>
                                     {{ calendarEvent.title }}
                                 </div>
                             </template>
 
                             <template #monthGridEvent="{ calendarEvent }">
-                                <div :style="calcPastEvents(calendarEvent) ? eventStyles : pastEventStyles">
+                                <div :style="calcPastEvents(calendarEvent) ? pastEventStyles : eventStyles">
                                     <span v-if="calendarEvent.options === true">🔁</span>
                                     {{ calendarEvent.title }}
                                 </div>
@@ -144,6 +144,7 @@ const {
     parseDateTo_YYYYMMDD_HHMM,
     parseToStringDate,
     calcPastEvents,
+    isToday,
     calcPastDates,
     twoDigitsDate,
     getHoursAndMinsFromDate,
@@ -277,10 +278,14 @@ const calendarApp = createCalendar({
     callbacks: {
         onEventClick(calendarEvent) {
             const selectedReservation = allReservations.value.find(reservation => reservation._id === calendarEvent.id);
+            if (calcPastEvents(calendarEvent.start) || isToday(calendarEvent.start)) {
+                // Es una reserva pasada
+                selectedReservation.canEdit = false;
+            } else selectedReservation.canEdit = true;
             reservationStore.setReservation(selectedReservation);
         },
         onClickDate(date) { // p.e. YYYY-MM-DD
-            if (!calcPastDates(new Date(date))) return;      // Si se hace clic en una fecha pasada, se ignora
+            if (calcPastDates(new Date(date))) return;      // Si se hace clic en una fecha pasada, se ignora
 
             const stringDate = parseToStringDate(new Date(date));
 
@@ -294,7 +299,7 @@ const calendarApp = createCalendar({
             dialog.value = true;
         },
         onClickDateTime(dateTime) {
-            if (!calcPastEvents(dateTime)) return;      // Si se hace clic en una fecha pasada, se ignora
+            if (calcPastEvents(dateTime)) return;      // Si se hace clic en una fecha pasada, se ignora
 
             // Se dividen las fechas y horas en partes separadas
             let [datePart, timePart] = dateTime.split(" ");
