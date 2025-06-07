@@ -144,6 +144,7 @@ const {
     parseDateTo_YYYYMMDD_HHMM,
     parseToStringDate,
     calcPastEvents,
+    isWithinNext24Hours,
     isToday,
     calcPastDates,
     twoDigitsDate,
@@ -278,10 +279,16 @@ const calendarApp = createCalendar({
     callbacks: {
         onEventClick(calendarEvent) {
             const selectedReservation = allReservations.value.find(reservation => reservation._id === calendarEvent.id);
-            if (calcPastEvents(calendarEvent.start) || isToday(calendarEvent.start)) {
-                // Es una reserva pasada
+
+            // si es el pasado, es hoy, o queda menos de 24 horas para que empiece, 
+            // NO se puede editar
+            if (calcPastEvents(calendarEvent) ||
+                isToday(calendarEvent.start) ||
+                isWithinNext24Hours(calendarEvent)
+            )
                 selectedReservation.canEdit = false;
-            } else selectedReservation.canEdit = true;
+            else selectedReservation.canEdit = true;
+
             reservationStore.setReservation(selectedReservation);
         },
         onClickDate(date) { // p.e. YYYY-MM-DD

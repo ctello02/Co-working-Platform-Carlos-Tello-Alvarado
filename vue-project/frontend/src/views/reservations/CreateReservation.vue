@@ -225,12 +225,31 @@ watch([startTime, durationSearched, reservationSeats], filterSpaces);
 async function loadDayData() {
   isLoading.value = true;
   const day = parseToYYYYMMDD(formattedDate.value);
-  const [d1, d2] = await Promise.all([
-    reservationService.getReservationsByDate(day),
-    reservationService.getPeriodicReservations()
-  ]);
-  reservationsByDate.value = d1.data.reservations;
-  periodicReservations.value = d2.data.periodicReservations;
+
+  let oneShot = [];
+  try {
+    const d1 = await reservationService.getReservationsByDate(day);
+    oneShot = d1.data.reservations || [];
+  } catch (e) {
+    if (e.response?.status === 404) {
+      // no hay reservas: lo tomamos como un array vacío
+      oneShot = [];
+    } else throw e;
+
+  }
+  reservationsByDate.value = oneShot;
+
+  let periodic = [];
+  try {
+    const d2 = await reservationService.getPeriodicReservations();
+    periodic = d2.data.periodicReservations || [];
+  } catch (e) {
+    if (e.response?.status === 404) {
+      // no hay reservas periódicas: lo tomamos como un array vacío
+      periodic = [];
+    } else throw e;
+  }
+  periodicReservations.value = periodic;
 
   // Inicializa slots para cada espacio
   spaces.value.forEach(spc => {
@@ -254,9 +273,6 @@ function filterSpaces() {
     if (!startTime.value && !durationSearched.value && !reservationSeats.value) {
       return true;
     }
-    // const openMin = spc.opening;
-    // const closeMin = spc.closing;
-    // const dur = durationSearched.value || spc.duration;
 
     //---------------------------------------------------------------------------------
     const st = startTime.value
@@ -277,7 +293,6 @@ function filterSpaces() {
     const durationOk = !durationSearched.value ||
       (spc.duration <= durationSearched.value &&
         calcDurationAvailable(slots, durationSearched.value));
-
     //---------------------------------------------------------------------------------
 
     return startOk && seatsOk && durationOk;
@@ -301,63 +316,9 @@ function calcDurationAvailable(slots, duration) {
 
     // Si no, seguimos buscando en el siguiente índice
   }
-
   // Si hemos recorrido todo sin encontrar bloque, devolvemos false
   return false;
 }
-
-// const calcDurationAvailable = (availableTimesForSpace, space) => {
-//   let hoursReserved = reservationStore.getHoursReservedBySpace(space._id) || [];
-//   const first = makeMinutes(availableTimesForSpace[0]);
-//   const duration = durationSearched.value;
-
-//   hoursReserved = hoursReserved?.filter(hour => hour.seatsReserved >= space.seats);
-
-//   if (!hoursReserved || hoursReserved.length === 0) {
-//     const total = space.closing - first;
-//     return total >= duration;
-//   }
-
-//   const allTimes = [];
-
-//   for (let minute = first; minute <= space.closing; minute += 15) {
-//     allTimes.push(minute);
-//   }
-
-//   let flag = false;
-//   for (let time of allTimes) {
-//     for (let hourReserved of hoursReserved) {
-//       if ((time + duration > space.closing)) {
-//         flag = false;
-//         break;
-//       }
-//       if (time >= hourReserved.startMinutes && time < hourReserved.endMinutes) {
-//         flag = false;
-//         break;
-//       }
-//       if (time >= hourReserved.endMinutes && time + duration >= hourReserved.endMinutes) {
-//         flag = true;
-//         continue;
-//       }
-
-//       if (time < hourReserved.startMinutes && time + duration <= hourReserved.startMinutes) {
-//         flag = true;
-//         break;
-//       }
-//       if (time < hourReserved.startMinutes && time + duration > hourReserved.startMinutes) {
-//         flag = false;
-//         break;
-//       }
-//       if (time === hourReserved.startMinutes && time + duration === hourReserved.endMinutes) {
-//         flag = false;
-//         break;
-//       }
-//     }
-//     if (flag) return true;
-//   }
-//   return false;
-// };
-
 
 // Crea y guarda la reserva, y redirige
 

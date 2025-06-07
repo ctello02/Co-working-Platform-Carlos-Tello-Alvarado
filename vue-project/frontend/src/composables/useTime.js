@@ -201,6 +201,21 @@ export function useTime() {
   }
 
   /**
+   * Comprueba si estamos dentro de las 24 horas anteriores al inicio del evento que pasamos por parámetro
+   * y devuelve true si es < 24 horas o devuelve false en caso contrario.
+   */
+  function isWithinNext24Hours(calendarEvent) {
+    console.log(calendarEvent);
+
+    const now = new Date();
+    // extraemos el inicio del evento
+    const start = new Date(calendarEvent.start || calendarEvent);
+    const diffMs = start - now;
+    const oneDayMs = 24 * 60 * 60 * 1000;
+    return diffMs > 0 && diffMs <= oneDayMs;
+  }
+
+  /**
    * Comprueba si la fecha pasada es igual o posterior al día actual
    * y devuelve true si es < al día actual o devuelve false en caso contrario.
    */
@@ -233,6 +248,7 @@ export function useTime() {
     twoDigitsDate,
     calcPastEvents,
     isToday,
+    isWithinNext24Hours,
     calcPastDates,
   };
 }

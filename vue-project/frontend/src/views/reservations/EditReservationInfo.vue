@@ -2,7 +2,7 @@
     <v-container fluid class="container">
         <v-col>
             <v-row>
-                <span class="text-h4">Confirmar reserva</span>
+                <span class="text-h4">Editar reserva</span>
             </v-row>
             <v-row v-if="!reservation" class="mt-8">
                 <span class="text-h5">No se encuentran datos</span>
@@ -166,7 +166,6 @@ const reservationDate = ref(null);
 const reservationsByDate = ref([]);
 const periodicReservations = ref([]);
 
-//const reservationTimes = ref({ start: null, end: null });
 const reservationSeats = ref(1);
 const repetition = ref('no_repeat');
 const applyToAll = ref(false);
@@ -220,14 +219,21 @@ onMounted(async () => {
 
 async function submitUpdate() {
     isLoading.value = true;
+    let formData = new FormData();
+    formData.append('id', reservation.value._id);
+    formData.append('startTime', reservationTimes.start);
+    formData.append('endTime', reservationTimes.end);
+    formData.append('seatsReserved', reservationSeats.value);
+    console.log(reservation.value._id);
+
     try {
-        await reservationService.updateReservation(reservation.value._id, {
-            startTime: reservationTimes.value.start,     /* payload desde reservationTimes */
-            endTime: reservationTimes.value.end,       /* lo mismo */
-            seatsReserved: reservationSeats.value,
-            applyToAll: applyToAll.value
-        });
-        // feedback y redirección
+        let res;
+        if (applyToAll.value === true) {
+            res = await reservationService.updatePeriodicReservation(formData);
+        } else {
+            res = await reservationService.updateReservation(formData);
+        }
+        console.log(res.data);
     } catch (e) {
         // toast error (p.ej. “No se pudo actualizar: ${e.message}”)
     } finally { isLoading.value = false; }

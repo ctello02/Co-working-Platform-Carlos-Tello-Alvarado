@@ -47,6 +47,14 @@ export const reservationService = {
     });
   },
 
+  updatePeriodicReservation(formData) {
+    return axiosInstance.put(`${API_URL}/updatePeriodicReservation`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+  },
+
   deleteReservation(id) {
     return axiosInstance.delete(`${API_URL}/deleteReservation/${id}`);
   },

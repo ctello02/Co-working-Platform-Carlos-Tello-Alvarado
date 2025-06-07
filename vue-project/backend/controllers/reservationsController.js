@@ -166,6 +166,8 @@ exports.getReservations = async (req, res) => {
   try {
     const reservations = await Reservation.find().sort({ startTime: 1 });
     if (!reservations || reservations.length === 0) {
+      console.log('No encuentra ocurrencias');
+
       return res.status(404).json({ message: 'No reservations found' });
     }
     res.json({ reservations });
@@ -179,6 +181,7 @@ exports.getPeriodicReservations = async (req, res) => {
     const periodicReservations = await PeriodicReservation.find().sort({
       startTime: 1,
     });
+
     if (!periodicReservations || periodicReservations.length === 0) {
       return res
         .status(404)
@@ -266,12 +269,37 @@ exports.getReservationsByDate = async (req, res) => {
 
 exports.updateReservation = async (req, res) => {
   try {
-    let reservation = await Reservation.findOne({ _id: req.body._id });
+    console.log(req.body);
+
+    let reservation = await Reservation.findOne({ _id: req.body.id });
     if (!reservation) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({ message: 'Reservation not found' });
     }
 
-    //Hacer el mismo proceso de createReservation
+    const { startTime, endTime, seatsReserved } = req.body;
+    reservation.startTime = startTime;
+    reservation.endTime = endTime;
+    reservation.seatsReserved = seatsReserved;
+
+    await reservation.save();
+    res.json({ message: 'Reservation updated successfully' });
+  } catch (error) {
+    console.error('Error al actualizar la reserva:', error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+exports.updatePeriodicReservation = async (req, res) => {
+  try {
+    let reservation = await Reservation.findOne({ _id: req.body._id });
+    if (!reservation) {
+      return res.status(404).json({ message: 'Reservation not found' });
+    }
+
+    const { startTime, endTime, seatsReserved } = req.body;
+    reservation.startTime = startTime;
+    reservation.endTime = endTime;
+    reservation.seatsReserved = seatsReserved;
 
     await reservation.save();
     res.json({ message: 'Reservation updated successfully' });
