@@ -189,6 +189,7 @@ const filteredSpaces = ref([]);
 const date = ref(new Date());
 const formattedDate = ref(parseToStringDate(date.value));
 const startTime = ref(null);
+const initialLoad = ref(false);
 const durationSearched = ref(null);
 const reservationSeats = ref(1);
 const isLoading = ref(false);
@@ -201,7 +202,12 @@ const slotsBySpace = reactive({});
 // Cada vez que cambiamos fecha, recargamos datos y slots
 watch(date, () => {
   formattedDate.value = parseToStringDate(date.value);
-  startTime.value = null;
+  if (initialLoad.value) {
+    startTime.value = null;
+  }
+  // Marcamos que ya pudo cargar la hora inicial de la store
+  // El problema es que se inicializaba a null aunque hubiese una hora en la store
+  initialLoad.value = true;
   loadDayData();
 });
 
@@ -210,11 +216,12 @@ onMounted(async () => {
   await loadDayData();
 
   const calendarDate = reservationStore.getCalendarDate;
-
-  if (calendarDate) {                     // Comprueba si hay una fecha guardada
-    let [datePart, timePart] = calendarDate.split(" ");
-    if (timePart) startTime.value = timePart;         // Guardar la hora en otra variable
-    date.value = new Date(datePart);    // Guardamos la fecha
+  if (calendarDate) {
+    const [datePart, timePart] = calendarDate.split(' ');
+    date.value = new Date(datePart);
+    if (timePart) {
+      startTime.value = timePart;
+    }
   }
 });
 

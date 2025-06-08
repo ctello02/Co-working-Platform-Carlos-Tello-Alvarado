@@ -277,6 +277,7 @@ exports.updateReservation = async (req, res) => {
     }
 
     const { startTime, endTime, seatsReserved } = req.body;
+
     reservation.startTime = startTime;
     reservation.endTime = endTime;
     reservation.seatsReserved = seatsReserved;

@@ -205,8 +205,6 @@ export function useTime() {
    * y devuelve true si es < 24 horas o devuelve false en caso contrario.
    */
   function isWithinNext24Hours(calendarEvent) {
-    console.log(calendarEvent);
-
     const now = new Date();
     // extraemos el inicio del evento
     const start = new Date(calendarEvent.start || calendarEvent);

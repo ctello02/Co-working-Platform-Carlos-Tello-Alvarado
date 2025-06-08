@@ -5,8 +5,14 @@
             <v-card-text v-if="reservation">
                 <v-col>
                     <v-row class="mt-n5 mb-n3" cols="12">
-                        <v-col cols="9">
+                        <v-col>
                             <span class="text-h4">{{ reservation.spaceId?.name }}</span>
+                        </v-col>
+                        <v-col class="d-flex align-center justify-end ga-3">
+                            <v-btn v-if="canEdit" @click="openEditReservationInfo()" variant="tonal" size="small"
+                                icon="mdi-pencil" />
+                            <v-btn v-if="canEdit" @click="deleteModal = true" variant="tonal" size="small"
+                                icon="mdi-trash-can-outline" />
                         </v-col>
                     </v-row>
 
@@ -77,28 +83,45 @@
             </v-card-actions>
         </v-card>
 
+        <AskModal v-model="deleteModal" :title="'¿Borrar reserva?'"
+            :message="'¿Estás seguro de que quieres borrar esta reserva?'" :actionText="'Borrar reserva'"
+            :closeModal="closeDialog" :action="deleteReservation"
+            :checkboxAction="reservationStore.getReservation?.periodicReservationId ? toggleCheckbox : null" />
+
     </v-container>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue';
 import { useReservationStore } from '@/store/reservationStore';
+import { useSpaceStore } from '@/store/spaceStore';
 import { useRouter } from 'vue-router';
 import TonalButton from '@/components/TonalButton.vue'
-
+import AskModal from '@/components/AskModal.vue';
+import { reservationService } from '@/services/reservationService';
 import { useTime } from '@/composables/useTime';
+import { useToast } from 'vue-toastification';
 
 // Instanciar stores
 const reservationStore = useReservationStore();
+const spaceStore = useSpaceStore();
 const router = useRouter();
 
 // Variables reactivas
 const reservation = ref(null);
+const canEdit = ref(false);
+const deleteModal = ref(false);
+const deleteAllReservations = ref(false);
+
 
 // Extraemos funciones del composable useTime
 const {
     getHoursAndMinsFromDate,
     parseToStringDate,
+    calcPastEvents,
+    isWithinNext24Hours,
+    isToday,
+    parseDateTo_YYYYMMDD_HHMM
 } = useTime();
 
 // Al montar el componente, se asigna la reserva y se redirige si no existe
@@ -107,9 +130,57 @@ onMounted(() => {
 
     if (!reservation.value) {
         router.push('/reservations');
+    } else {
+
+        // si es el pasado, es hoy, o queda menos de 24 horas para que empiece, 
+        // NO se puede editar
+        if (calcPastEvents(reservation.value.startTime) ||
+            isToday(reservation.value.startTime) ||
+            isWithinNext24Hours(parseDateTo_YYYYMMDD_HHMM(reservation.value.startTime))
+        )
+            canEdit.value = false;
+        else canEdit.value = true;
     }
 });
 
+function openEditReservationInfo() {
+    spaceStore.setSelectedSpace(reservation.value.spaceId);
+    router.push('/editReservationInfo');
+}
+
+function toggleCheckbox() {
+    deleteAllReservations.value = !deleteAllReservations.value;
+};
+
+function closeDialog() {
+    deleteModal.value = false;
+}
+
+function deleteReservation() {
+    const toast = useToast();
+    if (reservation.value.periodicReservationId && deleteAllReservations.value) {
+        reservationService.deletePeriodicReservation(reservation.value.periodicReservationId._id)
+            .then(res => {
+                closeDialog();
+                toast.success('Reserva periódica eliminada con éxito');
+                routerBack();
+            })
+            .catch(error => {
+                console.error('Error al borrar reserva:', error);
+            });
+
+    } else {
+        reservationService.deleteReservation(reservation.value._id)
+            .then(res => {
+                closeDialog();
+                toast.success('Reserva eliminada con éxito');
+                routerBack();
+            })
+            .catch(error => {
+                console.error('Error al borrar reserva:', error);
+            });
+    }
+}
 
 // Traduce el valor de repetición a un string legible
 const parseRepetition = (repetition) => {

@@ -122,7 +122,7 @@ import {
     createViewWeek,
 } from '@schedule-x/calendar';
 import '@schedule-x/theme-default/dist/index.css';
-import { options } from 'preact';
+import { useToast } from 'vue-toastification';
 /* -------------------------------------------------------------------- */
 
 
@@ -473,12 +473,14 @@ function openDeleteReservation() {
 };
 
 function deleteReservation() {
+    const toast = useToast();
     const reservation = reservationStore.getReservation;
     if (reservation.periodicReservationId && deleteAllReservations.value) {
         reservationService.deletePeriodicReservation(reservation.periodicReservationId._id)
             .then(res => {
                 closeModal();
                 getAllEvents();
+                toast.success('Reserva periódica eliminada con éxito');
             })
             .catch(error => {
                 console.error('Error al borrar reserva:', error);
@@ -489,6 +491,7 @@ function deleteReservation() {
             .then(res => {
                 closeModal();
                 getAllEvents();
+                toast.success('Reserva eliminada con éxito');
             })
             .catch(error => {
                 console.error('Error al borrar reserva:', error);

@@ -11,8 +11,9 @@
                         <v-col>
                             <span class="ml-n1 text-h4">{{ user?.name }}</span>
                             <v-spacer />
-                            <span v-if="user?.isCompany" style="color: grey;" class="text-h6">Empresa, CIF: {{ user?.cif
-                            }}</span>
+                            <span v-if="user?.isCompany" style="color: grey;" class="text-h6">
+                                Empresa, CIF: {{ user?.cif }}
+                            </span>
                             <span v-else style="color: grey;" class="text-h6">Usuario</span>
                         </v-col>
                     </v-row>

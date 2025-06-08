@@ -28,6 +28,9 @@ export const useReservationStore = defineStore({
     setWindow(window) {
       this.window = window;
     },
+    clearCalendarDate() {
+      this.calendarDate = null;
+    },
     clearStore() {
       this.reservation = null;
       this.hoursReservedBySpace = {};
