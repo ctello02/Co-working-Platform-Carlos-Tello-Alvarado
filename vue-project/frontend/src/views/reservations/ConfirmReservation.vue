@@ -142,6 +142,7 @@ const {
   makeMinutes,
   getHoursAndMinsFromDate,
   parseToStringDate,
+  makeMinutesFromIsoLocal,
 } = useTime();
 // ------------------------------------------------
 
@@ -150,13 +151,15 @@ const {
 // Variables Reactivas
 // ------------------------------------------------
 const reservation = ref(null);
+const reservationsByDate = ref([]);
+const periodicReservations = ref([]);
 const startTime = ref(null);
 const endTime = ref(null);
 const reservationStartMinutes = ref(null);
 const reservationEndMinutes = ref(null);
 
 const space = ref(null);
-const hoursReserved = ref(null);
+const hoursReserved = ref([]);
 const showSpaceModal = ref(false);
 const reservedModal = ref(false);
 
@@ -166,7 +169,6 @@ const reservationSeats = ref(0);
 const maxSeatsAllowed = ref(null);
 
 const repetition = ref('no_repeat');
-const periodicReservations = ref([]);
 const repetitionOptions = [
   { label: 'No repetir', value: 'no_repeat', occurrences: 0 },
   { label: 'Cada día', value: 'daily', occurrences: 60 },
@@ -179,24 +181,22 @@ const repetitionOptions = [
 // ------------------------------------------------
 // onMounted
 // ------------------------------------------------
-onMounted(() => {
+onMounted(async () => {
   space.value = spaceStore.getSelectedSpace;
   reservation.value = reservationStore.getReservation;
-
-  getPeriodicReservations();
 
   if (!space.value || !reservation.value) {
     router.push('/createReservation');
   } else {
-    hoursReserved.value = reservationStore.getHoursReservedBySpace(space.value._id);
+    await getReservations();
+
     reservationSeats.value = reservation.value.seatsReserved;
+    maxSeatsAllowed.value = reservation.value.maxSeatsAllowed;
 
     startTime.value = getHoursAndMinsFromDate(reservation.value.startTime);
     endTime.value = getHoursAndMinsFromDate(reservation.value.endTime);
     reservationStartMinutes.value = makeMinutes(startTime.value);
     reservationEndMinutes.value = makeMinutes(endTime.value);
-
-    calcSeatsAllowed();
   }
 });
 // ------------------------------------------------
@@ -204,51 +204,41 @@ onMounted(() => {
 // ------------------------------------------------
 // Obtener reservas periódicas
 // ------------------------------------------------
-async function getPeriodicReservations() {
+async function getReservations() {
+
+  const day = reservation.value.startTime.split('T')[0];
+
+  let oneShot = [];
   try {
-    const response = await reservationService.getPeriodicReservations();
-    periodicReservations.value = response.data.periodicReservations;
-
-    periodicReservations.value = periodicReservations.value.filter(reservation => {
-      return reservation.spaceId == space.value._id
-    }) || [];
-
-  } catch (error) {
-    console.error(error);
+    const d1 = await reservationService.getReservationsByDate(day);
+    oneShot = d1.data.reservations || [];
+  } catch (e) {
+    if (e.response?.status === 404) {
+      // no hay reservas: lo tomamos como un array vacío
+      oneShot = [];
+    } else throw e;
   }
-};
-// ------------------------------------------------
+  reservationsByDate.value = oneShot.filter(reservation => {
+    return reservation.spaceId == space.value._id
+  }) || [];
 
-
-// ------------------------------------------------
-// Calcular asientos permitidos
-// ------------------------------------------------
-const calcSeatsAllowed = () => {
-  if (!hoursReserved.value || hoursReserved.value.length === 0) {
-    maxSeatsAllowed.value = space.value.seats;
-    return;
+  let periodic = [];
+  try {
+    const d2 = await reservationService.getPeriodicReservations();
+    periodic = d2.data.periodicReservations || [];
+  } catch (e) {
+    if (e.response?.status === 404) {
+      // no hay reservas periódicas: lo tomamos como un array vacío
+      periodic = [];
+    } else throw e;
   }
+  periodicReservations.value = periodic.filter(reservation => {
+    return reservation.spaceId == space.value._id
+  }) || [];
 
-  let max = 0;
+  hoursReserved.value.push(...reservationsByDate.value);
+  hoursReserved.value.push(...periodicReservations.value);
 
-  hoursReserved.value.forEach(res => {
-    const startMinutes = res.startMinutes;
-    const endMinutes = res.endMinutes;
-
-    // Si la reserva actual está completamente antes o después de la existente, se ignora
-    if (
-      (reservationStartMinutes.value < startMinutes && reservationEndMinutes.value <= startMinutes) ||
-      (reservationStartMinutes.value >= endMinutes && reservationEndMinutes.value > endMinutes)
-    ) {
-      return;
-    }
-
-    if (res.seatsReserved > max) {
-      max = res.seatsReserved;
-    }
-  });
-
-  maxSeatsAllowed.value = space.value.seats - max;
 };
 // ------------------------------------------------
 

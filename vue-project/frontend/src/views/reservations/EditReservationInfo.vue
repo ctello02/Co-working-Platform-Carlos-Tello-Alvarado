@@ -1,13 +1,10 @@
 <template>
     <v-container fluid class="container">
         <v-col>
-            <v-row>
-                <span class="text-h4">Editar reserva</span>
-            </v-row>
             <v-row v-if="!reservation" class="mt-8">
                 <span class="text-h5">No se encuentran datos</span>
             </v-row>
-            <v-row v-else>
+            <v-row class="mt-n5" v-else>
                 <v-col>
                     <v-card class="mx-auto px-2 text-center" width="100%" max-width="600">
                         <v-card-text>
@@ -147,6 +144,7 @@ import { useTime } from '@/composables/useTime';
 import { useReservationSlots } from '@/composables/useReservationSlots';
 import TonalButton from '@/components/TonalButton.vue';
 import SpaceCard from '@/components/SpaceCard.vue';
+import { useToast } from 'vue-toastification';
 
 
 const router = useRouter();
@@ -155,7 +153,7 @@ const spaceStore = useSpaceStore();
 
 const {
     parseToStringDate,
-    getHoursAndMinsFromDate
+    getHoursAndMinsFromDate,
 } = useTime();
 
 // refs
@@ -218,24 +216,41 @@ onMounted(async () => {
 });
 
 async function submitUpdate() {
+    const toast = useToast();
     isLoading.value = true;
-    let formData = new FormData();
-    formData.append('id', reservation.value._id);
-    formData.append('startTime', reservationTimes.start);
-    formData.append('endTime', reservationTimes.end);
-    formData.append('seatsReserved', reservationSeats.value);
-    console.log(reservation.value._id);
+
+    const day = reservation.value.startTime.split('T')[0];
+
+    const start = reservationTimes.start;
+    const end = reservationTimes.end;
+    const startISO = new Date(`${day}T${start}:00Z`).toISOString();
+    const endISO = new Date(`${day}T${end}:00Z`).toISOString();
+
+    const newReservation = {
+        _id: applyToAll.value ? reservation.value.periodicReservationId : reservation.value._id,
+        startTime: startISO,
+        endTime: endISO,
+        seatsReserved: reservationSeats.value,
+    };
 
     try {
         let res;
         if (applyToAll.value === true) {
-            res = await reservationService.updatePeriodicReservation(formData);
+            res = await reservationService.updatePeriodicReservation(newReservation);
         } else {
-            res = await reservationService.updateReservation(formData);
+            res = await reservationService.updateReservation(newReservation);
         }
+        isLoading.value = false;
+        toast.success(res.data.message);
+
+        const conflictCount = res.data.conflictCount;
+        if (conflictCount) {
+            toast.warning(`Se han producido ${conflictCount.length} conflictos. Debe reservar manualmente los días donde ha habido un error.`);
+        }
+        router.go(-1);
         console.log(res.data);
     } catch (e) {
-        // toast error (p.ej. “No se pudo actualizar: ${e.message}”)
+        toast.error("No se pudo actualizar: " + e.message);
     } finally { isLoading.value = false; }
 }
 

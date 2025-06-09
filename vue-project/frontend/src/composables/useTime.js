@@ -18,6 +18,8 @@ export function useTime() {
   function occursOn(pr, date) {
     const s = new Date(pr.startTime);
 
+    if (date < s) return false;
+
     switch (pr.periodicity) {
       case 'daily':
         return true;

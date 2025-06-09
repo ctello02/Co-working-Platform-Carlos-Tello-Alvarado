@@ -51,8 +51,6 @@ exports.createPeriodicReservation = async (req, res) => {
       lastOccurrenceGenerated,
     } = req.body;
 
-    //console.log(req.body);
-
     if (
       !spaceId ||
       !userId ||
@@ -269,9 +267,7 @@ exports.getReservationsByDate = async (req, res) => {
 
 exports.updateReservation = async (req, res) => {
   try {
-    console.log(req.body);
-
-    let reservation = await Reservation.findOne({ _id: req.body.id });
+    let reservation = await Reservation.findOne({ _id: req.body._id });
     if (!reservation) {
       return res.status(404).json({ message: 'Reservation not found' });
     }
@@ -291,22 +287,114 @@ exports.updateReservation = async (req, res) => {
 };
 
 exports.updatePeriodicReservation = async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
   try {
-    let reservation = await Reservation.findOne({ _id: req.body._id });
-    if (!reservation) {
-      return res.status(404).json({ message: 'Reservation not found' });
+    let periodicReservation = await PeriodicReservation.findOne({
+      _id: req.body._id,
+    }).session(session);
+
+    if (!periodicReservation) {
+      await session.abortTransaction();
+      session.endSession();
+      return res
+        .status(404)
+        .json({ message: 'Periodic Reservation not found' });
     }
 
     const { startTime, endTime, seatsReserved } = req.body;
-    reservation.startTime = startTime;
-    reservation.endTime = endTime;
-    reservation.seatsReserved = seatsReserved;
+    const newStart = new Date(startTime);
+    const newEnd = new Date(endTime);
+    periodicReservation.startTime = newStart;
+    periodicReservation.endTime = newEnd;
+    periodicReservation.seatsReserved = seatsReserved;
 
-    await reservation.save();
-    res.json({ message: 'Reservation updated successfully' });
+    await periodicReservation.save({ session });
+
+    // Calculamos duración del evento (en ms)
+    const durationMs = newEnd.getTime() - newStart.getTime();
+
+    const newStartDay = new Date(newStart);
+    newStartDay.setHours(0, 0, 0, 0);
+
+    // 2) Recuperamos todas las Occurrences existentes
+    const children = await Reservation.find({
+      periodicReservationId: periodicReservation._id,
+      startTime: { $gte: newStartDay },
+    }).session(session);
+
+    // 3) Preparamos la lógica de conflictos
+    const conflictThreshold =
+      periodicReservation.periodicity === 'monthly' ? 6 : 15;
+    let conflictCounter = 0;
+
+    // 4) Recorremos cada reserva hija
+    for (let child of children) {
+      // Calculamos sus nuevos start/end combinando fecha original con la nueva hora
+      const origDate = child.startTime;
+      const updatedStart = new Date(origDate);
+      updatedStart.setHours(
+        newStart.getHours(),
+        newStart.getMinutes(),
+        newStart.getSeconds(),
+        newStart.getMilliseconds()
+      );
+      const updatedEnd = new Date(updatedStart.getTime() + durationMs);
+
+      // Buscamos conflictos (excluyendo la propia reserva child)
+      const conflict = await Reservation.findOne({
+        _id: { $ne: child._id },
+        spaceId: periodicReservation.spaceId,
+        startTime: { $lt: updatedEnd },
+        endTime: { $gt: updatedStart },
+      }).session(session);
+
+      const candidate = {
+        spaceId: child.spaceId,
+        periodicReservationId: child.periodicReservationId,
+        startTime: updatedStart,
+        endTime: updatedEnd,
+        seatsReserved,
+      };
+
+      if (conflict) {
+        // Hay solapamiento: acumulamos y no tocamos esta ocurrencia
+        conflictCounter++;
+
+        // Si superamos el umbral, abortamos
+        if (conflictCounter > conflictThreshold) {
+          await session.abortTransaction();
+          session.endSession();
+          return res.status(409).json({
+            errorCode: 'TOO_MANY_CONFLICTS',
+            message: 'Demasiados conflictos. Intenta con otra franja horaria.',
+            conflictCount: conflictCounter,
+          });
+        }
+      } else {
+        // No hay conflicto: aplicamos los cambios
+        child.startTime = updatedStart;
+        child.endTime = updatedEnd;
+        child.seatsReserved = seatsReserved;
+        await child.save({ session });
+      }
+    }
+
+    // 5) Commit de la transacción
+    await session.commitTransaction();
+    session.endSession();
+
+    return res.json({
+      message:
+        'La reserva periódica y sus ocurrencias se han actualizado correctamente',
+      conflictCount: conflictCounter > 0 ? conflictCounter : null,
+    });
   } catch (error) {
-    console.error('Error al actualizar la reserva:', error);
-    res.status(500).json({ message: error.message });
+    // Rollback en caso de error inesperado
+    await session.abortTransaction();
+    session.endSession();
+    console.error('Error updating periodic reservation:', error);
+    return res.status(500).json({ message: error.message });
   }
 };
 

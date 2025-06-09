@@ -39,20 +39,15 @@ export const reservationService = {
     return axiosInstance.get(`${API_URL}/getReservationsByDate/${date}`);
   },
 
-  updateReservation(formData) {
-    return axiosInstance.put(`${API_URL}/updateReservation`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
+  updateReservation(reservation) {
+    return axiosInstance.put(`${API_URL}/updateReservation`, reservation);
   },
 
-  updatePeriodicReservation(formData) {
-    return axiosInstance.put(`${API_URL}/updatePeriodicReservation`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
+  updatePeriodicReservation(periodicReservation) {
+    return axiosInstance.put(
+      `${API_URL}/updatePeriodicReservation`,
+      periodicReservation
+    );
   },
 
   deleteReservation(id) {

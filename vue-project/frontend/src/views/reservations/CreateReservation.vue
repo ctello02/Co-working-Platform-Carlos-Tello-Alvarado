@@ -342,7 +342,8 @@ async function createReservation(spc) {
     startTime: startISO,
     endTime: endISO,
     seatsReserved: reservationSeats.value,
-    repetition: 'none'
+    repetition: 'none',
+    maxSeatsAllowed: slotsBySpace[spc._id].maxSeatsAllowed
   };
 
   reservationStore.setReservation(payload);
