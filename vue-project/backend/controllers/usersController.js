@@ -22,13 +22,7 @@ exports.updateUser = async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    user.name = req.body.name;
-    user.email = req.body.email;
-    user.phone = req.body.phone;
-    user.address = req.body.address;
-    user.isCompany = req.body.isCompany;
-    user.cif = req.body.cif;
-    user.isAdmin = req.body.isAdmin;
+    user.set(req.body);
 
     await user.save();
     res.json({ message: 'User updated successfully' });

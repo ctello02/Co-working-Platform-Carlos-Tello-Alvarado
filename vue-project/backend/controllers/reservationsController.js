@@ -4,27 +4,13 @@ const mongoose = require('mongoose');
 
 exports.createReservation = async (req, res) => {
   try {
-    const {
-      spaceId,
-      userId,
-      startTime,
-      endTime,
-      seatsReserved,
-      periodicReservationId,
-    } = req.body;
+    const { spaceId, userId, startTime, endTime, seatsReserved } = req.body;
 
     if (!spaceId || !userId || !startTime || !endTime || !seatsReserved) {
       return res.status(400).json({ message: 'Missing required fields.' });
     }
 
-    const newReservation = new Reservation({
-      spaceId,
-      userId,
-      startTime,
-      endTime,
-      seatsReserved,
-      periodicReservationId,
-    });
+    const newReservation = new Reservation(req.body);
 
     const savedReservation = await newReservation.save();
     res.status(201).json({
@@ -65,15 +51,7 @@ exports.createPeriodicReservation = async (req, res) => {
       return res.status(400).json({ message: 'Missing required fields.' });
     }
 
-    const newPeriodicReservation = new PeriodicReservation({
-      spaceId,
-      userId,
-      startTime,
-      endTime,
-      seatsReserved,
-      periodicity,
-      lastOccurrenceGenerated,
-    });
+    const newPeriodicReservation = new PeriodicReservation(req.body);
 
     const savedPeriodicReservation = await newPeriodicReservation.save({
       session,
@@ -113,12 +91,10 @@ exports.createPeriodicReservation = async (req, res) => {
       }).session(session);
 
       const newObject = {
-        spaceId,
-        userId,
-        startTime: new Date(currentStart),
-        endTime: new Date(currentEnd),
-        seatsReserved,
-        periodicReservationId: savedPeriodicReservation._id,
+        ...req.body,
+        startTime: currentStart,
+        endTime: currentEnd,
+        periodicReservationId: savedPeriodic._id,
       };
 
       if (conflict) {
@@ -136,8 +112,7 @@ exports.createPeriodicReservation = async (req, res) => {
         }
       } else {
         // Si no hay conflictos, creamos la reserva
-        const newReservation = new Reservation(newObject);
-        await newReservation.save({ session });
+        await new Reservation(newObject).save({ session });
       }
 
       incrementDates();
@@ -149,8 +124,8 @@ exports.createPeriodicReservation = async (req, res) => {
     return res.status(201).json({
       message: 'Reserva periódica creada con éxito',
       periodicReservation: savedPeriodicReservation,
-      conflictCount: conflictCounter > 0 ? conflictCounter : null,
-      conflictObjects: conflictObjects.length > 0 ? conflictObjects : null,
+      conflictCount: conflictCounter || null,
+      conflictObjects: conflictObjects || null,
     });
   } catch (error) {
     await session.abortTransaction();
@@ -209,25 +184,6 @@ exports.getUserReservations = async (req, res) => {
     const pastReservations = reservations.filter((r) => r.endTime < now);
     const nextReservations = reservations.filter((r) => r.endTime >= now);
 
-    /*  
-    // También se pueden hacer las siguientes consultas en la BD para no sobrecargar la API
-    // Reservas pasadas
-    const pastReservations = await Reservation.find({
-      userId: req.params.id,
-      endTime: { $lt: now },
-    })
-      .populate("spaceId")
-      .sort({ startTime: 1 });
-
-    // Reservas siguientes (en curso o futuras)
-    const nextReservations = await Reservation.find({
-      userId: req.params.id,
-      endTime: { $gte: now },
-    })
-      .populate("spaceId")
-      .sort({ startTime: 1 });
-    */
-
     res.json({
       reservations, // todas las reservas
       pastReservations, // terminadas (endTime < now)
@@ -272,11 +228,7 @@ exports.updateReservation = async (req, res) => {
       return res.status(404).json({ message: 'Reservation not found' });
     }
 
-    const { startTime, endTime, seatsReserved } = req.body;
-
-    reservation.startTime = startTime;
-    reservation.endTime = endTime;
-    reservation.seatsReserved = seatsReserved;
+    reservation.set(req.body);
 
     await reservation.save();
     res.json({ message: 'Reservation updated successfully' });
@@ -348,14 +300,6 @@ exports.updatePeriodicReservation = async (req, res) => {
         startTime: { $lt: updatedEnd },
         endTime: { $gt: updatedStart },
       }).session(session);
-
-      const candidate = {
-        spaceId: child.spaceId,
-        periodicReservationId: child.periodicReservationId,
-        startTime: updatedStart,
-        endTime: updatedEnd,
-        seatsReserved,
-      };
 
       if (conflict) {
         // Hay solapamiento: acumulamos y no tocamos esta ocurrencia
