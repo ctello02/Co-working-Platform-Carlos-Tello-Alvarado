@@ -3,17 +3,19 @@ import axiosInstance from '@/plugins/axiosConfig'; // Importamos la configuraci√
 const API_URL = '/users';
 
 export const userService = {
+  getUsers() {
+    return axiosInstance.get(`${API_URL}/getUsers`);
+  },
 
-    getUsers() {
-        return axiosInstance.get(`${API_URL}/getUsers`);
-    },
+  updateUser(user) {
+    return axiosInstance.put(`${API_URL}/updateUser`, user);
+  },
 
-    updateUser(user) {
-        return axiosInstance.put(`${API_URL}/updateUser`, user);
-    },
+  deleteUser(id) {
+    return axiosInstance.delete(`${API_URL}/deleteUser/${id}`);
+  },
 
-    deleteUser(id) {
-        return axiosInstance.delete(`${API_URL}/deleteUser/${id}`);
-    },
-
+  bulkDeleteUser(id) {
+    return axiosInstance.delete(`${API_URL}/bulkDeleteUser/${id}`);
+  },
 };

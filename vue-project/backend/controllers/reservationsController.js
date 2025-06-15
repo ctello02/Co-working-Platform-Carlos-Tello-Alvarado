@@ -392,9 +392,10 @@ exports.updatePeriodicReservation = async (req, res) => {
   } catch (error) {
     // Rollback en caso de error inesperado
     await session.abortTransaction();
-    session.endSession();
     console.error('Error updating periodic reservation:', error);
     return res.status(500).json({ message: error.message });
+  } finally {
+    session.endSession();
   }
 };
 

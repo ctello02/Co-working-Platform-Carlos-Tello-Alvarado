@@ -19,7 +19,11 @@
 
     <AskModal v-model="deleteModal" :title="'¿Borrar usuario?'"
       :message="'¿Estás seguro de que quieres borrar este usuario?'" :actionText="'Borrar usuario'"
-      :closeModal="closeDialog" :action="deleteUser" />
+      :closeModal="closeDeleteDialog" :action="deleteUser" />
+
+    <AskModal v-model="bulkDeleteModal" :maxWidth="'600px'" :title="'Este usuario tiene reservas pendientes'"
+      :message="'Este usuario tiene reservas pendientes, ¿Estás seguro de que quieres borrarlo?'"
+      :actionText="'Borrar usuario'" :closeModal="closeBulkDeleteDialog" :action="bulkDeleteUser" />
 
   </v-container>
 </template>
@@ -40,6 +44,7 @@ export default {
       users: [],
       token: null,
       deleteModal: false,
+      bulkDeleteModal: false,
       selectedUser: null,
       currentUserId: null,
 
@@ -83,8 +88,14 @@ export default {
       this.selectedUser = { ...user }; // Hacer una copia del usuario seleccionado
       this.deleteModal = true;
     },
-    closeDialog() {
+    closeDeleteDialog() {
       this.deleteModal = false;
+    },
+    openBulkDeleteModal() {
+      this.bulkDeleteModal = true;
+    },
+    closeBulkDeleteDialog() {
+      this.bulkDeleteModal = false;
     },
     getUsers() {
       userService.getUsers()
@@ -101,9 +112,23 @@ export default {
     deleteUser() {
       const toast = useToast();
       userService.deleteUser(this.selectedUser._id)
-        .then(res => {
-          //console.log(res.data);
-          this.deleteModal = false;
+        .then(() => {
+          this.closeDeleteDialog()
+          this.getUsers();
+          toast.error('Usuario eliminado con éxito');
+        })
+        .catch(error => {
+          console.log(error);
+          if (error.response.status === 409) {
+            this.openBulkDeleteModal();
+          }
+        });
+    },
+    bulkDeleteUser() {
+      const toast = useToast();
+      userService.bulkDeleteUser(this.selectedUser._id)
+        .then(() => {
+          this.closeBulkDeleteDialog();
           this.getUsers();
           toast.error('Usuario eliminado con éxito');
         })

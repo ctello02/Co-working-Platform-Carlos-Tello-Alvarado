@@ -1,5 +1,5 @@
 <template>
-    <v-dialog v-model="dialogVisible" max-width="450px">
+    <v-dialog v-model="dialogVisible" :max-width="maxWidth">
         <v-card>
             <v-card-title class="ml-2 mt-3">
                 <span class="text-h5">{{ title }}</span>
@@ -70,6 +70,10 @@ export default {
             type: String,
             default: 'red'
         },
+        maxWidth: {
+            type: String,
+            default: '450px'
+        }
     },
     components: {
         TonalButton
