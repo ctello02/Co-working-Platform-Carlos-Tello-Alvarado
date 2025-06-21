@@ -44,13 +44,13 @@
                     <v-icon size="small" icon="mdi-timer-sand" />
                   </v-col>
                   <v-col class="ml-n4 mr-7">
-                    <span class="text-h6">Hora de inicio: {{ getHoursAndMinsFromDate(reservation.startTime) }}</span>
+                    <span class="text-h6">Hora de inicio: {{ startTime }}</span>
                   </v-col>
                   <v-col cols="1">
                     <v-icon size="small" icon="mdi-timer-sand-complete" />
                   </v-col>
                   <v-col class="ml-n7 mr-7">
-                    <span class="text-h6">Hora de fin: {{ getHoursAndMinsFromDate(reservation.endTime) }}</span>
+                    <span class="text-h6">Hora de fin: {{ endTime }}</span>
                   </v-col>
                 </v-row>
                 <v-divider />
@@ -97,7 +97,7 @@
                       </v-alert>
                     </v-fade-transition>
                     <v-fade-transition>
-                      <v-alert v-if="reservedModal" type="warning" density="compact" variant="tonal">
+                      <v-alert v-if="periodicReservedModal" type="warning" density="compact" variant="tonal">
                         No se puede reservar periódicamente, ya hay una reserva con el mismo horario.
                       </v-alert>
                     </v-fade-transition>
@@ -108,7 +108,7 @@
             <v-card-actions>
               <v-row class="mt-n6 mb-3 mr-2 d-flex justify-end ga-3">
                 <TonalButton color="grey" text="Volver" @click="routerBack" />
-                <TonalButton color="blue" text="Reservar" :loading="isLoading" @click="confirmReservation">
+                <TonalButton color="blue" text="Reservar" :loading="isLoading" @click="submit">
                 </TonalButton>
               </v-row>
             </v-card-actions>
@@ -168,13 +168,11 @@ const reservationsByDate = ref([]);
 const periodicReservations = ref([]);
 const startTime = ref(null);
 const endTime = ref(null);
-const reservationStartMinutes = ref(null);
-const reservationEndMinutes = ref(null);
 
 const space = ref(null);
 const hoursReserved = ref([]);
 const showSpaceModal = ref(false);
-const reservedModal = ref(false);
+const periodicReservedModal = ref(false);
 
 const isLoading = ref(false);
 
@@ -208,8 +206,6 @@ onMounted(async () => {
 
     startTime.value = getHoursAndMinsFromDate(reservation.value.startTime);
     endTime.value = getHoursAndMinsFromDate(reservation.value.endTime);
-    reservationStartMinutes.value = makeMinutes(startTime.value);
-    reservationEndMinutes.value = makeMinutes(endTime.value);
   }
 });
 // ------------------------------------------------
@@ -259,7 +255,7 @@ async function getReservations() {
 // ------------------------------------------------
 // Confirmar Reserva
 // ------------------------------------------------
-const confirmReservation = async () => {
+const submit = async () => {
 
   isLoading.value = true;
 
@@ -280,7 +276,7 @@ const confirmReservation = async () => {
     //   - Sin restricciones
 
     if (checkPeriodicReservations() == true) {
-      reservedModal.value = true;
+      periodicReservedModal.value = true;
       isLoading.value = false;
       return;
     }
@@ -364,13 +360,16 @@ function checkPeriodicReservations() {
       const periodicReservationStartMinutes = makeMinutes(periodicStartTime);
       const periodicReservationEndMinutes = makeMinutes(periodicEndTime);
 
-      if (reservationStartMinutes.value < periodicReservationStartMinutes &&
-        reservationEndMinutes.value <= periodicReservationStartMinutes) {
+      const reservationStartMinutes = makeMinutes(startTime.value);
+      const reservationEndMinutes = makeMinutes(endTime.value);
+
+      if (reservationStartMinutes < periodicReservationStartMinutes &&
+        reservationEndMinutes <= periodicReservationStartMinutes) {
         isReserved = false;
       }
       else
-        if (reservationStartMinutes.value >= periodicReservationEndMinutes &&
-          reservationEndMinutes.value > periodicReservationEndMinutes) {
+        if (reservationStartMinutes >= periodicReservationEndMinutes &&
+          reservationEndMinutes > periodicReservationEndMinutes) {
           isReserved = false;
         }
         else {

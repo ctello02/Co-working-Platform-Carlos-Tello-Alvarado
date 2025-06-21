@@ -9,14 +9,14 @@ export const useUserStore = defineStore({
     token: null,
     isAdmin: null,
     selectedUser: null,
-    user: null,
+    thisUser: null,
   }),
   getters: {
     getId: (state) => state._id,
     getToken: (state) => state.token,
     getIsAdmin: (state) => state.isAdmin,
     getSelectedUser: (state) => state.selectedUser,
-    getUser: (state) => state.user,
+    getThisUser: (state) => state.thisUser,
     isAuthenticated: (state) => !!state.token, // Retorna true si hay token
   },
   actions: {
@@ -35,21 +35,21 @@ export const useUserStore = defineStore({
     setSelectedUser(user) {
       this.selectedUser = user;
     },
-    setUser(user) {
-      this.user = user;
+    setThisUser(user) {
+      this.thisUser = user;
     },
     clearSelectedUser() {
       this.selectedUser = null;
     },
-    clearUser() {
-      this.user = null;
+    clearThisUser() {
+      this.thisUser = null;
     },
-    clearUsers() {
+    clearStore() {
       this._id = null;
       this.token = null;
       this.isAdmin = null;
       this.selectedUser = null;
-      this.user = null;
+      this.thisUser = null;
 
       localStorage.removeItem('user_id');
       localStorage.removeItem('token');
@@ -77,7 +77,7 @@ export const useUserStore = defineStore({
         authService
           .getUser()
           .then((res) => {
-            this.user = res.data.user;
+            this.thisUser = res.data.user;
           })
           .catch((error) => {
             console.log(error);
@@ -85,12 +85,12 @@ export const useUserStore = defineStore({
 
         if (response.data.valid) return true;
         else {
-          this.clearUsers();
+          this.clearStore();
           return false;
         }
       } catch (error) {
         console.error('Error validating session:', error);
-        this.clearUsers();
+        this.clearStore();
         return false;
       }
     },

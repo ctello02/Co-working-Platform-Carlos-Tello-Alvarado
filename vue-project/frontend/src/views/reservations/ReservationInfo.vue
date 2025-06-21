@@ -111,7 +111,7 @@ const router = useRouter();
 const reservation = ref(null);
 const canEdit = ref(false);
 const deleteModal = ref(false);
-const deleteAllReservations = ref(false);
+const bulkDeleteReservations = ref(false);
 
 
 // Extraemos funciones del composable useTime
@@ -149,7 +149,7 @@ function openEditReservationInfo() {
 }
 
 function toggleCheckbox() {
-    deleteAllReservations.value = !deleteAllReservations.value;
+    bulkDeleteReservations.value = !bulkDeleteReservations.value;
 };
 
 function closeDialog() {
@@ -158,7 +158,7 @@ function closeDialog() {
 
 function deleteReservation() {
     const toast = useToast();
-    if (reservation.value.periodicReservationId && deleteAllReservations.value) {
+    if (reservation.value.periodicReservationId && bulkDeleteReservations.value) {
         reservationService.deletePeriodicReservation(reservation.value.periodicReservationId._id)
             .then(res => {
                 closeDialog();

@@ -118,7 +118,7 @@
                                 <TonalButton color="grey" text="Volver" @click="routerBack" />
                                 <TonalButton color="blue" text="Actualizar" :loading="isLoading"
                                     :disabled="reservationSeats > maxSeatsAllowed || maxSeatsAllowed === 0"
-                                    @click="submitUpdate" />
+                                    @click="submit" />
                             </v-row>
                         </v-card-actions>
                     </v-card>
@@ -135,7 +135,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useReservationStore } from '@/store/reservationStore';
 import { useSpaceStore } from '@/store/spaceStore';
@@ -145,7 +145,6 @@ import { useReservationSlots } from '@/composables/useReservationSlots';
 import TonalButton from '@/components/TonalButton.vue';
 import SpaceCard from '@/components/SpaceCard.vue';
 import { useToast } from 'vue-toastification';
-
 
 const router = useRouter();
 const reservationStore = useReservationStore();
@@ -215,7 +214,7 @@ onMounted(async () => {
     periodicReservations.value = perRes.filter(pr => pr.spaceId === space.value._id);
 });
 
-async function submitUpdate() {
+async function submit() {
     const toast = useToast();
     isLoading.value = true;
 

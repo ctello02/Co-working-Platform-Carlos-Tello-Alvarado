@@ -103,7 +103,7 @@ export default {
   },
   mounted() {
     this.userStore = useUserStore();
-    this.user = this.userStore.getUser;
+    this.user = this.userStore.getThisUser;
     if (!this.user) {
       this.getUser(); // Redirigir al componente padre
     }
@@ -133,7 +133,7 @@ export default {
       this.bulkDeleteModal = false;
     },
     logOutUser() {
-      this.userStore.clearUsers();
+      this.userStore.clearStore();
       this.logOutModal = false;
       this.$router.push("/login");
     },
@@ -141,7 +141,7 @@ export default {
       const toast = useToast();
       userService.deleteUser(this.user._id)
         .then(() => {
-          this.userStore.clearUsers();
+          this.userStore.clearStore();
           this.closeDialog();
           this.$router.push("/login");
           toast.error('Cuenta eliminada con éxito');
@@ -158,7 +158,7 @@ export default {
       userService.bulkDeleteUser(this.user._id)
         .then(() => {
           this.closeBulkDeleteDialog();
-          this.userStore.clearUsers();
+          this.userStore.clearStore();
           this.$router.push("/login");
           toast.error('Cuenta eliminada con éxito');
         })

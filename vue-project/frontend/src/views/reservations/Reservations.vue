@@ -420,7 +420,7 @@ function roundToNearestQuarterHour(timeString) {
 
 
 function getWindowParams() {
-    const storedWindow = reservationStore.getWindow; // o localStorage, etc.
+    const storedWindow = reservationStore.getWindowParams; // o localStorage, etc.
     if (storedWindow) {
         mainTab.value = storedWindow.mainTab;
         subTab.value = storedWindow.subTab;
@@ -444,7 +444,7 @@ function setWindowParams() {
         expandedNames: expandedNames.value,
         expandedDates: expandedDates.value
     };
-    reservationStore.setWindow(storedWindow);
+    reservationStore.setWindowParams(storedWindow);
 };
 
 

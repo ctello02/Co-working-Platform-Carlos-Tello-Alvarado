@@ -35,7 +35,7 @@ export default {
     }
     authService.getUser()
       .then(res => {
-        this.userStore.setUser(res.data.user);
+        this.userStore.setThisUser(res.data.user);
       })
       .catch(error => {
         console.log(error);

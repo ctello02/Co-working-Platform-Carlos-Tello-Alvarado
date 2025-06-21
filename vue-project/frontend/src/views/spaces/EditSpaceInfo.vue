@@ -89,7 +89,7 @@ const spaceStore = useSpaceStore();
 // Variables reactivas
 const space = ref(null);
 const newSpace = ref(null);
-const newImageUrl = ref(null);
+const newImage = ref(null);
 const isNewImage = ref(false);
 const selectedTimeFrame = ref(null);
 const openingTime = ref(null);
@@ -144,7 +144,7 @@ const onFileChange = (e) => {
   const file = e.target.files[0];
   if (file) {
     isNewImage.value = true;
-    newImageUrl.value = file;
+    newImage.value = file;
 
     const reader = new FileReader();
     reader.onload = (e) => {
@@ -183,8 +183,8 @@ const submit = async () => {
   formData.append('duration', newSpace.value.duration);
   formData.append('pricing', newSpace.value.pricing);
 
-  if (isNewImage.value && newImageUrl.value) {
-    formData.append('image', newImageUrl.value);
+  if (isNewImage.value && newImage.value) {
+    formData.append('image', newImage.value);
   }
 
   try {

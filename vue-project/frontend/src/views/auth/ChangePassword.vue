@@ -79,7 +79,7 @@ export default {
                 .then(res => {
                     console.log(res.data);
                     toast.success("Contraseña cambiada correctamente");
-                    this.userStore.clearUsers();
+                    this.userStore.clearStore();
                     this.$router.push('/login');
                 })
                 .catch(error => {

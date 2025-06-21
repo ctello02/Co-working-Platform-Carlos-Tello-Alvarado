@@ -86,7 +86,7 @@ export default {
   },
   mounted() {
     this.userStore = useUserStore();
-    this.user = this.userStore.getUser;
+    this.user = this.userStore.getThisUser;
     if (!this.user) {
       this.getUser(); // Redirigir al componente padre
     }
@@ -133,7 +133,7 @@ export default {
       userService.updateUser(this.user)
         .then(res => {
           console.log(res.data);
-          this.userStore.setUser(this.user);
+          this.userStore.setThisUser(this.user);
           // Mostrar la alerta de éxito y ocultarla después de 3 segundos
           this.successToastId = toast.success('¡Perfil editado con éxito!');
         })
