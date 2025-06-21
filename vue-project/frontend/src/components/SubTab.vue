@@ -33,12 +33,12 @@
                     <v-card-title @click="() => $emit('toggleSpace', spaceName)" class="d-flex">
                         <h3>{{ spaceName }}</h3>
                         <v-spacer />
-                        <v-btn :ripple="false" :icon="expandedSpaces[spaceName] ? 'mdi-chevron-up' : 'mdi-chevron-down'"
+                        <v-btn :ripple="false" :icon="expandedNames[spaceName] ? 'mdi-chevron-up' : 'mdi-chevron-down'"
                             variant="text" size="small" />
                     </v-card-title>
 
                     <!-- Contenido expandido/colapsado -->
-                    <v-row v-if="expandedSpaces[spaceName]">
+                    <v-row v-if="expandedNames[spaceName]">
                         <!-- Modo tabla -->
                         <v-col v-if="list">
                             <Table :headers="tableHeaders" :fields="['date', 'schedule']"
@@ -97,7 +97,7 @@ const props = defineProps({
     filteredReservations: { type: Array, default: () => [] },
     groupedByDate: { type: Object, default: () => ({}) },
     groupedByName: { type: Object, default: () => ({}) },
-    expandedSpaces: { type: Object, default: () => ({}) },
+    expandedNames: { type: Object, default: () => ({}) },
     expandedDates: { type: Object, default: () => ({}) },
     list: { type: Boolean, default: false },
     filter: { type: String, default: null },

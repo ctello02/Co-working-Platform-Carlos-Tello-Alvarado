@@ -66,7 +66,7 @@
                                     :list="list" :filteredReservations="filteredNextReservations"
                                     :groupedByName="groupedByName" :groupedByDate="groupedByDate"
                                     :tableHeaders="tableHeaders" :tableItems="tableItems"
-                                    :tableDropdownItems="tableDropdownItems" :expandedSpaces="expandedSpaces"
+                                    :tableDropdownItems="tableDropdownItems" :expandedNames="expandedNames"
                                     :expandedDates="expandedDates" @toggleSpace="toggleSpace" @toggleDate="toggleDate"
                                     @rowClick="handleRowClick" />
                             </v-tabs-window-item>
@@ -78,7 +78,7 @@
                                     :groupedByName="groupedByName" :groupedByDate="groupedByDate"
                                     :tableHeaders="tableHeaders" :tableItems="tableItems"
                                     :tableDropdownItems="tableDropdownItems" :expandedDates="expandedDates"
-                                    :expandedSpaces="expandedSpaces" @toggleSpace="toggleSpace" @toggleDate="toggleDate"
+                                    :expandedNames="expandedNames" @toggleSpace="toggleSpace" @toggleDate="toggleDate"
                                     @rowClick="handleRowClick" />
                             </v-tabs-window-item>
                         </v-tabs-window>
@@ -174,7 +174,7 @@ const filterItems = ref([
     { label: 'Por fecha', value: 'date' },
 ]);
 
-const expandedSpaces = ref({});    // Almacena el estado abierto/cerrado del desplegable de cada nombre del espacio. 
+const expandedNames = ref({});    // Almacena el estado abierto/cerrado del desplegable de cada nombre del espacio. 
 const expandedDates = ref({});    // Almacena el estado abierto/cerrado del desplegable de cada fecha.
 
 const groupedByName = computed(() => {
@@ -190,7 +190,7 @@ const groupedByName = computed(() => {
         reservationsToSearch.sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
 
     reservationsToSearch.forEach(reservation => {
-        const nameKey = reservation.spaceId.name;
+        const nameKey = reservation.spaceId?.name;
         if (!groups[nameKey]) {
             groups[nameKey] = [];
         }
@@ -235,7 +235,7 @@ const groupedByDate = computed(() => {
 });
 
 function toggleSpace(nameKey) {
-    expandedSpaces.value[nameKey] = !expandedSpaces.value[nameKey];
+    expandedNames.value[nameKey] = !expandedNames.value[nameKey];
 };
 
 function toggleDate(dateKey) {
@@ -367,7 +367,7 @@ function addCalendarEvents(reservations) {
 
         return {
             id: reservation._id, // Usar el ID de la reserva como identificador único
-            title: `Reserva en ${reservation.spaceId.name}`,
+            title: `Reserva en ${reservation.spaceId?.name}`,
             start: formattedStart,  // start: '2024-06-28 08:00',
             end: formattedEnd,      // end: '2024-06-28 10:00',
             options: reservation.periodicReservationId ? true : false,
@@ -388,8 +388,8 @@ watch(
     groupedByName,
     (newVal) => {
         for (const nameKey in newVal) {
-            if (expandedSpaces.value[nameKey] === undefined) {
-                expandedSpaces.value[nameKey] = true;
+            if (expandedNames.value[nameKey] === undefined) {
+                expandedNames.value[nameKey] = true;
             }
         }
     },
@@ -426,8 +426,8 @@ function getWindowParams() {
         subTab.value = storedWindow.subTab;
         list.value = storedWindow.list;
         filter.value = storedWindow.filter;
-        if (storedWindow.expandedSpaces) {
-            expandedSpaces.value = storedWindow.expandedSpaces;
+        if (storedWindow.expandedNames) {
+            expandedNames.value = storedWindow.expandedNames;
         }
         if (storedWindow.expandedDates) {
             expandedDates.value = storedWindow.expandedDates;
@@ -441,7 +441,7 @@ function setWindowParams() {
         subTab: subTab.value,
         list: list.value,
         filter: filter.value,
-        expandedSpaces: expandedSpaces.value,
+        expandedNames: expandedNames.value,
         expandedDates: expandedDates.value
     };
     reservationStore.setWindow(storedWindow);

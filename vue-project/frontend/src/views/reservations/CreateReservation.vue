@@ -106,6 +106,15 @@
                 }}
                   horas</span>
               </div>
+              <div class="d-flex align-center ga-2">
+                <v-icon style="color: #4f5b66">mdi-hand-coin-outline</v-icon>
+                <span class="text-h6" style="color: #4f5b66" v-if="spc.pricing > 0">
+                  Precio por reserva: {{ spc.pricing }}€
+                </span>
+                <span class="text-h6" style="color: #4f5b66" v-else>
+                  Reservas gratis
+                </span>
+              </div>
             </v-card-text>
 
             <v-divider />
@@ -276,6 +285,14 @@ async function loadDayData() {
 // Filtra espacios con los criterios actuales
 function filterSpaces() {
   filteredSpaces.value = spaces.value.filter(spc => {
+    // Si la fecha que se está buscando es hoy, se eliminan los espacios que no están abiertos a la hora actual
+    let searchedDate = new Date(date.value);
+    const now = new Date();
+    const nowMins = now.getHours() * 60 + now.getMinutes();
+    if (searchedDate.toDateString() == now.toDateString() && spc.closing < nowMins) {
+      return false;
+    }
+
     // Si no hay filtro de hora/duración/asientos, mostrar todos
     if (!startTime.value && !durationSearched.value && !reservationSeats.value) {
       return true;

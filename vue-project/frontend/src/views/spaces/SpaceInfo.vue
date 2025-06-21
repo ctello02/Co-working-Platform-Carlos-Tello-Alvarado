@@ -1,6 +1,6 @@
 <template>
     <SpaceCard :space="space" :adminActions="userStore.getIsAdmin" :reserveActions="true" @go-back="routerBack"
-        @reserve="createReservation" @edit-space="openEditSpaceInfo" @delete-space="deleteSpace" />
+        @reserve="toCreateReservation" @edit-space="openEditSpaceInfo" @delete-space="deleteSpace" />
 </template>
 
 <script setup>
@@ -33,7 +33,7 @@ function openEditSpaceInfo() {
     router.push('/editSpaceInfo');
 }
 
-function createReservation() {
+function toCreateReservation() {
     router.push('/createReservation');
 }
 

@@ -1,14 +1,21 @@
 <template>
   <v-container class="container">
     <v-card class="mx-auto px-2" max-width="550">
-      <v-card-title class="my-3">
+      <v-card-title class="mt-5">
         <span class="text-h4">Nuevo espacio</span>
       </v-card-title>
       <v-card-text>
         <v-col>
           <v-row>
-            <v-text-field v-model="spaceName" label="Nombre" type="text" variant="outlined" required
-              :rules="[v => !!v || 'El campo es obligatorio']" class="my-1" />
+            <v-col cols="8">
+              <v-text-field v-model="spaceName" label="Nombre" type="text" variant="outlined" required
+                :rules="[v => !!v || 'El campo es obligatorio']" class="my-1 ml-n3" />
+            </v-col>
+            <v-col cols="4">
+              <v-text-field suffix="€" v-model.number="pricing" label="Precio de reserva"
+                prepend-icon="mdi-hand-coin-outline" type="number" variant="outlined" required
+                @input="pricing = Math.max(0, pricing)" class="mr-n3" />
+            </v-col>
           </v-row>
           <v-row>
             <v-text-field v-model="spaceDescription" label="Descripción" prepend-icon="mdi-text" type="text"
@@ -41,19 +48,19 @@
 
           <v-row class="mt-n1">
             <v-col cols="6">
-              <v-select v-model="openingTime" :items="allTimes" label="Hora de apertura"
+              <v-select class="ml-n3" v-model="openingTime" :items="allTimes" label="Hora de apertura"
                 prepend-icon="mdi-weather-sunny" variant="outlined"></v-select>
             </v-col>
 
             <v-col cols="6">
-              <v-select v-model="closingTime" :items="filteredClosingTimes" label="Hora de cierre"
+              <v-select class="mr-n3" v-model="closingTime" :items="filteredClosingTimes" label="Hora de cierre"
                 prepend-icon="mdi-weather-night" :disabled="!openingTime" variant="outlined"></v-select>
             </v-col>
           </v-row>
         </v-col>
       </v-card-text>
 
-      <v-card-actions class="mt-n9 mb-3 mr-2 d-flex justify-end ga-3">
+      <v-card-actions class="mt-n9 mb-5 mr-2 d-flex justify-end ga-3">
         <TonalButton color="grey" text="Volver" @click="routerBack" />
         <TonalButton text="Crear" @click="submit" :disabled="emptyFields()" color="blue" />
       </v-card-actions>
@@ -78,6 +85,7 @@ const successToastId = ref(null);
 const spaceName = ref(null);
 const spaceDescription = ref(null);
 const spaceImage = ref(null);
+const pricing = ref(0);
 const spaceSeats = ref(null);
 const selectedTimeFrame = ref(null);
 const spaceRepetition = ref(false);
@@ -119,6 +127,7 @@ const clearFields = () => {
   spaceDescription.value = null;
   spaceImage.value = null;
   spaceSeats.value = null;
+  pricing.value = 0;
   selectedTimeFrame.value = null;
   spaceRepetition.value = false;
   openingTime.value = null;
@@ -145,6 +154,7 @@ const submit = async () => {
   formData.append('admitsRepetition', spaceRepetition.value);
   formData.append('opening', openingTimeInMinutes);
   formData.append('closing', closingTimeInMinutes);
+  formData.append('pricing', pricing.value);
 
   try {
     const res = await spaceService.createSpace(formData);

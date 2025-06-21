@@ -75,7 +75,20 @@
                     </v-row>
                   </v-col>
                 </v-row>
-                <v-row class="mt-n3 mb-n4">
+                <v-divider class="mt-6" />
+                <v-row class="mt-3 mb-n8 d-flex align-center justify-center">
+                  <v-col cols="5">
+                    <span class="text-h6" v-if="space.pricing > 0">
+                      Precio por reserva: {{ calculatePrice }}€
+                    </span>
+                    <span class="text-h6" v-else>
+                      La reserva será gratis
+                    </span>
+                  </v-col>
+                </v-row>
+
+
+                <v-row class="mb-n4">
                   <v-col class="" style="display: flex; flex-direction: column; gap: 15px;">
                     <v-fade-transition>
                       <v-alert v-if="reservationSeats >= maxSeatsAllowed" type="warning" density="compact"
@@ -113,7 +126,7 @@
 </template>
 
 <script setup>
-import { ref, watch, onMounted } from 'vue';
+import { ref, watch, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useReservationStore } from '@/store/reservationStore';
 import { useSpaceStore } from '@/store/spaceStore';
@@ -427,6 +440,30 @@ watch(reservationSeats, (newValue) => {
 // ------------------------------------------------
 // Métodos Auxiliares 
 // ------------------------------------------------
+const calculatePrice = computed(() => {
+  const startStr = reservation.value.startTime
+  const endStr = reservation.value.endTime
+  const dur = space.value.duration      // duración de un bloque, en minutos
+  const pricePer = space.value.pricing       // precio por bloque
+
+  // convierto fecha ISO en minutos
+  const startMin = makeMinutesFromIsoLocal(startStr)
+  const endMin = makeMinutesFromIsoLocal(endStr)
+
+  // calculo cuántos bloques completos caben
+  const blocks = (endMin - startMin) / dur
+  console.log(blocks)
+
+
+  // en caso de que no sea un múltiplo exacto, redondeamos hacia abajo
+  const fullBlocks = Math.floor(blocks)
+  const total = fullBlocks * pricePer * reservationSeats.value
+
+  // toFixed devuelve una string con dos decimales
+  return total.toFixed(2)
+})
+
+
 const routerBack = () => {
   router.go(-1);
 };
