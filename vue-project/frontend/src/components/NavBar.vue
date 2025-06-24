@@ -42,6 +42,17 @@
                 </v-row>
             </v-list-item>
 
+            <v-list-item @click="toMaterials">
+                <v-row>
+                    <v-col cols="1" class="d-flex align-center">
+                        <v-icon size="small" icon="mdi-tools"></v-icon>
+                    </v-col>
+                    <v-col class="d-flex align-center">
+                        <span class="item">Materiales</span>
+                    </v-col>
+                </v-row>
+            </v-list-item>
+
             <v-list-item v-if="userStore.getIsAdmin" @click="toUsers">
                 <v-row>
                     <v-col cols="1" class="d-flex align-center">
@@ -90,6 +101,9 @@ export default {
         },
         toSpaces() {
             this.$router.push('/spaces')
+        },
+        toMaterials() {
+            this.$router.push('/materials')
         },
         toUsers() {
             this.$router.push('/users')
