@@ -4,6 +4,7 @@ const {
   createMaterial,
   updateMaterial,
   deleteMaterial,
+  bulkDeleteMaterial,
 } = require('../controllers/materialsController');
 const verifyToken = require('../middleware/verify_tokens');
 const upload = require('../utils/multerConfig');
@@ -23,5 +24,6 @@ router.put(
   updateMaterial
 );
 router.delete('/deleteMaterial/:id', verifyToken, deleteMaterial);
+router.delete('/bulkDeleteMaterial/:id', verifyToken, bulkDeleteMaterial);
 
 module.exports = router;

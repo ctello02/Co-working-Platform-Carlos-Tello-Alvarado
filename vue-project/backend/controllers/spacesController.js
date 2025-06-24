@@ -1,4 +1,7 @@
 const Space = require('../models/space');
+const Reservation = require('../models/reservation');
+const PeriodicReservation = require('../models/periodicReservation');
+const mongoose = require('mongoose');
 const fs = require('fs'); // Módulo para interactuar con el sistema de archivos
 const path = require('path');
 
@@ -73,10 +76,38 @@ exports.updateSpace = async (req, res) => {
 };
 
 exports.deleteSpace = async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
   try {
-    const space = await Space.findOne({ _id: req.params.id });
+    let space = await Space.findOne({ _id: req.params.id }).session(session);
     if (!space) {
+      await session.abortTransaction();
+      session.endSession();
       return res.status(404).json({ message: 'Space not found' });
+    }
+
+    const now = new Date();
+
+    let reservations = await Reservation.find({
+      spaceId: req.params.id,
+      startTime: { $gte: now },
+    }).session(session);
+    if (reservations.length > 0) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(409).json({ message: 'Space has reservations' });
+    }
+
+    let periodicReservations = await PeriodicReservation.find({
+      spaceId: req.params.id,
+    }).session(session);
+    if (periodicReservations.length > 0) {
+      await session.abortTransaction();
+      session.endSession();
+      return res
+        .status(409)
+        .json({ message: 'Space has periodic reservations' });
     }
 
     // Obtener la ruta completa de la imagen del servidor
@@ -96,13 +127,47 @@ exports.deleteSpace = async (req, res) => {
       }
     });
 
-    // Eliminar el espacio de la base de datos
-    await Space.deleteOne({ _id: req.params.id });
-
-    // Enviar respuesta de éxito
-    res.json({ message: 'Espacio y su imagen eliminados correctamente' });
+    await Space.deleteOne({ _id: req.params.id }).session(session);
+    await session.commitTransaction();
+    res.json({ message: 'Space deleted successfully' });
   } catch (error) {
-    console.error('Error al eliminar el espacio:', error);
+    await session.abortTransaction();
+    session.endSession();
     res.status(500).json({ message: error.message });
+  } finally {
+    session.endSession();
+  }
+};
+
+exports.bulkDeleteSpace = async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  try {
+    let space = await Space.findOne({ _id: req.params.id }).session(session);
+    if (!space) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(404).json({ message: 'Space not found' });
+    }
+
+    await Reservation.deleteMany({
+      spaceId: req.params.id,
+    }).session(session);
+
+    await PeriodicReservation.deleteMany({
+      spaceId: req.params.id,
+    }).session(session);
+
+    await Space.deleteOne({ _id: req.params.id }).session(session);
+
+    await session.commitTransaction();
+    res.json({ message: 'Space deleted successfully' });
+  } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
+    res.status(500).json({ message: error.message });
+  } finally {
+    session.endSession();
   }
 };
