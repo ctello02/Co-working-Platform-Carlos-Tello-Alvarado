@@ -39,9 +39,16 @@ export const reservationService = {
     return axiosInstance.get(`${API_URL}/getReservationsByDate/${date}`);
   },
 
-  // updateReservation(formData) {
-  //     return axiosInstance.put(`${API_URL}/updateReservation`, formData);
-  // },
+  updateReservation(reservation) {
+    return axiosInstance.put(`${API_URL}/updateReservation`, reservation);
+  },
+
+  updatePeriodicReservation(periodicReservation) {
+    return axiosInstance.put(
+      `${API_URL}/updatePeriodicReservation`,
+      periodicReservation
+    );
+  },
 
   deleteReservation(id) {
     return axiosInstance.delete(`${API_URL}/deleteReservation/${id}`);

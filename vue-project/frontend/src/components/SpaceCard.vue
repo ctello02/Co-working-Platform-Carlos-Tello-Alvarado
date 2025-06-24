@@ -46,12 +46,45 @@
                         </v-col>
                     </v-row>
 
+                    <v-row class="my-n3" cols="12" v-if="isPreview">
+                        <v-col cols="1" class="d-flex align-center ml-n3">
+                            <v-icon icon="mdi-hand-coin-outline" />
+                        </v-col>
+                        <v-col cols="10">
+                            <span class="ml-2" v-if="space.pricing > 0">
+                                {{ space.pricing }}€ por reserva
+                            </span>
+                            <span class="ml-2" v-else>
+                                Reserva gratis
+                            </span>
+                        </v-col>
+                    </v-row>
+
                     <v-row v-if="!isPreview" class="my-n3" cols="12">
-                        <v-col cols="1" class="d-flex align-center">
-                            <v-icon icon="mdi-table-chair" size="small" />
+                        <v-col>
+                            <v-row class="d-flex align-center my-n2">
+                                <v-col cols="2" class="d-flex align-center">
+                                    <v-icon icon="mdi-table-chair" size="small" />
+                                </v-col>
+                                <v-col>
+                                    <span class="pt-2 text-h6">{{ space.seats }} asientos</span>
+                                </v-col>
+                            </v-row>
                         </v-col>
                         <v-col>
-                            <span class="text-h6">{{ space.seats }} asientos</span>
+                            <v-row class="d-flex align-center my-n2">
+                                <v-col cols="2">
+                                    <v-icon size="small" icon="mdi-hand-coin-outline" />
+                                </v-col>
+                                <v-col>
+                                    <span class="pt-2 text-h6" v-if="space.pricing > 0">
+                                        {{ space.pricing }}€ por reserva
+                                    </span>
+                                    <span class="pt-2 text-h6" v-else>
+                                        Reserva gratis
+                                    </span>
+                                </v-col>
+                            </v-row>
                         </v-col>
                     </v-row>
 

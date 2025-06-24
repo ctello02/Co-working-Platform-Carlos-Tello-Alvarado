@@ -7,53 +7,62 @@
         <input type="file" ref="fileInput" accept="image/*" @change="onFileChange" style="display: none" />
       </v-img>
 
-      <v-card-text class="px-6">
+      <v-card-text>
         <v-col>
           <v-row>
-            <v-text-field v-model="newSpace.name" label="Nombre" variant="outlined" required
-              :rules="[v => !!v || 'El texto es requerido']" class="my-1" />
+            <v-col>
+              <v-text-field v-model="newSpace.name" label="Nombre" variant="outlined" required
+                :rules="[v => !!v || 'El texto es requerido']" class="my-n1" />
+            </v-col>
+            <v-col cols="4">
+              <v-text-field suffix="€" v-model.number="newSpace.pricing" label="Precio de reserva"
+                prepend-icon="mdi-hand-coin-outline" type="number" variant="outlined" required
+                @input="newSpace.pricing = Math.max(0, newSpace.pricing)" class="my-n1" />
+            </v-col>
           </v-row>
-
           <v-row>
-            <v-text-field v-model="newSpace.description" label="Descripción" variant="outlined" prepend-icon="mdi-text"
-              required :rules="[v => !!v || 'El texto es requerido']" class="my-1" />
+            <v-col>
+              <v-text-field v-model="newSpace.description" label="Descripción" variant="outlined"
+                prepend-icon="mdi-text" required :rules="[v => !!v || 'El texto es requerido']" class="my-n1" />
+            </v-col>
           </v-row>
-
           <v-row>
-            <v-text-field v-model.number="newSpace.seats" label="Número de asientos" prepend-icon="mdi-table-chair"
-              type="number" variant="outlined" required :rules="[v => !!v || 'El campo es obligatorio']"
-              @input="newSpace.seats = Math.max(0, newSpace.seats)" class="my-1" />
+            <v-col>
+              <v-text-field v-model.number="newSpace.seats" label="Número de asientos" prepend-icon="mdi-table-chair"
+                type="number" variant="outlined" required :rules="[v => !!v || 'El campo es obligatorio']"
+                @input="newSpace.seats = Math.max(0, newSpace.seats)" class="my-n1" />
+            </v-col>
           </v-row>
-
           <v-row>
-            <v-select v-model="selectedTimeFrame" :items="timeFrames" item-title="label" item-value="value"
-              label="Duración de las reservas" prepend-icon="mdi-clock-outline"
-              :rules="[v => !!v || 'El campo es obligatorio']" variant="outlined" class="my-1"></v-select>
+            <v-col>
+              <v-select v-model="selectedTimeFrame" :items="timeFrames" item-title="label" item-value="value"
+                label="Duración de las reservas" prepend-icon="mdi-clock-outline"
+                :rules="[v => !!v || 'El campo es obligatorio']" variant="outlined" class="my-n1" />
+            </v-col>
           </v-row>
-
           <v-row class="mt-1">
-            <v-radio-group inline prepend-icon="mdi-repeat" v-model="newSpace.admitsRepetition"
-              label="¿Permite repetición de reservas?">
-              <v-radio label="Si" :value="true" />
-              <v-radio label="No" :value="false" />
-            </v-radio-group>
+            <v-col>
+              <v-radio-group inline prepend-icon="mdi-repeat" v-model="newSpace.admitsRepetition"
+                label="¿Permite repetición de reservas?">
+                <v-radio label="Si" :value="true" />
+                <v-radio label="No" :value="false" />
+              </v-radio-group>
+            </v-col>
           </v-row>
-
           <v-row class="mt-n1">
             <v-col cols="6">
-              <v-select v-model="openingTime" :items="allTimes" label="Hora de apertura"
+              <v-select v-model="openingTime" variant="outlined" :items="allTimes" label="Hora de apertura"
                 prepend-icon="mdi-weather-sunny"></v-select>
             </v-col>
-
             <v-col cols="6">
-              <v-select v-model="closingTime" :items="filteredClosingTimes" label="Hora de cierre"
+              <v-select v-model="closingTime" variant="outlined" :items="filteredClosingTimes" label="Hora de cierre"
                 prepend-icon="mdi-weather-night" :disabled="!openingTime"></v-select>
             </v-col>
           </v-row>
         </v-col>
       </v-card-text>
 
-      <v-card-actions class="mt-n9 mb-3 mr-4 d-flex justify-end ga-3">
+      <v-card-actions class="mt-n8 mb-5 mr-5 d-flex justify-end ga-3">
         <TonalButton color="grey" text="Volver" @click="routerBack" />
         <TonalButton color="blue" text="Guardar" @click="submit" :disabled="emptyFields()" />
       </v-card-actions>
@@ -80,7 +89,7 @@ const spaceStore = useSpaceStore();
 // Variables reactivas
 const space = ref(null);
 const newSpace = ref(null);
-const newImageUrl = ref(null);
+const newImage = ref(null);
 const isNewImage = ref(false);
 const selectedTimeFrame = ref(null);
 const openingTime = ref(null);
@@ -135,7 +144,7 @@ const onFileChange = (e) => {
   const file = e.target.files[0];
   if (file) {
     isNewImage.value = true;
-    newImageUrl.value = file;
+    newImage.value = file;
 
     const reader = new FileReader();
     reader.onload = (e) => {
@@ -172,9 +181,10 @@ const submit = async () => {
   formData.append('opening', newSpace.value.opening);
   formData.append('closing', newSpace.value.closing);
   formData.append('duration', newSpace.value.duration);
+  formData.append('pricing', newSpace.value.pricing);
 
-  if (isNewImage.value && newImageUrl.value) {
-    formData.append('image', newImageUrl.value);
+  if (isNewImage.value && newImage.value) {
+    formData.append('image', newImage.value);
   }
 
   try {

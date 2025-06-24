@@ -13,6 +13,26 @@ export function useTime() {
   ];
 
   /**
+   * Función para normalizar y verificar si ocurre un evento en una fecha
+   */
+  function occursOn(pr, date) {
+    const s = new Date(pr.startTime);
+
+    if (date < s) return false;
+
+    switch (pr.periodicity) {
+      case 'daily':
+        return true;
+      case 'weekly':
+        return date.getDay() === s.getDay();
+      case 'monthly':
+        return date.getDate() === s.getDate();
+      default:
+        return false;
+    }
+  }
+
+  /**
    * Genera un array con todos los horarios en formato "HH:MM"
    * en intervalos de 15 minutos para un día completo.
    */
@@ -47,6 +67,16 @@ export function useTime() {
   };
 
   /**
+   * Devuelve los minutos totales de una fecha de tipo ISO.
+   */
+  function makeMinutesFromIsoLocal(isoString) {
+    // isoString === "2025-04-27T09:00:00.000Z"
+    const timePart = isoString.split('T')[1]; // "09:00:00.000Z"
+    const [hh, mm] = timePart.split(':'); // ["09","00","00.000Z"]
+    return Number(hh) * 60 + Number(mm);
+  }
+
+  /**
    * Obtiene la hora y los minutos de una fecha (usando UTC) en formato "HH:MM".
    */
   const getHoursAndMinsFromDate = (dateString) => {
@@ -68,7 +98,7 @@ export function useTime() {
       day: 'numeric',
       month: 'long',
       year: 'numeric',
-    }).format(date);
+    }).format(new Date(date));
   };
 
   /**
@@ -138,25 +168,56 @@ export function useTime() {
   };
 
   /**
-   * Comprueba si el evento o la fecha pasada es posterior al día actual
+   * Comprueba si el evento o la fecha pasada es anterior al día actual
    * y devuelve true (si es una fecha pasada) o false (si es un evento futuro).
    */
   function calcPastEvents(calendarEvent) {
     const today = new Date();
     let selectedDate;
 
-    if (calendarEvent.end) selectedDate = new Date(calendarEvent.end);
-    else selectedDate = new Date(calendarEvent);
+    selectedDate = new Date(calendarEvent.end || calendarEvent);
 
-    if (today > selectedDate) {
+    if (selectedDate < today) {
+      return true;
+    }
+    return false;
+  }
+
+  /**
+   * Comprueba si el evento o la fecha pasada es igual al día actual
+   * y devuelve true si lo es o false en caso contrario.
+   */
+  function isToday(date) {
+    const today = new Date();
+    date = new Date(date);
+
+    if (
+      date.getDate() == today.getDate() &&
+      date.getMonth() == today.getMonth() &&
+      date.getFullYear() == today.getFullYear()
+    )
+      return true;
+    else {
       return false;
     }
-    return true;
+  }
+
+  /**
+   * Comprueba si estamos dentro de las 24 horas anteriores al inicio del evento que pasamos por parámetro
+   * y devuelve true si es < 24 horas o devuelve false en caso contrario.
+   */
+  function isWithinNext24Hours(calendarEvent) {
+    const now = new Date();
+    // extraemos el inicio del evento
+    const start = new Date(calendarEvent.start || calendarEvent);
+    const diffMs = start - now;
+    const oneDayMs = 24 * 60 * 60 * 1000;
+    return diffMs > 0 && diffMs <= oneDayMs;
   }
 
   /**
    * Comprueba si la fecha pasada es igual o posterior al día actual
-   * y devuelve true si es >= al día actual o devuelve false en caso contrario.
+   * y devuelve true si es < al día actual o devuelve false en caso contrario.
    */
   function calcPastDates(date) {
     const today = new Date();
@@ -166,24 +227,28 @@ export function useTime() {
       date.getMonth() == today.getMonth() &&
       date.getFullYear() == today.getFullYear()
     )
-      return true;
-    else if (today > date) {
       return false;
+    else if (date < today) {
+      return true;
     }
-    return true;
+    return false;
   }
 
   return {
     timeFrames,
+    occursOn,
     generateAllTimes,
     makeMinutes,
     makeHoursAndMinutes,
+    makeMinutesFromIsoLocal,
     getHoursAndMinsFromDate,
     parseToStringDate,
     parseToYYYYMMDD,
     parseDateTo_YYYYMMDD_HHMM,
     twoDigitsDate,
     calcPastEvents,
+    isToday,
+    isWithinNext24Hours,
     calcPastDates,
   };
 }

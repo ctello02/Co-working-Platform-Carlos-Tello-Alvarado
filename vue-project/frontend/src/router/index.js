@@ -106,6 +106,11 @@ const routes = [
     name: 'reservationInfo',
     component: () => import('../views/reservations/ReservationInfo.vue'),
   },
+  {
+    path: '/editReservationInfo',
+    name: 'editReservationInfo',
+    component: () => import('../views/reservations/EditReservationInfo.vue'),
+  },
 ];
 
 const router = createRouter({

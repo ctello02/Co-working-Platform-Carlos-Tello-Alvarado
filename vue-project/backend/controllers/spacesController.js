@@ -16,29 +16,13 @@ exports.getSpaces = async (req, res) => {
 
 exports.createSpace = async (req, res) => {
   try {
-    const {
-      name,
-      description,
-      duration,
-      seats,
-      admitsRepetition,
-      opening,
-      closing,
-    } = req.body;
-    const image = `${req.protocol}://${req.get('host')}/uploads/${
-      req.file.filename
-    }`; // Generar la URL de la imagen
+    if (req.file) {
+      req.body.image = `${req.protocol}://${req.get('host')}/uploads/${
+        req.file.filename
+      }`;
+    }
 
-    const newSpace = new Space({
-      name,
-      description,
-      image, // Almacena la URL de la imagen en la base de datos
-      duration,
-      seats,
-      admitsRepetition,
-      opening,
-      closing,
-    });
+    const newSpace = new Space(req.body);
 
     const savedSpace = await newSpace.save();
     res.status(201).json(savedSpace);
@@ -73,22 +57,15 @@ exports.updateSpace = async (req, res) => {
       });
 
       // Actualizar la URL de la imagen con la nueva
-      space.image = `${req.protocol}://${req.get('host')}/uploads/${
+      req.body.image = `${req.protocol}://${req.get('host')}/uploads/${
         req.file.filename
       }`;
     }
 
-    // Actualizar otros campos
-    space.name = req.body.name;
-    space.description = req.body.description;
-    space.seats = req.body.seats;
-    space.duration = req.body.duration;
-    space.admitsRepetition = req.body.admitsRepetition;
-    space.opening = req.body.opening;
-    space.closing = req.body.closing;
+    space.set(req.body);
 
     const savedSpace = await space.save();
-    res.status(201).json(savedSpace);
+    res.status(200).json(savedSpace);
   } catch (error) {
     console.error('Error al actualizar el espacio:', error);
     res.status(500).json({ message: error.message });

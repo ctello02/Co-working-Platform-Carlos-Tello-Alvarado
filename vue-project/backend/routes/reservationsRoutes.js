@@ -6,6 +6,8 @@ const {
   getPeriodicReservations,
   getUserReservations,
   getReservationsByDate,
+  updateReservation,
+  updatePeriodicReservation,
   deleteReservation,
   deletePeriodicReservation,
 } = require('../controllers/reservationsController');
@@ -29,7 +31,12 @@ router.get('/getReservations', verifyToken, getReservations);
 router.get('/getPeriodicReservations', verifyToken, getPeriodicReservations);
 router.get('/getUserReservations/:id', verifyToken, getUserReservations);
 router.get('/getReservationsByDate/:date', verifyToken, getReservationsByDate);
-// router.put('/updateReservation', verifyToken, updateReservation);
+router.put('/updateReservation', verifyToken, updateReservation);
+router.put(
+  '/updatePeriodicReservation',
+  verifyToken,
+  updatePeriodicReservation
+);
 router.delete('/deleteReservation/:id', verifyToken, deleteReservation);
 router.delete(
   '/deletePeriodicReservation/:id',

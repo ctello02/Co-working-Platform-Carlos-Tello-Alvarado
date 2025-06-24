@@ -20,14 +20,14 @@
                         <ScheduleXCalendar class="mt-4 mx-1" :calendar-app="calendarApp">
                             <template #timeGridEvent="{ calendarEvent }">
                                 <div
-                                    :style="calcPastEvents(calendarEvent) ? timeGridEventStyles : timeGridPastEventStyles">
+                                    :style="calcPastEvents(calendarEvent) ? timeGridPastEventStyles : timeGridEventStyles">
                                     <span v-if="calendarEvent.options === true">🔁</span>
                                     {{ calendarEvent.title }}
                                 </div>
                             </template>
 
                             <template #monthGridEvent="{ calendarEvent }">
-                                <div :style="calcPastEvents(calendarEvent) ? eventStyles : pastEventStyles">
+                                <div :style="calcPastEvents(calendarEvent) ? pastEventStyles : eventStyles">
                                     <span v-if="calendarEvent.options === true">🔁</span>
                                     {{ calendarEvent.title }}
                                 </div>
@@ -35,8 +35,8 @@
 
                             <template #eventModal="{ calendarEvent }">
                                 <CustomEventCalendar :reservation="reservationStore.getReservation"
-                                    @see-event="openReservation" @delete-event="openDeleteReservation"
-                                    @close="closeModal" />
+                                    @see-event="openReservation" @edit-event="editReservation"
+                                    @delete-event="openDeleteReservation" @close="closeModal" />
                             </template>
 
                         </ScheduleXCalendar>
@@ -66,7 +66,7 @@
                                     :list="list" :filteredReservations="filteredNextReservations"
                                     :groupedByName="groupedByName" :groupedByDate="groupedByDate"
                                     :tableHeaders="tableHeaders" :tableItems="tableItems"
-                                    :tableDropdownItems="tableDropdownItems" :expandedSpaces="expandedSpaces"
+                                    :tableDropdownItems="tableDropdownItems" :expandedNames="expandedNames"
                                     :expandedDates="expandedDates" @toggleSpace="toggleSpace" @toggleDate="toggleDate"
                                     @rowClick="handleRowClick" />
                             </v-tabs-window-item>
@@ -78,7 +78,7 @@
                                     :groupedByName="groupedByName" :groupedByDate="groupedByDate"
                                     :tableHeaders="tableHeaders" :tableItems="tableItems"
                                     :tableDropdownItems="tableDropdownItems" :expandedDates="expandedDates"
-                                    :expandedSpaces="expandedSpaces" @toggleSpace="toggleSpace" @toggleDate="toggleDate"
+                                    :expandedNames="expandedNames" @toggleSpace="toggleSpace" @toggleDate="toggleDate"
                                     @rowClick="handleRowClick" />
                             </v-tabs-window-item>
                         </v-tabs-window>
@@ -101,6 +101,7 @@
 import { ref, onMounted, computed, onUnmounted, watch } from 'vue';
 import { useUserStore } from '@/store/userStore';
 import { useReservationStore } from '@/store/reservationStore';
+import { useSpaceStore } from '@/store/spaceStore';
 import { useRouter } from 'vue-router';
 import { useTime } from '@/composables/useTime';
 import TonalButton from '@/components/TonalButton.vue';
@@ -121,7 +122,7 @@ import {
     createViewWeek,
 } from '@schedule-x/calendar';
 import '@schedule-x/theme-default/dist/index.css';
-import { options } from 'preact';
+import { useToast } from 'vue-toastification';
 /* -------------------------------------------------------------------- */
 
 
@@ -129,6 +130,7 @@ import { options } from 'preact';
 const userStore = useUserStore();
 const router = useRouter();
 const reservationStore = useReservationStore();
+const spaceStore = useSpaceStore();
 const eventsServicePlugin = createEventsServicePlugin();
 const eventModal = createEventModalPlugin();
 const currentTimePlugin = createCurrentTimePlugin();
@@ -142,6 +144,8 @@ const {
     parseDateTo_YYYYMMDD_HHMM,
     parseToStringDate,
     calcPastEvents,
+    isWithinNext24Hours,
+    isToday,
     calcPastDates,
     twoDigitsDate,
     getHoursAndMinsFromDate,
@@ -170,7 +174,7 @@ const filterItems = ref([
     { label: 'Por fecha', value: 'date' },
 ]);
 
-const expandedSpaces = ref({});    // Almacena el estado abierto/cerrado del desplegable de cada nombre del espacio. 
+const expandedNames = ref({});    // Almacena el estado abierto/cerrado del desplegable de cada nombre del espacio. 
 const expandedDates = ref({});    // Almacena el estado abierto/cerrado del desplegable de cada fecha.
 
 const groupedByName = computed(() => {
@@ -186,7 +190,7 @@ const groupedByName = computed(() => {
         reservationsToSearch.sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
 
     reservationsToSearch.forEach(reservation => {
-        const nameKey = reservation.spaceId.name;
+        const nameKey = reservation.spaceId?.name;
         if (!groups[nameKey]) {
             groups[nameKey] = [];
         }
@@ -231,7 +235,7 @@ const groupedByDate = computed(() => {
 });
 
 function toggleSpace(nameKey) {
-    expandedSpaces.value[nameKey] = !expandedSpaces.value[nameKey];
+    expandedNames.value[nameKey] = !expandedNames.value[nameKey];
 };
 
 function toggleDate(dateKey) {
@@ -275,10 +279,20 @@ const calendarApp = createCalendar({
     callbacks: {
         onEventClick(calendarEvent) {
             const selectedReservation = allReservations.value.find(reservation => reservation._id === calendarEvent.id);
+
+            // si es el pasado, es hoy, o queda menos de 24 horas para que empiece, 
+            // NO se puede editar
+            if (calcPastEvents(calendarEvent) ||
+                isToday(calendarEvent.start) ||
+                isWithinNext24Hours(calendarEvent)
+            )
+                selectedReservation.canEdit = false;
+            else selectedReservation.canEdit = true;
+
             reservationStore.setReservation(selectedReservation);
         },
         onClickDate(date) { // p.e. YYYY-MM-DD
-            if (!calcPastDates(new Date(date))) return;      // Si se hace clic en una fecha pasada, se ignora
+            if (calcPastDates(new Date(date))) return;      // Si se hace clic en una fecha pasada, se ignora
 
             const stringDate = parseToStringDate(new Date(date));
 
@@ -292,7 +306,7 @@ const calendarApp = createCalendar({
             dialog.value = true;
         },
         onClickDateTime(dateTime) {
-            if (!calcPastEvents(dateTime)) return;      // Si se hace clic en una fecha pasada, se ignora
+            if (calcPastEvents(dateTime)) return;      // Si se hace clic en una fecha pasada, se ignora
 
             // Se dividen las fechas y horas en partes separadas
             let [datePart, timePart] = dateTime.split(" ");
@@ -353,7 +367,7 @@ function addCalendarEvents(reservations) {
 
         return {
             id: reservation._id, // Usar el ID de la reserva como identificador único
-            title: `Reserva en ${reservation.spaceId.name}`,
+            title: `Reserva en ${reservation.spaceId?.name}`,
             start: formattedStart,  // start: '2024-06-28 08:00',
             end: formattedEnd,      // end: '2024-06-28 10:00',
             options: reservation.periodicReservationId ? true : false,
@@ -374,8 +388,8 @@ watch(
     groupedByName,
     (newVal) => {
         for (const nameKey in newVal) {
-            if (expandedSpaces.value[nameKey] === undefined) {
-                expandedSpaces.value[nameKey] = true;
+            if (expandedNames.value[nameKey] === undefined) {
+                expandedNames.value[nameKey] = true;
             }
         }
     },
@@ -406,14 +420,14 @@ function roundToNearestQuarterHour(timeString) {
 
 
 function getWindowParams() {
-    const storedWindow = reservationStore.getWindow; // o localStorage, etc.
+    const storedWindow = reservationStore.getWindowParams; // o localStorage, etc.
     if (storedWindow) {
         mainTab.value = storedWindow.mainTab;
         subTab.value = storedWindow.subTab;
         list.value = storedWindow.list;
         filter.value = storedWindow.filter;
-        if (storedWindow.expandedSpaces) {
-            expandedSpaces.value = storedWindow.expandedSpaces;
+        if (storedWindow.expandedNames) {
+            expandedNames.value = storedWindow.expandedNames;
         }
         if (storedWindow.expandedDates) {
             expandedDates.value = storedWindow.expandedDates;
@@ -427,10 +441,10 @@ function setWindowParams() {
         subTab: subTab.value,
         list: list.value,
         filter: filter.value,
-        expandedSpaces: expandedSpaces.value,
+        expandedNames: expandedNames.value,
         expandedDates: expandedDates.value
     };
-    reservationStore.setWindow(storedWindow);
+    reservationStore.setWindowParams(storedWindow);
 };
 
 
@@ -448,17 +462,25 @@ function openReservation() {
     router.push('/reservationInfo');
 };
 
+function editReservation() {
+    const reservation = reservationStore.getReservation;
+    spaceStore.setSelectedSpace(reservation.spaceId);
+    router.push('/editReservationInfo');
+};
+
 function openDeleteReservation() {
     deleteModal.value = true;
 };
 
 function deleteReservation() {
+    const toast = useToast();
     const reservation = reservationStore.getReservation;
     if (reservation.periodicReservationId && deleteAllReservations.value) {
         reservationService.deletePeriodicReservation(reservation.periodicReservationId._id)
             .then(res => {
                 closeModal();
                 getAllEvents();
+                toast.success('Reserva periódica eliminada con éxito');
             })
             .catch(error => {
                 console.error('Error al borrar reserva:', error);
@@ -469,6 +491,7 @@ function deleteReservation() {
             .then(res => {
                 closeModal();
                 getAllEvents();
+                toast.success('Reserva eliminada con éxito');
             })
             .catch(error => {
                 console.error('Error al borrar reserva:', error);

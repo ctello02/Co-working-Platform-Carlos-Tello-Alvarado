@@ -11,8 +11,9 @@
                         <v-col>
                             <span class="ml-n1 text-h4">{{ user?.name }}</span>
                             <v-spacer />
-                            <span v-if="user?.isCompany" style="color: grey;" class="text-h6">Empresa, CIF: {{ user?.cif
-                            }}</span>
+                            <span v-if="user?.isCompany" style="color: grey;" class="text-h6">
+                                Empresa, CIF: {{ user?.cif }}
+                            </span>
                             <span v-else style="color: grey;" class="text-h6">Usuario</span>
                         </v-col>
                     </v-row>
@@ -69,6 +70,10 @@
         <AskModal v-model="deleteModal" :title="'¿Borrar usuario?'"
             :message="'¿Estás seguro de que quieres borrar este usuario?'" :actionText="'Borrar usuario'"
             :closeModal="closeDialog" :action="deleteUser" />
+
+        <AskModal v-model="bulkDeleteModal" :maxWidth="'600px'" :title="'Este usuario tiene reservas pendientes'"
+            :message="'Este usuario tiene reservas pendientes, ¿Estás seguro de que quieres borrarlo?'"
+            :actionText="'Borrar usuario'" :closeModal="closeBulkDeleteDialog" :action="bulkDeleteUser" />
     </v-container>
 
 </template>
@@ -86,6 +91,7 @@ export default {
             userStore: null,
             user: null,
             deleteModal: false,
+            bulkDeleteModal: false,
             successToastId: null,
         };
     },
@@ -117,12 +123,33 @@ export default {
         closeDialog() {
             this.deleteModal = false;
         },
+        openBulkDeleteModal() {
+            this.bulkDeleteModal = true;
+        },
+        closeBulkDeleteDialog() {
+            this.bulkDeleteModal = false;
+        },
         deleteUser() {
             const toast = useToast();
             userService.deleteUser(this.user._id)
-                .then(res => {
-                    console.log(res.data);
-                    this.deleteModal = false;
+                .then(() => {
+                    this.closeDialog()
+                    this.userStore.clearSelectedUser();
+                    this.routerBack();
+                    this.successToastId = toast.error('Usuario eliminado con éxito');
+                })
+                .catch(error => {
+                    console.log(error);
+                    if (error.response.status === 409) {
+                        this.openBulkDeleteModal();
+                    }
+                });
+        },
+        bulkDeleteUser() {
+            const toast = useToast();
+            userService.bulkDeleteUser(this.user._id)
+                .then(() => {
+                    this.closeBulkDeleteDialog();
                     this.userStore.clearSelectedUser();
                     this.routerBack();
                     this.successToastId = toast.error('Usuario eliminado con éxito');
@@ -130,7 +157,7 @@ export default {
                 .catch(error => {
                     console.log(error);
                 });
-        }
+        },
     },
 };
 </script>

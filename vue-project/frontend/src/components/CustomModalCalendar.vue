@@ -5,15 +5,22 @@
                 <v-col class="d-flex align-center justify-end ga-3">
                     <v-btn @click="() => emit('see-event')" variant="text" size="x-small"
                         icon="mdi-information-outline" />
-                    <v-btn @click="() => emit('edit-event')" variant="text" size="x-small" icon="mdi-pencil" />
-                    <v-btn @click="() => emit('delete-event')" variant="text" size="x-small" color="error"
-                        icon="mdi-trash-can-outline" />
+                    <v-btn v-if="reservation?.canEdit" @click="() => emit('edit-event')" variant="text" size="x-small"
+                        icon="mdi-pencil" />
+                    <v-btn v-if="reservation?.canEdit" @click="() => emit('delete-event')" variant="text" size="x-small"
+                        color="error" icon="mdi-trash-can-outline" />
                     <v-btn @click="() => emit('close')" variant="text" size="x-small" icon="mdi-close" />
                 </v-col>
             </v-row>
             <v-row class="mt-n6">
                 <v-col>
                     <span class="text-h5">{{ reservation?.spaceId.name }}</span>
+                </v-col>
+            </v-row>
+            <v-row v-if="reservation?.periodicReservationId">
+                <v-col class="d-flex align-center ga-1 mt-n5 mb-2">
+                    <v-icon size="small" class="text-medium-emphasis">mdi-repeat</v-icon>
+                    <small class="text-medium-emphasis">Reserva periódica</small>
                 </v-col>
             </v-row>
             <v-row>

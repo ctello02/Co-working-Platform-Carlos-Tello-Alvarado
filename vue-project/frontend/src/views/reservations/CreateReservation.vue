@@ -4,6 +4,8 @@
       <v-row>
         <span class="text-h4">Nueva reserva</span>
       </v-row>
+
+      <!-- Filtros generales -->
       <v-row>
         <v-card class="pa-2 mt-4 mb-n3" width="100%">
           <v-card-text class="d-flex justify-space-between mb-n5 flex-wrap">
@@ -16,7 +18,8 @@
                   <v-menu :close-on-content-click="false" location="bottom" transition="slide-y-transition">
                     <template v-slot:activator="{ props }">
                       <v-text-field density="compact" prepend-icon="mdi-calendar-month-outline" v-bind="props"
-                        variant="outlined" class="ml-n3" :readonly="true">{{ formattedDate }}</v-text-field>
+                        variant="outlined" class="ml-n3" :readonly="true">{{
+                          formattedDate }}</v-text-field>
                     </template>
                     <v-date-picker class="ml-10" :min-date="new Date()" is-required v-model="date" />
                   </v-menu>
@@ -61,110 +64,101 @@
           </v-card-text>
         </v-card>
       </v-row>
+
+      <!-- Loader -->
       <div v-if="isLoading" class="loader-overlay">
         <v-progress-circular indeterminate color="primary" size="50"></v-progress-circular>
       </div>
-      <v-row class="mx-n7">
-        <v-col v-if="!filteredSpaces.length && !isLoading" class="d-flex justify-center align-center mt-5">
-          <span class="text-h4">No hay espacios disponibles para esos filtros de búsqueda</span>
-        </v-col>
-        <v-col v-else class="px-0">
-          <v-container fluid>
-            <v-row>
-              <v-col v-for="space in filteredSpaces" :key="space._id" xl="3" lg="4" md="6" sm="12" xs="12">
-                <v-card>
-                  <v-img :src="space?.image" color="surface-variant" height="200px" cover></v-img>
-                  <v-card-title class="text-h4 mb-1">{{ space?.name }}</v-card-title>
-                  <v-card-text>
-                    <v-row class="d-flex align-center">
-                      <v-col>
-                        <v-row class="d-flex align-center">
-                          <v-col cols="1">
-                            <v-icon size="small" icon="mdi-weather-sunny" />
-                          </v-col>
-                          <v-col><span class="text-h6">Abre:
-                              {{ makeHoursAndMinutes(space?.opening) }}</span></v-col>
-                        </v-row>
-                      </v-col>
-                      <v-col>
-                        <v-row class="d-flex align-center">
-                          <v-col cols="1">
-                            <v-icon size="small" icon="mdi-weather-night" />
-                          </v-col>
-                          <v-col><span class="text-h6">Cierra:
-                              {{ makeHoursAndMinutes(space?.closing) }}</span></v-col>
-                        </v-row>
-                      </v-col>
-                    </v-row>
-                    <v-row>
-                      <v-col>
-                        <v-row>
-                          <v-col cols="1" class="d-flex align-center">
-                            <v-icon icon="mdi-timer-outline" size="small" />
-                          </v-col>
-                          <v-col>
-                            <span class="pt-2 text-h6" v-if="space.duration < 60">Tiempos de: {{ space.duration }}
-                              minutos</span>
-                            <span class="pt-2 text-h6" v-if="space.duration == 60">Tiempos de: {{ space.duration / 60 }}
-                              hora</span>
-                            <span class="pt-2 text-h6" v-if="space.duration > 60">Tiempos de: {{ space.duration / 60 }}
-                              horas</span>
-                          </v-col>
-                        </v-row>
-                      </v-col>
-                    </v-row>
-                    <v-row>
-                      <v-col>
-                        <v-row class="d-flex align-center">
-                          <v-col cols="1">
-                            <v-icon icon="mdi-table-chair" size="small" />
-                          </v-col>
-                          <v-col><span class="text-h6">Máx. {{ space?.seats }} asientos</span></v-col>
-                        </v-row>
-                      </v-col>
-                    </v-row>
-                    <v-row>
-                      <v-col>
-                        <v-select :model-value="reservationTimes[space._id]?.reservationStartTime || null"
-                          @update:model-value="val => updateReservation(space, 'reservationStartTime', val)"
-                          :items="availableTimes[space._id]" label="Inicio" prepend-icon="mdi-timer-sand"
-                          variant="outlined" density="compact" clearable />
-                      </v-col>
-                      <v-col>
-                        <v-select :model-value="reservationTimes[space._id]?.reservationEndTime || null"
-                          @update:model-value="val => updateReservation(space, 'reservationEndTime', val)"
-                          :items="calcEndTimeOfSpace(space)" item-title="label" item-value="value" label="Final"
-                          prepend-icon="mdi-timer-sand-complete" variant="outlined" density="compact" clearable
-                          :disabled="!reservationTimes[space._id]?.reservationStartTime" />
-                      </v-col>
-                    </v-row>
-                    <v-row class="mt-n6 mx-0 mb-2">
-                      <v-fade-transition>
-                        <v-alert v-if="reservationTimes[space._id]?.reservationNotAllowed" type="error"
-                          icon="mdi-alert-outline" density="compact" variant="tonal">
-                          Ya tiene una reserva a esa hora
-                        </v-alert>
-                      </v-fade-transition>
 
-                      <v-fade-transition>
-                        <v-alert v-if="reservationTimes[space._id]?.seatsLeft"
-                          :type="reservationTimes[space._id].seatsLeft == space.seats ? 'success' : reservationTimes[space._id].seatsLeft > 3 ? 'warning' : 'error'"
-                          icon="mdi-information-outline" density="compact" variant="tonal">
-                          Quedan
-                          {{ reservationTimes[space._id].seatsLeft }} asientos
-                        </v-alert>
-                      </v-fade-transition>
-                    </v-row>
-                  </v-card-text>
-                  <v-card-actions class="mt-n6 mx-2 mb-2">
-                    <TonalButton block class="" color="blue" text="Reservar"
-                      :disabled="(!reservationTimes[space._id]?.reservationStartTime || !reservationTimes[space._id]?.reservationEndTime) || reservationTimes[space._id]?.reservationNotAllowed == true"
-                      @click="createReservation(space)" />
-                  </v-card-actions>
-                </v-card>
-              </v-col>
-            </v-row>
-          </v-container>
+      <!-- Espacios filtrados -->
+      <v-row class="mt-6" v-if="!filteredSpaces.length && !isLoading">
+        <v-col class="text-center">
+          <span class="text-h5">No hay espacios disponibles con estos filtros</span>
+        </v-col>
+      </v-row>
+      <v-row class="mt-6 mx-n6" v-else>
+        <v-col v-for="spc in filteredSpaces" :key="spc._id" cols="12" md="6" lg="4">
+          <v-card>
+            <v-img :src="spc.image" height="200px" cover />
+            <v-card-title class="text-h4 mb-n1">{{ spc.name }}</v-card-title>
+            <v-card-text>
+              <div class="d-flex align-center ga-2">
+                <v-icon style="color: #4f5b66">mdi-clock-outline</v-icon>
+                <span class="text-h6" style="color: #4f5b66">
+                  Abre: {{ makeHoursAndMinutes(spc.opening) }} —
+                  Cierra: {{ makeHoursAndMinutes(spc.closing) }}
+                </span>
+              </div>
+              <div class="d-flex align-center ga-2">
+                <v-icon style="color: #4f5b66">mdi-table-chair</v-icon>
+                <span class="text-h6" style="color: #4f5b66">
+                  Capacidad: {{ spc.seats }} asientos
+                </span>
+              </div>
+              <div class="d-flex align-center ga-2">
+                <v-icon style="color: #4f5b66">mdi-timer-outline</v-icon>
+                <span class="text-h6" style="color: #4f5b66" v-if="spc.duration < 60">Tiempos de: {{ spc.duration }}
+                  minutos</span>
+                <span class="text-h6" style="color: #4f5b66" v-if="spc.duration == 60">Tiempos de: {{ spc.duration / 60
+                }}
+                  hora</span>
+                <span class="text-h6" style="color: #4f5b66" v-if="spc.duration > 60">Tiempos de: {{ spc.duration / 60
+                }}
+                  horas</span>
+              </div>
+              <div class="d-flex align-center ga-2">
+                <v-icon style="color: #4f5b66">mdi-hand-coin-outline</v-icon>
+                <span class="text-h6" style="color: #4f5b66" v-if="spc.pricing > 0">
+                  Precio por reserva: {{ spc.pricing }}€
+                </span>
+                <span class="text-h6" style="color: #4f5b66" v-else>
+                  Reservas gratis
+                </span>
+              </div>
+            </v-card-text>
+
+            <v-divider />
+
+            <!-- Selectores siempre visibles -->
+            <v-card-text>
+              <v-row>
+                <v-col>
+                  <v-select :model-value="slotsBySpace[spc._id].reservationTimes.start"
+                    @update:model-value="val => slotsBySpace[spc._id].updateReservation('start', val)"
+                    :items="slotsBySpace[spc._id].availableStartTimes" label="Inicio" prepend-icon="mdi-timer-sand"
+                    variant="outlined" density="compact" clearable />
+                </v-col>
+                <v-col>
+                  <v-select :model-value="slotsBySpace[spc._id].reservationTimes.end"
+                    @update:model-value="val => slotsBySpace[spc._id].updateReservation('end', val)"
+                    :items="slotsBySpace[spc._id].availableEndTimes" label="Fin" prepend-icon="mdi-timer-sand-complete"
+                    :disabled="!slotsBySpace[spc._id].reservationTimes.start" variant="outlined" density="compact"
+                    clearable />
+                </v-col>
+              </v-row>
+              <v-row>
+                <v-col cols="12">
+                  <v-alert class="mt-n8 mb-12" v-if="slotsBySpace[spc._id].reservationTimes.end
+                    && slotsBySpace[spc._id].maxSeatsAllowed === 0" type="error" variant="tonal" density="compact">
+                    Ya tienes una reserva en ese horario
+                  </v-alert>
+                  <v-alert class="mt-n8 mb-12" v-else-if="slotsBySpace[spc._id].reservationTimes.end" :type="slotsBySpace[spc._id].maxSeatsAllowed >= reservationSeats
+                    ? 'success'
+                    : 'error'
+                    " density="compact" variant="tonal">
+                    Quedan {{ slotsBySpace[spc._id].maxSeatsAllowed }} asientos
+                  </v-alert>
+                </v-col>
+              </v-row>
+            </v-card-text>
+
+            <v-card-actions class="mt-n14 mx-2 mb-2">
+              <TonalButton block color="blue" text="Reservar" :disabled="!slotsBySpace[spc._id].reservationTimes.start ||
+                !slotsBySpace[spc._id].reservationTimes.end ||
+                slotsBySpace[spc._id].maxSeatsAllowed < reservationSeats
+                " @click="createReservation(spc)" />
+            </v-card-actions>
+          </v-card>
         </v-col>
       </v-row>
     </v-col>
@@ -172,600 +166,208 @@
 </template>
 
 <script setup>
-import { ref, reactive, watch, onMounted } from 'vue';
+import { ref, watch, onMounted, computed, reactive } from 'vue';
 import { useRouter } from 'vue-router';
-import TonalButton from '@/components/TonalButton.vue';
-import { spaceService } from '@/services/spaceService';
-import { reservationService } from '@/services/reservationService';
-import { useUserStore } from '@/store/userStore';
 import { useSpaceStore } from '@/store/spaceStore';
+import { useUserStore } from '@/store/userStore';
 import { useReservationStore } from '@/store/reservationStore';
+import { reservationService } from '@/services/reservationService';
+import { spaceService } from '@/services/spaceService';
 import { useTime } from '@/composables/useTime';
+import { useReservationSlots } from '@/composables/useReservationSlots';
+import TonalButton from '@/components/TonalButton.vue';
 
-// -----------------------------------------------------------------------------------------------------
-// Instancias de router y stores
 const router = useRouter();
-const userStore = useUserStore();
 const spaceStore = useSpaceStore();
+const userStore = useUserStore();
 const reservationStore = useReservationStore();
 
-// Extraemos funciones del composable useTime
+// helpers de tiempo
 const {
   timeFrames,
   generateAllTimes,
-  makeMinutes,
-  makeHoursAndMinutes,
-  getHoursAndMinsFromDate,
   parseToStringDate,
   parseToYYYYMMDD,
+  makeMinutes,
+  makeHoursAndMinutes
 } = useTime();
-// Cambiamos el label de la última duración del filtro para que incluya el 'o más'
-// Ya que en timeFrames no lo incluye
-timeFrames[timeFrames.length - 1].label = '3 horas o más';
 
-
-// Variables reactivas
+// Estado general
 const spaces = ref([]);
 const filteredSpaces = ref([]);
-const reservationTimes = reactive({});
+const date = ref(new Date());
+const formattedDate = ref(parseToStringDate(date.value));
+const startTime = ref(null);
+const initialLoad = ref(false);
+const durationSearched = ref(null);
 const reservationSeats = ref(1);
+const isLoading = ref(false);
 const reservationsByDate = ref([]);
 const periodicReservations = ref([]);
 
-const date = ref(new Date());
-const today = ref(new Date());
-const formattedDate = ref(parseToStringDate(new Date()));
+// Diccionario de slots por espacio
+const slotsBySpace = reactive({});
 
-const startTime = ref(null);
-const durationSearched = ref(null);
+// Cada vez que cambiamos fecha, recargamos datos y slots
+watch(date, () => {
+  formattedDate.value = parseToStringDate(date.value);
+  if (initialLoad.value) {
+    startTime.value = null;
+  }
+  // Marcamos que ya pudo cargar la hora inicial de la store
+  // El problema es que se inicializaba a null aunque hubiese una hora en la store
+  initialLoad.value = true;
+  loadDayData();
+});
 
-const availableTimes = reactive({});
-const isLoading = ref(false);
-// -----------------------------------------------------------------------------------------------------
-
-
-// -----------------------------------------------------------------------------------------------------
-// Hook onMounted
-// -----------------------------------------------------------------------------------------------------
-onMounted(() => {
-  // Llamamos a getSpaces para obtener los espacios al montar el componente
-  getSpaces();
+onMounted(async () => {
+  spaces.value = (await spaceService.getSpaces()).data.spaces;
+  await loadDayData();
 
   const calendarDate = reservationStore.getCalendarDate;
-
-  if (calendarDate) {                     // Comprueba si hay una fecha guardada
-    let [datePart, timePart] = calendarDate.split(" ");
-
-    if (!timePart) {                      // Si solo tiene la fecha, guardamos la parte de la fecha
-      date.value = new Date(datePart);
-    } else {                              // Si tiene la fecha y la hora, guardamos ambas partes
-      startTime.value = timePart;         // Guardar la hora en otra variable
-      date.value = new Date(datePart);    // Guardar solo la fecha
+  if (calendarDate) {
+    const [datePart, timePart] = calendarDate.split(' ');
+    date.value = new Date(datePart);
+    if (timePart) {
+      startTime.value = timePart;
     }
   }
 });
 
-// Obtiene los espacios a través del servicio
-const getSpaces = () => {
-  spaceService.getSpaces()
-    .then(res => {
-      spaces.value = res.data.spaces;
-      filterSpaces();
-    })
-    .catch(error => {
-      console.error(error);
-    });
-};
-// -----------------------------------------------------------------------------------------------------
+// Cada vez que cambian filtros, actualizamos lista
+watch([startTime, durationSearched, reservationSeats], filterSpaces);
 
-
-// -----------------------------------------------------------------------------------------------------
-// Funciones para filtrar los espacios en el DOM.
-// Obtiene las reservas del día seleccionado, filtra las horas disponibles 
-// y calcula la duración disponible
-// -----------------------------------------------------------------------------------------------------
-// Filtra los espacios en función de varios criterios (horario, duración, asientos)
-const filterSpaces = async () => {
+// Función que carga reservas y reconstruye slots por espacio
+async function loadDayData() {
   isLoading.value = true;
-  if (!reservationsByDate.value || reservationsByDate.value.length === 0) {
-    await getReservationsByDate(formattedDate.value);
-  }
+  const day = parseToYYYYMMDD(formattedDate.value);
 
-  if (!periodicReservations.value || periodicReservations.value.length === 0) {
-    await getPeriodicReservations();
-  }
-
-  updateAvailableTimes();
-
-  filteredSpaces.value = spaces.value.filter(space => {
-    const isAvailable = availableTimes[space._id] || [];
-    if (isAvailable.length === 0) return false;
-
-    const matchesStartTime = startTime.value == null ||
-      (makeHoursAndMinutes(space.opening) <= startTime.value &&
-        makeHoursAndMinutes(space.closing) > startTime.value &&
-        availableTimes[space._id].includes(startTime.value));
-
-    const matchesDuration = durationSearched.value == null ||
-      (space.duration <= durationSearched.value &&
-        calcDurationAvailable(durationSearched.value, availableTimes[space._id], space));
-
-    const matchesSeats = reservationSeats.value == null || space.seats >= reservationSeats.value;
-
-    return matchesStartTime && matchesDuration && matchesSeats;
-  });
-  isLoading.value = false;
-};
-
-// Obtiene las reservas para la fecha seleccionada
-const getReservationsByDate = async (dateParam) => {
-  const parsedDate = parseToYYYYMMDD(dateParam);
+  let oneShot = [];
   try {
-    const response = await reservationService.getReservationsByDate(parsedDate);
-    reservationsByDate.value = response.data.reservations;
-  } catch (error) {
-    console.error(error);
-  }
-};
+    const d1 = await reservationService.getReservationsByDate(day);
+    oneShot = d1.data.reservations || [];
+  } catch (e) {
+    if (e.response?.status === 404) {
+      // no hay reservas: lo tomamos como un array vacío
+      oneShot = [];
+    } else throw e;
 
-// Obtiene las reservas periódicas
-async function getPeriodicReservations() {
+  }
+  reservationsByDate.value = oneShot;
+
+  let periodic = [];
   try {
-    const response = await reservationService.getPeriodicReservations();
-    periodicReservations.value = response.data.periodicReservations;
-  } catch (error) {
-    console.error(error);
+    const d2 = await reservationService.getPeriodicReservations();
+    periodic = d2.data.periodicReservations || [];
+  } catch (e) {
+    if (e.response?.status === 404) {
+      // no hay reservas periódicas: lo tomamos como un array vacío
+      periodic = [];
+    } else throw e;
   }
-};
+  periodicReservations.value = periodic;
 
-// Actualiza los horarios disponibles de cada espacio
-const updateAvailableTimes = () => {
-  const todayInMinutes = today.value.getHours() * 60 + today.value.getMinutes();
-
-  const dateSelected = new Date(date.value);
-  dateSelected.setHours(0, 0, 0, 0);
-
-  spaces.value.forEach(space => {
-    const temp = calcStartTimeOfSpace(space);
-    if (dateSelected > today.value) {
-      availableTimes[space._id] = temp;
-    } else {
-      availableTimes[space._id] = temp.filter(spaceTime => makeMinutes(spaceTime) > todayInMinutes);
-    }
-  });
-};
-
-// Verifica si existe un intervalo de tiempo disponible para la duración solicitada
-const calcDurationAvailable = (duration, availableTimesForSpace, space) => {
-  let hoursReserved = reservationStore.getHoursReservedBySpace(space._id) || [];
-  const first = makeMinutes(availableTimesForSpace[0]);
-
-  hoursReserved = hoursReserved?.filter(hour => hour.seatsReserved >= space.seats);
-
-  if (!hoursReserved || hoursReserved.length === 0) {
-    const total = space.closing - first;
-    return total >= duration;
-  }
-
-  const allTimes = [];
-
-  for (let minute = first; minute <= space.closing; minute += 15) {
-    allTimes.push(minute);
-  }
-
-  let flag = false;
-  for (let time of allTimes) {
-    for (let hourReserved of hoursReserved) {
-      if ((time + duration > space.closing)) {
-        flag = false;
-        break;
-      }
-      if (time >= hourReserved.startMinutes && time < hourReserved.endMinutes) {
-        flag = false;
-        break;
-      }
-      if (time >= hourReserved.endMinutes && time + duration >= hourReserved.endMinutes) {
-        flag = true;
-        continue;
-      }
-
-      if (time < hourReserved.startMinutes && time + duration <= hourReserved.startMinutes) {
-        flag = true;
-        break;
-      }
-      if (time < hourReserved.startMinutes && time + duration > hourReserved.startMinutes) {
-        flag = false;
-        break;
-      }
-      if (time === hourReserved.startMinutes && time + duration === hourReserved.endMinutes) {
-        flag = false;
-        break;
-      }
-    }
-    if (flag) return true;
-  }
-  return false;
-};
-// -----------------------------------------------------------------------------------------------------
-
-
-// -----------------------------------------------------------------------------------------------------
-// Cálculo de las horas disponibles en la hora de inicio y fin de un espacio
-// -----------------------------------------------------------------------------------------------------
-// Calcula el inicio de los intervalos disponibles para un espacio
-const calcStartTimeOfSpace = (space) => {
-  return calcFrameTimesOfSpace(space, space.opening, space.closing, 15, space.duration, true);
-};
-
-// Calcula el final de los intervalos disponibles a partir del inicio seleccionado
-const calcEndTimeOfSpace = (space) => {
-  if (reservationTimes[space._id] != null && reservationTimes[space._id].reservationStartTime != undefined) {
-    const start = makeMinutes(reservationTimes[space._id].reservationStartTime);
-    return calcFrameTimesOfSpace(space, start + space.duration, space.closing, space.duration, space.duration, false);
-  }
-};
-
-// Calcula los intervalos (frames) de tiempo disponibles para un espacio
-const calcFrameTimesOfSpace = (space, startingTime, endingTime, interval, duration, needsVerification) => {
-  const availableHours = [];
-  let hoursReserved = [];
-
-  // Si hay reservas periódicas
-  if (periodicReservations.value.length > 0) {
-    hoursReserved = checkPeriodicReservations(hoursReserved, space);
-  }
-
-  if (reservationsByDate.value.length > 0) {
-    const events = reservationsByDate.value
-      .filter(reservation => reservation.spaceId === space._id && reservation.periodicReservationId == null)
-      .flatMap(reservation => {
-        const startTimeStr = getHoursAndMinsFromDate(reservation.startTime);
-        const endTimeStr = getHoursAndMinsFromDate(reservation.endTime);
-        const seats = reservation.seatsReserved;
-        const startMinutes = makeMinutes(startTimeStr);
-        const endMinutes = makeMinutes(endTimeStr);
-        return [
-          { time: startMinutes, change: seats },
-          { time: endMinutes, change: -seats },
-        ];
-      });
-    events.sort((a, b) => a.time - b.time);
-
-    let currentSeats = 0;
-    let currentTime = events[0] ? events[0].time : 0;
-
-    for (let i = 0; i < events.length; i++) {
-      const event = events[i];
-      if (event.time !== currentTime) {
-        if (currentSeats !== 0) {
-          hoursReserved.push({
-            start: makeHoursAndMinutes(currentTime),
-            end: makeHoursAndMinutes(event.time),
-            startMinutes: currentTime,
-            endMinutes: event.time,
-            seatsReserved: currentSeats,
-            userId: event.userId,
-          });
-        }
-        currentTime = event.time;
-      }
-      currentSeats += event.change;
-    }
-  }
-
-  if (hoursReserved.length > 0) {
-    reservationStore.setHoursReservedBySpace(space._id, hoursReserved);
-  }
-
-  for (let time = startingTime; time <= endingTime; time += interval) {
-    if (needsVerification && time + duration > endingTime) break;
-    const currentTimeFormatted = makeHoursAndMinutes(time);
-
-    if (hoursReserved.length > 0) {
-      const { reserved, isEnd } = isTimeReserved(time, duration, hoursReserved, space, needsVerification);
-      if (reserved) continue;
-      if (isEnd) {
-        availableHours.push(currentTimeFormatted);
-        break;
-      }
-    }
-    availableHours.push(currentTimeFormatted);
-  }
-  return availableHours;
-};
-
-
-// ------------------------------------------------
-// Función para comprobar si hay reservas periodicas
-// ------------------------------------------------
-function checkPeriodicReservations(hoursReserved, space) {
-
-  // Antes que nada, hay que ver si podría crear la reserva periódica
-  // Hay que ver si hay algún periodicReservation con el mismo espacio y horario
-  const periodicEvents = periodicReservations.value
-    .filter(periodicReservation => {
-      if (periodicReservation.spaceId == space._id) {
-        let selectedDate = new Date();
-        if (date.value) {
-          selectedDate = new Date(date.value);
-        }
-        selectedDate.setHours(0, 0, 0, 0);
-
-        const periodicReservationDate = new Date(periodicReservation.startTime);
-        periodicReservationDate.setHours(0, 0, 0, 0);
-
-        if (selectedDate < periodicReservationDate) {
-          return false;
-        }
-
-        if (periodicReservation.periodicity === 'weekly') {
-          if (periodicReservationDate.getDay() !== selectedDate.getDay()) {
-            // Si no coinciden los días de la reserva que se quiere crear y de la periodicReservation que existe, se puede reservar
-            return false;
-          }
-        } else if (periodicReservation.periodicity === 'monthly') {
-          if (periodicReservationDate.getDate() !== selectedDate.getDate()) {
-            // Si no coinciden los días de la reserva que se quiere crear y de la periodicReservation que existe, se puede reservar
-            return false;
-          }
-        }
-        return true;
-      } return false;
-    }).flatMap(periodicReservation => {
-      const startTimeStr = getHoursAndMinsFromDate(periodicReservation.startTime);
-      const endTimeStr = getHoursAndMinsFromDate(periodicReservation.endTime);
-      const seats = periodicReservation.seatsReserved;
-      const startMinutes = makeMinutes(startTimeStr);
-      const endMinutes = makeMinutes(endTimeStr);
-      return [
-        { time: startMinutes, change: seats },
-        { time: endMinutes, change: -seats },
-      ];
+  // Inicializa slots para cada espacio
+  spaces.value.forEach(spc => {
+    slotsBySpace[spc._id] = useReservationSlots({
+      space: computed(() => spaces.value.find(s => s._id === spc._id)),
+      reservationDate: date,
+      reservationsByDate,
+      periodicReservations,
+      initialReservation: null
     });
-  periodicEvents.sort((a, b) => a.time - b.time);
-
-  let currentSeats = 0;
-  let currentTime = periodicEvents[0] ? periodicEvents[0].time : 0;
-
-  for (let i = 0; i < periodicEvents.length; i++) {
-    const event = periodicEvents[i];
-    if (event.time !== currentTime) {
-      if (currentSeats !== 0) {
-        hoursReserved.push({
-          start: makeHoursAndMinutes(currentTime),
-          end: makeHoursAndMinutes(event.time),
-          startMinutes: currentTime,
-          endMinutes: event.time,
-          seatsReserved: currentSeats,
-          userId: event.userId,
-        });
-      }
-      currentTime = event.time;
-    }
-    currentSeats += event.change;
-  }
-
-  return hoursReserved;
-};
-
-// Determina si un intervalo de tiempo se encuentra reservado
-const isTimeReserved = (time, duration, hoursReserved, space, needsVerification) => {
-  const reservationInterval = binarySearchReservation(time, duration, hoursReserved);
-  if (!reservationInterval) return { reserved: false, isEnd: false };
-
-  if (!needsVerification && time + duration > reservationInterval.startMinutes && reservationInterval.seatsReserved >= space.seats) {
-    return { reserved: false, isEnd: true };
-  }
-  if (!needsVerification && time >= reservationInterval.startMinutes && reservationInterval.seatsReserved >= space.seats) {
-    return { reserved: false, isEnd: true };
-  }
-  if (time + duration > reservationInterval.startMinutes && time + duration < reservationInterval.endMinutes && reservationInterval.seatsReserved >= space.seats) {
-    return { reserved: true, isEnd: false };
-  }
-  if (time === reservationInterval.startMinutes && reservationInterval.seatsReserved < space.seats) {
-    return { reserved: false, isEnd: false };
-  }
-  if (time >= reservationInterval.startMinutes && reservationInterval.seatsReserved >= space.seats) {
-    return { reserved: true, isEnd: false };
-  }
-  return { reserved: false, isEnd: false };
-};
-
-// Búsqueda binaria para encontrar un intervalo que contenga el tiempo
-const binarySearchReservation = (time, duration, hoursReserved) => {
-  let low = 0;
-  let high = hoursReserved.length - 1;
-  while (low <= high) {
-    const mid = Math.floor((low + high) / 2);
-    const interval = hoursReserved[mid];
-    if (time >= interval.startMinutes && time < interval.endMinutes) return interval;
-    if (time + duration >= interval.startMinutes && time + duration < interval.endMinutes) return interval;
-    if (time < interval.startMinutes) {
-      high = mid - 1;
-    } else {
-      low = mid + 1;
-    }
-  }
-  return null;
-};
-// -----------------------------------------------------------------------------------------------------
-
-
-// -----------------------------------------------------------------------------------------------------
-// Funciones auxiliares para la creación de espacios en el DOM.
-// Además, maneja las variables de la hora de inicio y fin
-// -----------------------------------------------------------------------------------------------------
-// Actualiza los datos de reserva para un espacio
-const updateReservation = (space, key, value) => {
-  if (!reservationTimes[space._id]) {
-    reservationTimes[space._id] = { reservationStartTime: null, reservationEndTime: null, seatsLeft: null, reservationNotAllowed: false };
-  }
-
-  reservationTimes[space._id][key] = value;
-
-  if (key === 'reservationStartTime') {
-    reservationTimes[space._id].reservationEndTime = null;
-    reservationTimes[space._id].reservationNotAllowed = false;
-  }
-
-  if (key === 'reservationEndTime' && value != null) {
-    calcSeatsAllowed(space);
-    calcReservationAllowed(space);
-  }
-
-  if (value == null) {
-    reservationTimes[space._id].seatsLeft = null;
-    reservationTimes[space._id].reservationNotAllowed = false;
-  }
-};
-
-// Calcula la cantidad de asientos disponibles según las reservas existentes
-const calcSeatsAllowed = (space) => {
-  let hoursReserved = reservationStore.getHoursReservedBySpace(space._id) || [];
-  if (!hoursReserved || hoursReserved.length === 0) {
-    reservationTimes[space._id].seatsLeft = space.seats;
-    return;
-  }
-
-  const start = makeMinutes(reservationTimes[space._id].reservationStartTime);
-  const end = makeMinutes(reservationTimes[space._id].reservationEndTime);
-  let max = 0;
-
-  hoursReserved.forEach(res => {
-    const startReservation = res.startMinutes;
-    const endReservation = res.endMinutes;
-
-    if ((start < startReservation && end <= startReservation) ||
-      (start >= endReservation && end > endReservation))
-      return;
-
-    if (res.seatsReserved > max)
-      max = res.seatsReserved;
   });
 
-  reservationTimes[space._id].seatsLeft = space.seats - max;
+  filterSpaces();
+  isLoading.value = false;
+}
+
+// Filtra espacios con los criterios actuales
+function filterSpaces() {
+  filteredSpaces.value = spaces.value.filter(spc => {
+    // Si la fecha que se está buscando es hoy, se eliminan los espacios que no están abiertos a la hora actual
+    let searchedDate = new Date(date.value);
+    const now = new Date();
+    const nowMins = now.getHours() * 60 + now.getMinutes();
+    if (searchedDate.toDateString() == now.toDateString() && spc.closing < nowMins) {
+      return false;
+    }
+
+    // Si no hay filtro de hora/duración/asientos, mostrar todos
+    if (!startTime.value && !durationSearched.value && !reservationSeats.value) {
+      return true;
+    }
+
+    //---------------------------------------------------------------------------------
+    const st = startTime.value
+      ? makeMinutes(startTime.value)
+      : null;
+
+    const startOk = st == null
+      ? true
+      : slotsBySpace[spc._id].availableStartTimes.some(s => s === startTime.value);
+    //---------------------------------------------------------------------------------
+
+    //---------------------------------------------------------------------------------
+    const seatsOk = !reservationSeats.value || spc.seats >= reservationSeats.value;
+    //---------------------------------------------------------------------------------
+
+    //---------------------------------------------------------------------------------
+    const slots = slotsBySpace[spc._id].allSlots;
+    const durationOk = !durationSearched.value ||
+      (spc.duration <= durationSearched.value &&
+        calcDurationAvailable(slots, durationSearched.value));
+    //---------------------------------------------------------------------------------
+
+    return startOk && seatsOk && durationOk;
+  });
 };
 
-// Valida si se permite la reserva según las reservas del usuario
-const calcReservationAllowed = (space) => {
-  if (reservationStore.getHoursReservedBySpace(space._id) == null) {
-    reservationTimes[space._id].reservationNotAllowed = false; // Se puede reservar
-    return;
+function calcDurationAvailable(slots, duration) {
+  const interval = 15;                          // Cada slot es de 15 min
+  const needed = Math.ceil(duration / interval);// Cuántos slots consecutivos hacen falta para cubrir la duración
+
+  // Recorremos todos los posibles inicios de bloque
+  // hasta slots.length - needed, para que quepa needed slots y no sobrepase el array cuando i = slots.length - needed
+  for (let i = 0; i <= slots.length - needed; i++) {
+    // Extraemos un bloque de tamaño needed
+    // slots[i], slots[i+1], ..., slots[i+needed-1]
+    const block = slots.slice(i, i + needed);
+
+    // Verificamos que todos los slots del bloque tengan asientos libres
+    const allFree = block.every(slot => slot.seatsLeft > 0);
+    if (allFree) return true; // Si este bloque tiene asientos y es válido, devolvemos true
+
+    // Si no, seguimos buscando en el siguiente índice
   }
+  // Si hemos recorrido todo sin encontrar bloque, devolvemos false
+  return false;
+}
 
-  let events = [];
+// Crea y guarda la reserva, y redirige
 
-  events = reservationsByDate.value.filter(reservation => {
-    return reservation.spaceId === space._id && reservation.userId === userStore.getId
-  });
+async function createReservation(spc) {
+  const day = parseToYYYYMMDD(formattedDate.value);
+  const start = slotsBySpace[spc._id].reservationTimes.start;
+  const end = slotsBySpace[spc._id].reservationTimes.end;
+  const startISO = new Date(`${day}T${start}:00Z`).toISOString();
+  const endISO = new Date(`${day}T${end}:00Z`).toISOString();
 
-  const periodicEvents = periodicReservations.value.filter(reservation => {
-    const reservationDate = new Date(reservation.startTime);
-    let selectedDate = new Date();
-    if (date.value) {
-      selectedDate = new Date(date.value);
-    }
-    selectedDate.setHours(0, 0, 0, 0);
-    reservationDate.setHours(0, 0, 0, 0);
-
-    if (selectedDate < reservationDate) return false;
-
-    let matchPeriodicity;
-
-    if (reservation.periodicity === 'weekly') {
-      matchPeriodicity = reservationDate.getDay() === selectedDate.getDay() // Solo entran las que son el mismo día de la semana
-    } else if (reservation.periodicity === 'monthly') {
-      matchPeriodicity = reservationDate.getDate() === selectedDate.getDate()   // Solo entran las que son el mismo día del mes
-    } else if (reservation.periodicity === 'daily') {
-      matchPeriodicity = true;    // Como es diariamente, entra todo
-    }
-    return (reservation.spaceId === space._id) && (reservation.userId === userStore.getId) && matchPeriodicity;
-  });
-
-  events.push(...periodicEvents);
-
-  if (events && events.length > 0) {
-    const startTimeString = reservationTimes[space._id].reservationStartTime;
-    const endTimeString = reservationTimes[space._id].reservationEndTime;
-
-    for (let ev of events) {
-      const evStartTime = makeMinutes(getHoursAndMinsFromDate(ev.startTime));
-      const evEndTime = makeMinutes(getHoursAndMinsFromDate(ev.endTime));
-      if (   // Si se quiere reservar antes o después de la reserva periódica, se puede
-        (makeMinutes(startTimeString) < evStartTime && makeMinutes(endTimeString) <= evStartTime) ||
-        (makeMinutes(startTimeString) >= evEndTime && makeMinutes(endTimeString) > evEndTime)
-      ) {
-        reservationTimes[space._id].reservationNotAllowed = false; // Se puede reservar
-      } else {
-        reservationTimes[space._id].reservationNotAllowed = true;  // NO se puede reservar
-        reservationTimes[space._id].seatsLeft = null;
-        return;
-      }
-    }
-  }
-
-  reservationTimes[space._id].reservationNotAllowed = false;
-};
-// -----------------------------------------------------------------------------------------------------
-
-
-// -----------------------------------------------------------------------------------------------------
-// Crea la reserva y redirige a la pantalla de confirmación de la reserva
-// -----------------------------------------------------------------------------------------------------
-const createReservation = async (space) => {
-  const selectedDate = parseToYYYYMMDD(formattedDate.value);
-  const startTimeString = reservationTimes[space._id].reservationStartTime;
-  const endTimeString = reservationTimes[space._id].reservationEndTime;
-  const startTimeObj = new Date(`${selectedDate}T${startTimeString}:00Z`);
-  const endTimeObj = new Date(`${selectedDate}T${endTimeString}:00Z`);
-
-  const reservation = {
-    spaceId: space._id,
+  const payload = {
+    spaceId: spc._id,
     userId: userStore.getId,
-    startTime: startTimeObj.toISOString(),
-    endTime: endTimeObj.toISOString(),
+    startTime: startISO,
+    endTime: endISO,
     seatsReserved: reservationSeats.value,
-    repetition: "none",
+    repetition: 'none',
+    maxSeatsAllowed: slotsBySpace[spc._id].maxSeatsAllowed
   };
 
-  reservationStore.setReservation(reservation);
-  spaceStore.setSelectedSpace(space);
+  reservationStore.setReservation(payload);
+  spaceStore.setSelectedSpace(spc);
   router.push('/confirmReservation');
-};
-// -----------------------------------------------------------------------------------------------------
-
-
-// -----------------------------------------------------------------------------------------------------
-// Watchers
-// -----------------------------------------------------------------------------------------------------
-// Cuando cambia la fecha, se actualiza la fecha formateada, se reinician reservas y se filtran espacios
-watch(date, (newVal) => {
-  formattedDate.value = parseToStringDate(newVal);
-  filterSpaces();
-  reservationStore.clearStore();
-
-  reservationsByDate.value = [];
-
-  for (const key in reservationTimes) {   // Reiniciamos el objeto reservationTimes
-    delete reservationTimes[key];
-  }
-});
-
-watch(startTime, () => {
-  filterSpaces();
-});
-
-watch(durationSearched, () => {
-  filterSpaces();
-});
-
-watch(reservationSeats, () => {
-  filterSpaces();
-});
-// -----------------------------------------------------------------------------------------------------
-
+}
 </script>
-
 <style scoped>
 .loader-overlay {
   position: fixed;
