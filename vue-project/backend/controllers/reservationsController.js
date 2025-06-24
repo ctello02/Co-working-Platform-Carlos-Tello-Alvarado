@@ -380,3 +380,9 @@ exports.deletePeriodicReservation = async (req, res) => {
     session.endSession();
   }
 };
+
+// payReservation
+
+// markPaidReservation
+
+// getTodayReservations
