@@ -12,5 +12,5 @@ const MaterialSchema = new Schema({
   pricing: { type: Number, default: 0 }, // Ejemplo: 1.3€
 });
 
-const Material = mongoose.model('Space', MaterialSchema);
-module.exports = Space;
+const Material = mongoose.model('Material', MaterialSchema);
+module.exports = Material;
