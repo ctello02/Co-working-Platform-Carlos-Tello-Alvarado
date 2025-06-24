@@ -33,7 +33,7 @@
                             <v-col cols="12" sm="6" md="4" lg="3" v-for="space in spaces" :key="space._id">
                                 <SpaceCard :space="space" :adminActions="userStore.getIsAdmin" :reserveActions="false"
                                     :maxWidth="'300px'" :isPreview="true" @edit-space="openEditSpaceInfo(space)"
-                                    @delete-space="deleteSpace(space._id)" @click="openSpace(space)" />
+                                    @delete-space="deleteSpace()" @click="openSpace(space)" />
                             </v-col>
                         </v-row>
                     </v-container>
@@ -43,6 +43,10 @@
             <AskModal v-model="deleteModal" :title="'¿Borrar espacio?'"
                 :message="'¿Estás seguro de que quieres borrar este espacio?'" :actionText="'Borrar espacio'"
                 :closeModal="closeDialog" :action="deleteSpace" />
+
+            <AskModal v-model="bulkDeleteModal" :maxWidth="'600px'" :title="'Este espacio tiene reservas pendientes'"
+                :message="'Este espacio tiene reservas pendientes, ¿Estás seguro de que quieres borrarlo?'"
+                :actionText="'Borrar espacio'" :closeModal="closeBulkDeleteDialog" :action="bulkDeleteSpace" />
 
         </v-col>
     </v-container>
@@ -75,8 +79,9 @@ const isAdmin = computed(() => userStore.value.getIsAdmin)
 // Variables reactivas
 const list = ref(false);
 const spaces = ref(null);
-const selectedSpace = ref(null);
+//const selectedSpace = ref(null);
 const deleteModal = ref(false);
+const bulkDeleteModal = ref(false);
 
 //Variables para la Tabla
 
@@ -109,10 +114,26 @@ function getSpaces() {
 // Borrar el espacio. Si se pasa el id, se borra ese espacio, 
 // si no, se borra el espacio seleccionado de la SpaceStore
 const deleteSpace = (id) => {
-    spaceService.deleteSpace(id ? id : selectedSpace.value._id)
+    spaceService.deleteSpace(id ? id : spaceStore.getSelectedSpace._id)
         .then(res => {
             getSpaces();
             deleteModal.value = false;
+            toast.error('Espacio eliminado con éxito');
+        })
+        .catch(error => {
+            console.log(error);
+            if (error.response.status === 409) {
+                bulkDeleteModal.value = true;
+            }
+        });
+};
+
+// Borrar el espacio y todas sus reservas. Se borra el espacio seleccionado de la SpaceStore
+const bulkDeleteSpace = () => {
+    spaceService.bulkDeleteSpace(spaceStore.getSelectedSpace._id)
+        .then(res => {
+            getSpaces();
+            bulkDeleteModal.value = false;
             toast.error('Espacio eliminado con éxito');
         })
         .catch(error => {
@@ -134,11 +155,15 @@ const openEditSpaceInfo = (space) => {
     router.push('/editSpaceInfo');
 };
 const openDeleteModal = (space) => {
-    selectedSpace.value = { ...space }; // Hacer una copia del espacio seleccionado
+    //selectedSpace.value = { ...space }; // Hacer una copia del espacio seleccionado
+    spaceStore.setSelectedSpace(space);
     deleteModal.value = true;
 };
 const closeDialog = () => {
     deleteModal.value = false;
+};
+const closeBulkDeleteDialog = () => {
+    bulkDeleteModal.value = false;
 };
 
 /* ------------------------- Objetos de la tabla ------------------------- */

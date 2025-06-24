@@ -154,7 +154,7 @@
             <v-card-actions v-if="isPreview && adminActions"
                 class="d-flex align-center justify-space-between ga-3 mx-3 mb-3 mt-n3">
                 <v-btn @click.stop="() => emit('edit-space')" variant="tonal" size="small" icon="mdi-pencil" />
-                <v-btn @click.stop="() => deleteModal = true" variant="tonal" size="small" icon="mdi-trash-can-outline"
+                <v-btn @click.stop="() => openDeleteSpace()" variant="tonal" size="small" icon="mdi-trash-can-outline"
                     color="error" />
             </v-card-actions>
         </v-card>
@@ -170,6 +170,7 @@ import { computed, ref } from 'vue';
 import TonalButton from '@/components/TonalButton.vue';
 import AskModal from '@/components/AskModal.vue';
 import { useTime } from '@/composables/useTime';
+import { useSpaceStore } from '@/store/spaceStore';
 
 const props = defineProps({
     space: { type: Object, required: true },
@@ -185,10 +186,16 @@ const {
     makeHoursAndMinutes
 } = useTime();
 
+const spaceStore = useSpaceStore();
 const deleteModal = ref(false);
 
 function closeDialog() {
     deleteModal.value = false;
+}
+
+function openDeleteSpace() {
+    spaceStore.setSelectedSpace(props.space);
+    deleteModal.value = true;
 }
 
 const openingTime = computed(() => {
