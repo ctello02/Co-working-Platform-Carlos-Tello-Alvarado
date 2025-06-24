@@ -2,13 +2,13 @@
   <v-container class="container">
     <v-card class="mx-auto px-2" max-width="550">
       <v-card-title class="mt-5">
-        <span class="text-h4">Nuevo espacio</span>
+        <span class="text-h4">Nuevo material</span>
       </v-card-title>
       <v-card-text>
         <v-col>
           <v-row>
             <v-col cols="8">
-              <v-text-field v-model="spaceName" label="Nombre" type="text" variant="outlined" required
+              <v-text-field v-model="materialName" label="Nombre" type="text" variant="outlined" required
                 :rules="[v => !!v || 'El campo es obligatorio']" class="my-1 ml-n3" />
             </v-col>
             <v-col cols="4">
@@ -18,18 +18,13 @@
             </v-col>
           </v-row>
           <v-row>
-            <v-text-field v-model="spaceDescription" label="Descripción" prepend-icon="mdi-text" type="text"
+            <v-text-field v-model="materialDescription" label="Descripción" prepend-icon="mdi-text" type="text"
               variant="outlined" required :rules="[v => !!v || 'El campo es obligatorio']" class="my-1" />
           </v-row>
           <v-row>
             <v-col>
-              <v-file-input v-model="spaceImage" accept="image/*" label="Imagen" prepend-icon="mdi-camera"
+              <v-file-input v-model="materialImage" accept="image/*" label="Imagen" prepend-icon="mdi-camera"
                 variant="outlined" required :rules="[v => !!v || 'La imagen es obligatoria']" class="ml-n3" />
-            </v-col>
-            <v-col>
-              <v-text-field v-model.number="spaceSeats" label="Número de asientos" prepend-icon="mdi-table-chair"
-                type="number" variant="outlined" required :rules="[v => !!v || 'El campo es obligatorio']"
-                @input="spaceSeats = Math.max(0, spaceSeats)" class="mr-n3" />
             </v-col>
           </v-row>
           <v-row>
@@ -39,7 +34,7 @@
           </v-row>
 
           <v-row class="mt-1">
-            <v-radio-group inline prepend-icon="mdi-repeat" v-model="spaceRepetition"
+            <v-radio-group inline prepend-icon="mdi-repeat" v-model="materialRepetition"
               label="¿Permite repetición de reservas?">
               <v-radio label="Si" :value="true" />
               <v-radio label="No" :value="false" />
@@ -72,7 +67,7 @@
 import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useToast } from 'vue-toastification';
-import { spaceService } from '@/services/spaceService';
+import { materialService } from '@/services/materialService';
 import TonalButton from '@/components/TonalButton.vue';
 import { useTime } from '@/composables/useTime';
 
@@ -82,13 +77,12 @@ const toast = useToast();
 const successToastId = ref(null);
 
 // Variables reactivas
-const spaceName = ref(null);
-const spaceDescription = ref(null);
-const spaceImage = ref(null);
+const materialName = ref(null);
+const materialDescription = ref(null);
+const materialImage = ref(null);
 const pricing = ref(0);
-const spaceSeats = ref(null);
 const selectedTimeFrame = ref(null);
-const spaceRepetition = ref(false);
+const materialRepetition = ref(false);
 const openingTime = ref(null);
 const closingTime = ref(null);
 const allTimes = ref([]);
@@ -117,24 +111,23 @@ watch(openingTime, (newVal) => {
 
 // Función para validar campos vacíos
 const emptyFields = () => {
-  return !spaceName.value || !spaceDescription.value || !selectedTimeFrame.value ||
-    !spaceImage.value || !spaceSeats.value || !openingTime.value || !closingTime.value;
+  return !materialName.value || !materialDescription.value || !selectedTimeFrame.value ||
+    !materialImage.value || !openingTime.value || !closingTime.value;
 };
 
 // Limpiar los campos del formulario
 const clearFields = () => {
-  spaceName.value = null;
-  spaceDescription.value = null;
-  spaceImage.value = null;
-  spaceSeats.value = null;
+  materialName.value = null;
+  materialDescription.value = null;
+  materialImage.value = null;
   pricing.value = 0;
   selectedTimeFrame.value = null;
-  spaceRepetition.value = false;
+  materialRepetition.value = false;
   openingTime.value = null;
   closingTime.value = null;
 };
 
-// Función para manejar la creación del espacio
+// Función para manejar la creación del material
 const submit = async () => {
   if (emptyFields()) {
     toast.error('Formulario inválido');
@@ -146,20 +139,19 @@ const submit = async () => {
   const closingTimeInMinutes = makeMinutes(closingTime.value);
 
   const formData = new FormData();
-  formData.append('name', spaceName.value);
-  formData.append('description', spaceDescription.value);
-  formData.append('image', spaceImage.value);
-  formData.append('seats', spaceSeats.value);
+  formData.append('name', materialName.value);
+  formData.append('description', materialDescription.value);
+  formData.append('image', materialImage.value);
   formData.append('duration', selectedTimeFrame.value);
-  formData.append('admitsRepetition', spaceRepetition.value);
+  formData.append('admitsRepetition', materialRepetition.value);
   formData.append('opening', openingTimeInMinutes);
   formData.append('closing', closingTimeInMinutes);
   formData.append('pricing', pricing.value);
 
   try {
-    const res = await spaceService.createSpace(formData);
+    const res = await materialService.createMaterial(formData);
     console.log(res.data);
-    toast.success('¡Espacio creado con éxito!');
+    toast.success('¡Material creado con éxito!');
     clearFields();
   } catch (error) {
     console.error(error);

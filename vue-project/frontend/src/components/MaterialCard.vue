@@ -1,23 +1,23 @@
 <template>
     <v-container class="pa-5 container">
-        <v-card v-if="space" class="mx-auto" :max-width="maxWidth" :class="isPreview ? 'spaceCardPreview' : ''">
-            <v-img :src="space.image" color="surface-variant" :height="isPreview ? '150px' : '300px'" cover
+        <v-card v-if="material" class="mx-auto" :max-width="maxWidth" :class="isPreview ? 'materialCardPreview' : ''">
+            <v-img :src="material.image" color="surface-variant" :height="isPreview ? '150px' : '300px'" cover
                 :gradient="isPreview ? 'to bottom, rgba(0,0,0,.1), rgba(0,0,0,.5)' : ''" class="align-end">
                 <v-card-title v-if="isPreview" class="overflow-text text-h5">
-                    {{ space.name }}
+                    {{ material.name }}
                 </v-card-title>
             </v-img>
 
-            <v-card-text v-if="space && openingTime && closingTime">
+            <v-card-text v-if="material && openingTime && closingTime">
                 <v-col>
                     <v-row class="mt-n5 mb-n6" cols="12">
                         <v-col v-if="!isPreview">
                             <span class="text-h4">
-                                {{ space.name }}
+                                {{ material.name }}
                             </span>
                         </v-col>
                         <v-col v-if="!isPreview" class="d-flex align-center justify-end ga-3">
-                            <v-btn v-if="adminActions" @click="() => emit('edit-space')" variant="tonal" size="small"
+                            <v-btn v-if="adminActions" @click="() => emit('edit-material')" variant="tonal" size="small"
                                 icon="mdi-pencil" />
                             <v-btn v-if="adminActions" @click="() => deleteModal = true" variant="tonal" size="small"
                                 icon="mdi-trash-can-outline" />
@@ -30,7 +30,7 @@
                         </v-col>
                         <v-col cols="10">
                             <span :class="isPreview ? 'overflow-text ml-2 mt-2' : 'text-h6'">
-                                {{ space.description }}
+                                {{ material.description }}
                             </span>
                         </v-col>
                     </v-row>
@@ -51,8 +51,8 @@
                             <v-icon icon="mdi-hand-coin-outline" />
                         </v-col>
                         <v-col cols="10">
-                            <span class="ml-2" v-if="space.pricing > 0">
-                                {{ space.pricing }}€ por reserva
+                            <span class="ml-2" v-if="material.pricing > 0">
+                                {{ material.pricing }}€ por reserva
                             </span>
                             <span class="ml-2" v-else>
                                 Reserva gratis
@@ -63,22 +63,12 @@
                     <v-row v-if="!isPreview" class="my-n3" cols="12">
                         <v-col>
                             <v-row class="d-flex align-center my-n2">
-                                <v-col cols="2" class="d-flex align-center">
-                                    <v-icon icon="mdi-table-chair" size="small" />
-                                </v-col>
-                                <v-col>
-                                    <span class="pt-2 text-h6">{{ space.seats }} asientos</span>
-                                </v-col>
-                            </v-row>
-                        </v-col>
-                        <v-col>
-                            <v-row class="d-flex align-center my-n2">
-                                <v-col cols="2">
+                                <v-col cols="1">
                                     <v-icon size="small" icon="mdi-hand-coin-outline" />
                                 </v-col>
                                 <v-col>
-                                    <span class="pt-2 text-h6" v-if="space.pricing > 0">
-                                        {{ space.pricing }}€ por reserva
+                                    <span class="pt-2 text-h6" v-if="material.pricing > 0">
+                                        {{ material.pricing }}€ por reserva
                                     </span>
                                     <span class="pt-2 text-h6" v-else>
                                         Reserva gratis
@@ -118,14 +108,14 @@
                                     <v-icon icon="mdi-timer-outline" size="small" />
                                 </v-col>
                                 <v-col>
-                                    <span class="pt-2 text-h6" v-if="space.duration < 60">
-                                        Reservas de {{ space.duration }} minutos
+                                    <span class="pt-2 text-h6" v-if="material.duration < 60">
+                                        Reservas de {{ material.duration }} minutos
                                     </span>
-                                    <span class="pt-2 text-h6" v-if="space.duration === 60">
-                                        Reservas de {{ space.duration / 60 }} hora
+                                    <span class="pt-2 text-h6" v-if="material.duration === 60">
+                                        Reservas de {{ material.duration / 60 }} hora
                                     </span>
-                                    <span class="pt-2 text-h6" v-if="space.duration > 60">
-                                        Reservas de {{ space.duration / 60 }} horas
+                                    <span class="pt-2 text-h6" v-if="material.duration > 60">
+                                        Reservas de {{ material.duration / 60 }} horas
                                     </span>
                                 </v-col>
                             </v-row>
@@ -137,7 +127,7 @@
                                 </v-col>
                                 <v-col>
                                     <span class="pt-2 text-h6">
-                                        {{ space.admitsRepetition ? 'Permite repetición' : 'No permite repetición' }}
+                                        {{ material.admitsRepetition ? 'Permite repetición' : 'No permite repetición' }}
                                     </span>
                                 </v-col>
                             </v-row>
@@ -153,15 +143,15 @@
 
             <v-card-actions v-if="isPreview && adminActions"
                 class="d-flex align-center justify-space-between ga-3 mx-3 mb-3 mt-n3">
-                <v-btn @click.stop="() => emit('edit-space')" variant="tonal" size="small" icon="mdi-pencil" />
-                <v-btn @click.stop="() => openDeleteSpace()" variant="tonal" size="small" icon="mdi-trash-can-outline"
-                    color="error" />
+                <v-btn @click.stop="() => emit('edit-material')" variant="tonal" size="small" icon="mdi-pencil" />
+                <v-btn @click.stop="() => openDeleteMaterial()" variant="tonal" size="small"
+                    icon="mdi-trash-can-outline" color="error" />
             </v-card-actions>
         </v-card>
 
-        <AskModal v-model="deleteModal" title="¿Borrar espacio?"
-            message="¿Estás seguro de que quieres borrar este espacio?" actionText="Borrar espacio"
-            :closeModal="closeDialog" :action="() => emit('delete-space')" />
+        <AskModal v-model="deleteModal" title="¿Borrar material?"
+            message="¿Estás seguro de que quieres borrar este material?" actionText="Borrar material"
+            :closeModal="closeDialog" :action="() => emit('delete-material')" />
     </v-container>
 </template>
 
@@ -170,51 +160,51 @@ import { computed, ref } from 'vue';
 import TonalButton from '@/components/TonalButton.vue';
 import AskModal from '@/components/AskModal.vue';
 import { useTime } from '@/composables/useTime';
-import { useSpaceStore } from '@/store/spaceStore';
+import { useMaterialStore } from '@/store/materialStore';
 
 const props = defineProps({
-    space: { type: Object, required: true },
+    material: { type: Object, required: true },
     adminActions: { type: Boolean, default: false },
     reserveActions: { type: Boolean, default: false },
     isPreview: { type: Boolean, default: false },
     maxWidth: { type: String, default: '600px' }
 });
 
-const emit = defineEmits(['edit-space', 'delete-space', 'go-back', 'reserve']);
+const emit = defineEmits(['edit-material', 'delete-material', 'go-back', 'reserve']);
 
 const {
     makeHoursAndMinutes
 } = useTime();
 
-const spaceStore = useSpaceStore();
+const materialStore = useMaterialStore();
 const deleteModal = ref(false);
 
 function closeDialog() {
     deleteModal.value = false;
 }
 
-function openDeleteSpace() {
-    spaceStore.setSelectedSpace(props.space);
+function openDeleteMaterial() {
+    materialStore.setSelectedMaterial(props.material);
     deleteModal.value = true;
 }
 
 const openingTime = computed(() => {
-    return makeHoursAndMinutes(props.space?.opening);
+    return makeHoursAndMinutes(props.material?.opening);
 });
 
 const closingTime = computed(() => {
-    return makeHoursAndMinutes(props.space?.closing);
+    return makeHoursAndMinutes(props.material?.closing);
 });
 </script>
 
 
 <style scoped>
-.spaceCardPreview {
+.materialCardPreview {
     cursor: pointer;
     transition: background-color 0.3s ease, box-shadow 0.3s ease;
 }
 
-.spaceCardPreview:hover {
+.materialCardPreview:hover {
     background-color: rgba(0, 0, 0, 0.01);
     box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
 }
