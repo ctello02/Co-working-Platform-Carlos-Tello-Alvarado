@@ -367,7 +367,7 @@ function addCalendarEvents(reservations) {
 
         return {
             id: reservation._id, // Usar el ID de la reserva como identificador único
-            title: `Reserva en ${reservation.spaceId?.name}`,
+            title: `Reserva de ${reservation.spaceId?.name}`,
             start: formattedStart,  // start: '2024-06-28 08:00',
             end: formattedEnd,      // end: '2024-06-28 10:00',
             options: reservation.periodicReservationId ? true : false,
