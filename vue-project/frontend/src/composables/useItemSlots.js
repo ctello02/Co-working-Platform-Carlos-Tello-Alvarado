@@ -64,7 +64,7 @@ export function useItemSlots({
     const today0 = new Date(reservationDate.value);
     today0.setHours(0, 0, 0, 0);
 
-    console.log(reservationsByDate.value);
+    //console.log(reservationsByDate.value);
 
     // puntuales
     reservationsByDate.value.forEach((r) => {
@@ -88,7 +88,7 @@ export function useItemSlots({
       arr.push({ ...pr, start: s, end: e });
     });
 
-    console.log('Reservas:', arr);
+    //console.log('Reservas:', arr);
 
     return arr;
   });
@@ -113,7 +113,7 @@ export function useItemSlots({
 
       const used = res
         .filter((r) => {
-          console.log('Asientos usados:', calcUsedUnits(r, t));
+          //console.log('Asientos usados:', calcUsedUnits(r, t));
           return r._id !== ignoreId && r.start <= t && t < r.end;
         })
         .reduce((sum, r) => sum + calcUsedUnits(r, t), 0);
@@ -129,7 +129,7 @@ export function useItemSlots({
         reservedByMe: byMe,
       });
     }
-    console.log(list);
+    //console.log(list);
 
     return list;
   });

@@ -175,13 +175,13 @@
               </v-row>
             </v-tabs-window-item>
             <v-tabs-window-item value="materials">
-              <v-row class="mt-3" v-if="!materials.length && !isLoading">
+              <v-row class="mt-3" v-if="!filteredMaterials.length && !isLoading">
                 <v-col class="text-center">
                   <span class="text-h5">No hay materiales disponibles con estos filtros</span>
                 </v-col>
               </v-row>
               <v-row class="mt-2 mx-n1" v-else>
-                <v-col v-for="mtl in materials" :key="mtl._id" cols="12" md="6" lg="4">
+                <v-col v-for="mtl in filteredMaterials" :key="mtl._id" cols="12" md="6" lg="4">
                   <v-card>
                     <v-img :src="mtl.image" height="200px" cover />
                     <v-card-title class="text-h4 mb-n1">{{ mtl.name }}</v-card-title>
@@ -342,7 +342,10 @@ onMounted(async () => {
 });
 
 // Cada vez que cambian filtros, actualizamos lista
-watch([startTime, durationSearched, reservationSeats], filterSpaces);
+watch([startTime, durationSearched, reservationSeats], () => {
+  filterSpaces();
+  filterMaterials();
+});
 
 // Función que carga reservas y reconstruye slots por espacio
 async function loadDayData() {
@@ -441,7 +444,40 @@ function filterSpaces() {
   });
 };
 
-function filterMaterials() {//TODO
+function filterMaterials() {
+  filteredMaterials.value = materials.value.filter(mtl => {
+    // Si la fecha que se está buscando es hoy, se eliminan los materiales que no están abiertos a la hora actual
+    let searchedDate = new Date(date.value);
+    const now = new Date();
+    const nowMins = now.getHours() * 60 + now.getMinutes();
+    if (searchedDate.toDateString() == now.toDateString() && mtl.closing < nowMins) {
+      return false;
+    }
+
+    // Si no hay filtro de hora/duración/asientos, mostrar todos
+    if (!startTime.value && !durationSearched.value) {
+      return true;
+    }
+
+    //---------------------------------------------------------------------------------
+    const st = startTime.value
+      ? makeMinutes(startTime.value)
+      : null;
+
+    const startOk = st == null
+      ? true
+      : slotsByMaterial[mtl._id].availableStartTimes.some(m => m === startTime.value);
+    //---------------------------------------------------------------------------------
+
+    //---------------------------------------------------------------------------------
+    const slots = slotsByMaterial[mtl._id].allSlots;
+    const durationOk = !durationSearched.value ||
+      (mtl.duration <= durationSearched.value &&
+        calcDurationAvailable(slots, durationSearched.value));
+    //---------------------------------------------------------------------------------
+
+    return startOk && durationOk;
+  });
 };
 
 function calcDurationAvailable(slots, duration) {
@@ -456,7 +492,7 @@ function calcDurationAvailable(slots, duration) {
     const block = slots.slice(i, i + needed);
 
     // Verificamos que todos los slots del bloque tengan asientos libres
-    const allFree = block.every(slot => slot.seatsLeft > 0);
+    const allFree = block.every(slot => slot.unitsLeft > 0);
     if (allFree) return true; // Si este bloque tiene asientos y es válido, devolvemos true
 
     // Si no, seguimos buscando en el siguiente índice
