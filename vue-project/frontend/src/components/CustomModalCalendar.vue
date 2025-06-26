@@ -14,7 +14,7 @@
             </v-row>
             <v-row class="mt-n6">
                 <v-col>
-                    <span class="text-h5">{{ reservation?.spaceId.name }}</span>
+                    <span class="text-h5">{{ reservation?.spaceId?.name || reservation?.materialId?.name }}</span>
                 </v-col>
             </v-row>
             <v-row v-if="reservation?.periodicReservationId">

@@ -152,15 +152,14 @@
                       <v-row>
                         <v-col cols="12">
                           <v-alert class="mt-n8 mb-12" v-if="slotsBySpace[spc._id].reservationTimes.end
-                            && slotsBySpace[spc._id].maxSeatsAllowed === 0" type="error" variant="tonal"
-                            density="compact">
+                            && slotsBySpace[spc._id].maxAllowed === 0" type="error" variant="tonal" density="compact">
                             Ya tienes una reserva en ese horario
                           </v-alert>
-                          <v-alert class="mt-n8 mb-12" v-else-if="slotsBySpace[spc._id].reservationTimes.end" :type="slotsBySpace[spc._id].maxSeatsAllowed >= reservationSeats
+                          <v-alert class="mt-n8 mb-12" v-else-if="slotsBySpace[spc._id].reservationTimes.end" :type="slotsBySpace[spc._id].maxAllowed >= reservationSeats
                             ? 'success'
                             : 'error'
                             " density="compact" variant="tonal">
-                            Quedan {{ slotsBySpace[spc._id].maxSeatsAllowed }} asientos
+                            Quedan {{ slotsBySpace[spc._id].maxAllowed }} asientos
                           </v-alert>
                         </v-col>
                       </v-row>
@@ -168,8 +167,8 @@
                     <v-card-actions class="mt-n14 mx-2 mb-2">
                       <TonalButton block color="blue" text="Reservar" :disabled="!slotsBySpace[spc._id].reservationTimes.start ||
                         !slotsBySpace[spc._id].reservationTimes.end ||
-                        slotsBySpace[spc._id].maxSeatsAllowed < reservationSeats
-                        " @click="createReservation(spc)" />
+                        slotsBySpace[spc._id].maxAllowed < reservationSeats
+                        " @click="createSpaceReservation(spc)" />
                     </v-card-actions>
                   </v-card>
                 </v-col>
@@ -222,7 +221,7 @@
                     </v-card-text>
                     <v-divider />
                     <!-- Selectores siempre visibles -->
-                    <!-- <v-card-text>
+                    <v-card-text>
                       <v-row>
                         <v-col>
                           <v-select :model-value="slotsByMaterial[mtl._id].reservationTimes.start"
@@ -242,25 +241,17 @@
                       <v-row>
                         <v-col cols="12">
                           <v-alert class="mt-n8 mb-12" v-if="slotsByMaterial[mtl._id].reservationTimes.end
-                            && slotsByMaterial[mtl._id].maxSeatsAllowed === 0" type="error" variant="tonal"
+                            && slotsByMaterial[mtl._id].maxAllowed === 0" type="error" variant="tonal"
                             density="compact">
                             Ya tienes una reserva en ese horario
-                          </v-alert>
-                          <v-alert class="mt-n8 mb-12" v-else-if="slotsByMaterial[mtl._id].reservationTimes.end" :type="slotsByMaterial[mtl._id].maxSeatsAllowed >= reservationSeats
-                            ? 'success'
-                            : 'error'
-                            " density="compact" variant="tonal">
-                            Quedan {{ slotsByMaterial[mtl._id].maxSeatsAllowed }} asientos
                           </v-alert>
                         </v-col>
                       </v-row>
                     </v-card-text>
                     <v-card-actions class="mt-n14 mx-2 mb-2">
                       <TonalButton block color="blue" text="Reservar" :disabled="!slotsByMaterial[mtl._id].reservationTimes.start ||
-                        !slotsByMaterial[mtl._id].reservationTimes.end ||
-                        slotsByMaterial[mtl._id].maxSeatsAllowed < reservationSeats
-                        " @click="createReservation(mtl)" />
-                    </v-card-actions> -->
+                        !slotsByMaterial[mtl._id].reservationTimes.end" @click="createMaterialReservation(mtl)" />
+                    </v-card-actions>
                   </v-card>
                 </v-col>
               </v-row>
@@ -283,7 +274,8 @@ import { reservationService } from '@/services/reservationService';
 import { spaceService } from '@/services/spaceService';
 import { materialService } from '@/services/materialService';
 import { useTime } from '@/composables/useTime';
-import { useReservationSlots } from '@/composables/useReservationSlots';
+import { useSpaceSlots } from '@/composables/useSpaceSlots';
+import { useMaterialSlots } from '@/composables/useMaterialSlots';
 import TonalButton from '@/components/TonalButton.vue';
 
 const router = useRouter();
@@ -384,7 +376,7 @@ async function loadDayData() {
 
   // Inicializa slots para cada espacio
   spaces.value.forEach(spc => {
-    slotsBySpace[spc._id] = useReservationSlots({
+    slotsBySpace[spc._id] = useSpaceSlots({
       space: computed(() => spaces.value.find(s => s._id === spc._id)),
       reservationDate: date,
       reservationsByDate,
@@ -393,7 +385,18 @@ async function loadDayData() {
     });
   });
 
+  materials.value.forEach(mtl => {
+    slotsByMaterial[mtl._id] = useMaterialSlots({
+      material: computed(() => materials.value.find(m => m._id === mtl._id)),
+      reservationDate: date,
+      reservationsByDate,
+      periodicReservations,
+      initialReservation: null
+    });
+  });
+
   filterSpaces();
+  filterMaterials();
   isLoading.value = false;
 }
 
@@ -438,6 +441,9 @@ function filterSpaces() {
   });
 };
 
+function filterMaterials() {//TODO
+};
+
 function calcDurationAvailable(slots, duration) {
   const interval = 15;                          // Cada slot es de 15 min
   const needed = Math.ceil(duration / interval);// Cuántos slots consecutivos hacen falta para cubrir la duración
@@ -461,7 +467,7 @@ function calcDurationAvailable(slots, duration) {
 
 // Crea y guarda la reserva, y redirige
 
-async function createReservation(spc) {
+async function createSpaceReservation(spc) {
   const day = parseToYYYYMMDD(formattedDate.value);
   const start = slotsBySpace[spc._id].reservationTimes.start;
   const end = slotsBySpace[spc._id].reservationTimes.end;
@@ -469,17 +475,37 @@ async function createReservation(spc) {
   const endISO = new Date(`${day}T${end}:00Z`).toISOString();
 
   const payload = {
+    item: 'space',
     spaceId: spc._id,
     userId: userStore.getId,
     startTime: startISO,
     endTime: endISO,
     seatsReserved: reservationSeats.value,
-    repetition: 'none',
-    maxSeatsAllowed: slotsBySpace[spc._id].maxSeatsAllowed
+    maxAllowed: slotsBySpace[spc._id].maxAllowed
   };
 
   reservationStore.setReservation(payload);
   spaceStore.setSelectedSpace(spc);
+  router.push('/confirmReservation');
+}
+
+async function createMaterialReservation(mtl) {
+  const day = parseToYYYYMMDD(formattedDate.value);
+  const start = slotsByMaterial[mtl._id].reservationTimes.start;
+  const end = slotsByMaterial[mtl._id].reservationTimes.end;
+  const startISO = new Date(`${day}T${start}:00Z`).toISOString();
+  const endISO = new Date(`${day}T${end}:00Z`).toISOString();
+
+  const payload = {
+    item: 'material',
+    materialId: mtl._id,
+    userId: userStore.getId,
+    startTime: startISO,
+    endTime: endISO,
+  };
+
+  reservationStore.setReservation(payload);
+  materialStore.setSelectedMaterial(mtl);
   router.push('/confirmReservation');
 }
 </script>
@@ -494,5 +520,17 @@ async function createReservation(spc) {
   justify-content: center;
   align-items: center;
   z-index: 9999;
+}
+
+.v-tab-text {
+  font-size: clamp(14px, 1.4vw, 20px);
+  letter-spacing: normal;
+
+}
+
+.v-subtab-text {
+  font-size: clamp(10px, 1.2vw, 18px);
+  letter-spacing: normal;
+  color: rgb(92, 92, 92);
 }
 </style>

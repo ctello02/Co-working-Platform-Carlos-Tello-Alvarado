@@ -4,9 +4,14 @@ const mongoose = require('mongoose');
 
 exports.createReservation = async (req, res) => {
   try {
-    const { spaceId, userId, startTime, endTime, seatsReserved } = req.body;
+    const { spaceId, materialId, seatsReserved, userId, startTime, endTime } =
+      req.body;
 
-    if (!spaceId || !userId || !startTime || !endTime || !seatsReserved) {
+    if (spaceId == 'null') req.body.spaceId = null;
+    if (materialId == 'null') req.body.materialId = null;
+    if (seatsReserved == 'null') req.body.seatsReserved = null;
+
+    if (!userId || !startTime || !endTime) {
       return res.status(400).json({ message: 'Missing required fields.' });
     }
 
@@ -173,6 +178,7 @@ exports.getUserReservations = async (req, res) => {
     // Obtenemos todas las reservas
     const reservations = await Reservation.find({ userId: req.params.id })
       .populate('spaceId')
+      .populate('materialId')
       .populate('periodicReservationId')
       .sort({ startTime: 1 });
 

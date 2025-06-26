@@ -68,7 +68,7 @@
                                             <v-col class="d-flex ml-2" style="height:60px;">
                                                 <v-text-field v-model.number="reservationSeats"
                                                     label="Número de asientos" type="number" variant="outlined"
-                                                    density="compact" :max="maxSeatsAllowed"
+                                                    density="compact" :max="maxAllowed"
                                                     @input="reservationSeats = Math.max(1, reservationSeats)" />
                                             </v-col>
                                         </v-row>
@@ -98,14 +98,14 @@
                                 <v-row :class="reservation.periodicReservationId ? 'mt-n5 mb-n4' : 'mt-7 mb-n9'">
                                     <v-col>
                                         <v-fade-transition>
-                                            <v-alert v-if="reservationTimes.end && maxSeatsAllowed === 0" type="error"
+                                            <v-alert v-if="reservationTimes.end && maxAllowed === 0" type="error"
                                                 variant="tonal" density="compact">
                                                 Ya tienes una reserva en ese horario.
                                             </v-alert>
                                             <v-alert
-                                                v-if="reservationSeats >= maxSeatsAllowed && reservationTimes.end != null"
+                                                v-if="reservationSeats >= maxAllowed && reservationTimes.end != null"
                                                 type="warning" density="compact" variant="tonal">
-                                                No se pueden reservar más de {{ maxSeatsAllowed }} asientos.
+                                                No se pueden reservar más de {{ maxAllowed }} asientos.
                                             </v-alert>
                                         </v-fade-transition>
                                     </v-col>
@@ -117,8 +117,7 @@
                                 :class="reservation.periodicReservationId ? 'mt-n5' : 'mt-0'">
                                 <TonalButton color="grey" text="Volver" @click="routerBack" />
                                 <TonalButton color="blue" text="Actualizar" :loading="isLoading"
-                                    :disabled="reservationSeats > maxSeatsAllowed || maxSeatsAllowed === 0"
-                                    @click="submit" />
+                                    :disabled="reservationSeats > maxAllowed || maxAllowed === 0" @click="submit" />
                             </v-row>
                         </v-card-actions>
                     </v-card>
@@ -141,7 +140,7 @@ import { useReservationStore } from '@/store/reservationStore';
 import { useSpaceStore } from '@/store/spaceStore';
 import { reservationService } from '@/services/reservationService';
 import { useTime } from '@/composables/useTime';
-import { useReservationSlots } from '@/composables/useReservationSlots';
+import { useSpaceSlots } from '@/composables/useSpaceSlots';
 import TonalButton from '@/components/TonalButton.vue';
 import SpaceCard from '@/components/SpaceCard.vue';
 import { useToast } from 'vue-toastification';
@@ -173,9 +172,9 @@ const {
     reservationTimes,
     availableStartTimes,
     availableEndTimes,
-    maxSeatsAllowed,
+    maxAllowed,
     updateReservation
-} = useReservationSlots({
+} = useSpaceSlots({
     space,
     reservationDate,
     reservationsByDate,
@@ -207,11 +206,11 @@ onMounted(async () => {
         reservationService.getReservationsByDate(reservationDate.value),
         reservationService.getPeriodicReservations()
     ]);
-    const res = rawRes.data.reservations;
-    const perRes = rawPerRes.data.periodicReservations;
+    const res = rawRes.data.reservations || [];
+    const perRes = rawPerRes.data.periodicReservations || [];
 
-    reservationsByDate.value = res.filter(r => r.spaceId === space.value._id);
-    periodicReservations.value = perRes.filter(pr => pr.spaceId === space.value._id);
+    reservationsByDate.value = res ? res.filter(r => r.spaceId === space.value._id) : [];
+    periodicReservations.value = perRes ? perRes.filter(pr => pr.spaceId === space.value._id) : [];
 });
 
 async function submit() {
@@ -258,7 +257,7 @@ function routerBack() { router.go(-1); }
 // Watcher validar número de asientos. Se evita que el usuario teclee numeros incorrectos
 // ------------------------------------------------
 watch(reservationSeats, (newValue) => {
-    if (newValue > maxSeatsAllowed.value) {
+    if (newValue > maxAllowed.value) {
         reservationSeats.value = reservationSeats.value - 1;
     }
 });

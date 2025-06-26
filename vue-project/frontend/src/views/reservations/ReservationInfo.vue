@@ -1,12 +1,13 @@
 <template>
     <v-container class="pa-5 container">
         <v-card v-if="reservation" class="mx-auto" max-width="600">
-            <v-img :src="reservation.spaceId?.image" color="surface-variant" height="300px" cover />
+            <v-img :src="reservation.spaceId?.image || reservation.materialId?.image" color="surface-variant"
+                height="300px" cover />
             <v-card-text v-if="reservation">
                 <v-col>
                     <v-row class="mt-n5 mb-n3" cols="12">
                         <v-col>
-                            <span class="text-h4">{{ reservation.spaceId?.name }}</span>
+                            <span class="text-h4">{{ reservation.spaceId?.name || reservation.materialId?.name }}</span>
                         </v-col>
                         <v-col class="d-flex align-center justify-end ga-3">
                             <v-btn v-if="canEdit" @click="openEditReservationInfo()" variant="tonal" size="small"
@@ -21,7 +22,8 @@
                             <v-icon icon="mdi-text" />
                         </v-col>
                         <v-col>
-                            <span class="text-h6">{{ reservation.spaceId?.description }}</span>
+                            <span class="text-h6">{{ reservation.spaceId?.description ||
+                                reservation.materialId?.description }}</span>
                         </v-col>
                     </v-row>
 
@@ -36,15 +38,19 @@
                     <v-row class="my-n3 d-flex justify-center align-center" cols="12">
                         <v-col>
                             <v-row>
-                                <v-col cols="2" class="d-flex align-center">
+                                <v-col :cols="reservation.spaceId ? '2' : '1'" class="d-flex align-center">
                                     <v-icon icon="mdi-clock-outline" size="small" />
                                 </v-col>
-                                <v-col><span class="pt-2 text-h6">{{ getHoursAndMinsFromDate(reservation.startTime) }}h
+                                <v-col>
+                                    <span class="pt-2 text-h6">
+                                        {{ getHoursAndMinsFromDate(reservation.startTime) }}h
                                         -
-                                        {{ getHoursAndMinsFromDate(reservation.endTime) }}h</span></v-col>
+                                        {{ getHoursAndMinsFromDate(reservation.endTime) }}h
+                                    </span>
+                                </v-col>
                             </v-row>
                         </v-col>
-                        <v-col>
+                        <v-col v-if="reservation.seatsReserved">
                             <v-row>
                                 <v-col cols="2" class="d-flex align-center">
                                     <v-icon icon="mdi-table-chair" size="small" />

@@ -67,7 +67,7 @@
                                     :groupedByName="groupedByName" :groupedByDate="groupedByDate"
                                     :tableHeaders="tableHeaders" :tableItems="tableItems"
                                     :tableDropdownItems="tableDropdownItems" :expandedNames="expandedNames"
-                                    :expandedDates="expandedDates" @toggleSpace="toggleSpace" @toggleDate="toggleDate"
+                                    :expandedDates="expandedDates" @toggleItem="toggleItem" @toggleDate="toggleDate"
                                     @rowClick="handleRowClick" />
                             </v-tabs-window-item>
 
@@ -78,7 +78,7 @@
                                     :groupedByName="groupedByName" :groupedByDate="groupedByDate"
                                     :tableHeaders="tableHeaders" :tableItems="tableItems"
                                     :tableDropdownItems="tableDropdownItems" :expandedDates="expandedDates"
-                                    :expandedNames="expandedNames" @toggleSpace="toggleSpace" @toggleDate="toggleDate"
+                                    :expandedNames="expandedNames" @toggleItem="toggleItem" @toggleDate="toggleDate"
                                     @rowClick="handleRowClick" />
                             </v-tabs-window-item>
                         </v-tabs-window>
@@ -102,6 +102,7 @@ import { ref, onMounted, computed, onUnmounted, watch } from 'vue';
 import { useUserStore } from '@/store/userStore';
 import { useReservationStore } from '@/store/reservationStore';
 import { useSpaceStore } from '@/store/spaceStore';
+import { useMaterialStore } from '@/store/materialStore';
 import { useRouter } from 'vue-router';
 import { useTime } from '@/composables/useTime';
 import TonalButton from '@/components/TonalButton.vue';
@@ -131,6 +132,7 @@ const userStore = useUserStore();
 const router = useRouter();
 const reservationStore = useReservationStore();
 const spaceStore = useSpaceStore();
+const materialStore = useMaterialStore();
 const eventsServicePlugin = createEventsServicePlugin();
 const eventModal = createEventModalPlugin();
 const currentTimePlugin = createCurrentTimePlugin();
@@ -170,11 +172,11 @@ const deleteModal = ref(false);
 const filter = ref(null);
 const filterItems = ref([
     { label: 'Todas', value: null },
-    { label: 'Por nombre de espacios', value: 'spacesName' },
+    { label: 'Por nombre de espacios/materiales', value: 'itemsName' },
     { label: 'Por fecha', value: 'date' },
 ]);
 
-const expandedNames = ref({});    // Almacena el estado abierto/cerrado del desplegable de cada nombre del espacio. 
+const expandedNames = ref({});    // Almacena el estado abierto/cerrado del desplegable de cada nombre del espacio/material. 
 const expandedDates = ref({});    // Almacena el estado abierto/cerrado del desplegable de cada fecha.
 
 const groupedByName = computed(() => {
@@ -190,7 +192,7 @@ const groupedByName = computed(() => {
         reservationsToSearch.sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
 
     reservationsToSearch.forEach(reservation => {
-        const nameKey = reservation.spaceId?.name;
+        const nameKey = reservation.spaceId?.name || reservation.materialId?.name;
         if (!groups[nameKey]) {
             groups[nameKey] = [];
         }
@@ -234,7 +236,7 @@ const groupedByDate = computed(() => {
     return groups;
 });
 
-function toggleSpace(nameKey) {
+function toggleItem(nameKey) {
     expandedNames.value[nameKey] = !expandedNames.value[nameKey];
 };
 
@@ -364,10 +366,11 @@ function addCalendarEvents(reservations) {
         // Usamos la función del composable useTime para transformar startTime y endTime
         const formattedStart = parseDateTo_YYYYMMDD_HHMM(reservation.startTime);
         const formattedEnd = parseDateTo_YYYYMMDD_HHMM(reservation.endTime);
+        const name = reservation.spaceId?.name || reservation.materialId?.name;
 
         return {
             id: reservation._id, // Usar el ID de la reserva como identificador único
-            title: `Reserva de ${reservation.spaceId?.name}`,
+            title: `Reserva de ${name}`,
             start: formattedStart,  // start: '2024-06-28 08:00',
             end: formattedEnd,      // end: '2024-06-28 10:00',
             options: reservation.periodicReservationId ? true : false,
@@ -464,7 +467,8 @@ function openReservation() {
 
 function editReservation() {
     const reservation = reservationStore.getReservation;
-    spaceStore.setSelectedSpace(reservation.spaceId);
+    if (reservation.spaceId) spaceStore.setSelectedSpace(reservation.spaceId);
+    else materialStore.setSelectedMaterial(reservation.materialId);
     router.push('/editReservationInfo');
 };
 
@@ -524,7 +528,7 @@ const headers = [
 const tableHeaders = computed(() => {
     if (filter.value === null) return headers;
     return headers.filter(header => {
-        if (filter.value === 'spacesName') {
+        if (filter.value === 'itemsName') {
             if (header.label === 'Nombre') return;
             return {
                 label: header.label,
@@ -549,7 +553,7 @@ function tableDropdownItems(reservations) {
         return {
             id: reservation._id,        // key para v-for
             date: `${twoDigitsDate(new Date(reservation.startTime))}`,
-            name: reservation.spaceId.name,
+            name: reservation.spaceId?.name || reservation.materialId?.name,
             schedule: `${getHoursAndMinsFromDate(reservation.startTime)}h - ${getHoursAndMinsFromDate(reservation.endTime)}h`,
             object: reservation,      // guardamos el objeto para usarlo en las acciones
         }
@@ -567,7 +571,7 @@ const tableItems = computed(() => {
         return {
             id: reservation._id,        // key para v-for
             date: `${twoDigitsDate(new Date(reservation.startTime))}`,
-            name: reservation.spaceId.name,
+            name: reservation.spaceId?.name || reservation.materialId?.name,
             schedule: `${getHoursAndMinsFromDate(reservation.startTime)}h - ${getHoursAndMinsFromDate(reservation.endTime)}h`,
             object: reservation,      // guardamos el objeto para usarlo en las acciones
         }
