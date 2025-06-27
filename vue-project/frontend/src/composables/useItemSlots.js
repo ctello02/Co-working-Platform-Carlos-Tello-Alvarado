@@ -103,20 +103,21 @@ export function useItemSlots({
     const cap = itemConfig.value.capacity;
     const interval = 15;
     const res = allReservations.value;
+    let isReserved = false;
     const meId = initRef.value?.userId || userStore.getId;
     const list = [];
 
-    //console.log('itemConfig.value:', itemConfig.value);
-
     for (let t = opening; t <= closing; t += interval) {
-      //console.log('Entra');
-
       const used = res
         .filter((r) => {
-          //console.log('Asientos usados:', calcUsedUnits(r, t));
-          return r._id !== ignoreId && r.start <= t && t < r.end;
+          const found = r._id !== ignoreId && r.start <= t && t < r.end;
+          if (found) {
+            isReserved = true;
+          }
+          return found;
         })
         .reduce((sum, r) => sum + calcUsedUnits(r, t), 0);
+
       const byMe = res.some(
         (r) =>
           r._id !== ignoreId && r.userId === meId && r.start <= t && t < r.end
@@ -127,9 +128,10 @@ export function useItemSlots({
         time: makeHoursAndMinutes(t),
         unitsLeft: Math.max(cap - used, 0),
         reservedByMe: byMe,
+        isReserved,
       });
+      isReserved = false;
     }
-    //console.log(list);
 
     return list;
   });
@@ -151,7 +153,14 @@ export function useItemSlots({
         // chequear cada sub-slot del bloque
         for (let k = 0; k < duration / interval; k++) {
           const sub = slots[idx + k];
-          if (!sub || sub.unitsLeft <= 0) return false;
+          console.log('sub', sub);
+
+          if (
+            !sub ||
+            sub.unitsLeft <= 0 ||
+            (sub.isReserved && foreignKey === 'materialId')
+          )
+            return false;
         }
         return true;
       })
