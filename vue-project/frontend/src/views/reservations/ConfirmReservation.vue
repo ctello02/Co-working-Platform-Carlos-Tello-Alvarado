@@ -20,9 +20,10 @@
                 </v-row>
                 <v-divider class="mt-1" />
                 <v-row class="d-flex align-center justify-center mt-6" cols="12">
-                  <span class="text-h4">{{ space.name }}</span>
+                  <span class="text-h4" v-if="reservation.item === 'space'">{{ space.name }}</span>
+                  <span class="text-h4" v-else>{{ material.name }}</span>
                   <v-btn icon="mdi-information-outline" variant="text" density="compact" :ripple="false"
-                    @click="showSpaceModal = !showSpaceModal" />
+                    @click="reservation.item === 'space' ? showSpaceModal = !showSpaceModal : showMaterialModal = !showMaterialModal" />
                 </v-row>
                 <v-row>
                   <v-col>
@@ -54,31 +55,50 @@
                   </v-col>
                 </v-row>
                 <v-divider />
-                <v-row class="mt-5 mb-n8">
+
+                <v-row v-if="reservation.item === 'space'" class="mt-5 mb-n8">
                   <v-col cols="5">
                     <v-text-field v-model.number="reservationSeats" label="Número de asientos"
                       prepend-icon="mdi-table-chair" type="number" variant="outlined" density="compact" required
                       @input="reservationSeats = Math.max(1, reservationSeats)" />
                   </v-col>
-                  <v-col v-if="space.admitsRepetition">
+                  <v-col v-if="admitsRepetition" cols="7">
                     <v-select v-model="repetition" :items="repetitionOptions" item-title="label" item-value="value"
                       label="Repetición" prepend-icon="mdi-repeat" variant="outlined" density="compact" />
                   </v-col>
                   <v-col v-else>
                     <v-row>
-                      <v-col cols="1" class="d-flex align-center">
+                      <v-col cols="1" class="d-flex align-center ml-5">
                         <v-icon size="small" icon="mdi-repeat-off" />
                       </v-col>
                       <v-col>
-                        <span class="text-h6">Repetición no disponible</span>
+                        <span class="text-h6 ml-n4">Repetición no disponible</span>
                       </v-col>
                     </v-row>
                   </v-col>
                 </v-row>
+
+                <v-row v-if="reservation.item === 'material'" class="mt-3 d-flex align-center justify-center">
+                  <v-col v-if="admitsRepetition" cols="7" class="mb-n5">
+                    <v-select v-model="repetition" :items="repetitionOptions" item-title="label" item-value="value"
+                      label="Repetición" prepend-icon="mdi-repeat" variant="outlined" density="compact" />
+                  </v-col>
+                  <v-col v-else>
+                    <v-row class="d-flex align-center justify-center">
+                      <v-col cols="1" class="d-flex align-center ml-4 mr-n6">
+                        <v-icon size="small" icon="mdi-repeat-off" />
+                      </v-col>
+                      <v-col cols="6">
+                        <span class="text-h6 ">Repetición no disponible</span>
+                      </v-col>
+                    </v-row>
+                  </v-col>
+                </v-row>
+
                 <v-divider class="mt-6" />
                 <v-row class="mt-3 mb-n8 d-flex align-center justify-center">
                   <v-col cols="5">
-                    <span class="text-h6" v-if="space.pricing > 0">
+                    <span class="text-h6" v-if="pricing > 0">
                       Precio por reserva: {{ calculatePrice }}€
                     </span>
                     <span class="text-h6" v-else>
@@ -87,13 +107,12 @@
                   </v-col>
                 </v-row>
 
-
                 <v-row class="mb-n4">
                   <v-col class="" style="display: flex; flex-direction: column; gap: 15px;">
                     <v-fade-transition>
-                      <v-alert v-if="reservationSeats >= maxSeatsAllowed" type="warning" density="compact"
-                        variant="tonal">
-                        No se pueden reservar más de {{ maxSeatsAllowed }} asientos.
+                      <v-alert v-if="reservationSeats >= maxAllowed && reservation.item === 'space'" type="warning"
+                        density="compact" variant="tonal">
+                        No se pueden reservar más de {{ maxAllowed }} asientos.
                       </v-alert>
                     </v-fade-transition>
                     <v-fade-transition>
@@ -120,6 +139,11 @@
             <SpaceCard :space="space" :adminActions="false" :reserveActions="false" />
           </v-col>
         </transition>
+        <transition name="slide-right" mode="out-in">
+          <v-col v-if="material && showMaterialModal" class="mt-n5">
+            <MaterialCard :material="material" :adminActions="false" :reserveActions="false" />
+          </v-col>
+        </transition>
       </v-row>
     </v-col>
   </v-container>
@@ -130,11 +154,13 @@ import { ref, watch, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useReservationStore } from '@/store/reservationStore';
 import { useSpaceStore } from '@/store/spaceStore';
+import { useMaterialStore } from '@/store/materialStore';
 import { reservationService } from '@/services/reservationService';
 import { useToast } from 'vue-toastification';
 
 import TonalButton from '@/components/TonalButton.vue';
 import SpaceCard from '@/components/SpaceCard.vue';
+import MaterialCard from '@/components/MaterialCard.vue';
 
 import { useTime } from '@/composables/useTime';
 
@@ -145,6 +171,7 @@ const router = useRouter();
 const toast = useToast();
 const reservationStore = useReservationStore();
 const spaceStore = useSpaceStore();
+const materialStore = useMaterialStore();
 // ------------------------------------------------
 
 
@@ -164,20 +191,22 @@ const {
 // Variables Reactivas
 // ------------------------------------------------
 const reservation = ref(null);
-const reservationsByDate = ref([]);
 const periodicReservations = ref([]);
 const startTime = ref(null);
 const endTime = ref(null);
+const admitsRepetition = ref(null);
+const pricing = ref(null);
 
 const space = ref(null);
-const hoursReserved = ref([]);
+const material = ref(null);
 const showSpaceModal = ref(false);
+const showMaterialModal = ref(false);
 const periodicReservedModal = ref(false);
 
 const isLoading = ref(false);
 
-const reservationSeats = ref(0);
-const maxSeatsAllowed = ref(null);
+const reservationSeats = ref(1);
+const maxAllowed = ref(null);
 
 const repetition = ref('no_repeat');
 const repetitionOptions = [
@@ -193,16 +222,27 @@ const repetitionOptions = [
 // onMounted
 // ------------------------------------------------
 onMounted(async () => {
-  space.value = spaceStore.getSelectedSpace;
   reservation.value = reservationStore.getReservation;
 
-  if (!space.value || !reservation.value) {
+  if (!reservationStore.getReservation) {
     router.push('/createReservation');
   } else {
-    await getReservations();
+    if (reservation?.value.item === 'space') {
+      space.value = spaceStore.getSelectedSpace;
+      admitsRepetition.value = space.value.admitsRepetition;
+      pricing.value = space.value.pricing;
+    } else {
+      material.value = materialStore.getSelectedMaterial;
+      admitsRepetition.value = material.value.admitsRepetition;
+      pricing.value = material.value.pricing;
+    }
 
-    reservationSeats.value = reservation.value.seatsReserved;
-    maxSeatsAllowed.value = reservation.value.maxSeatsAllowed;
+    await getPeriodicReservations();
+
+    if (reservation.value.item === 'space') {
+      reservationSeats.value = reservation.value.seatsReserved;
+      maxAllowed.value = reservation.value.maxAllowed;
+    }
 
     startTime.value = getHoursAndMinsFromDate(reservation.value.startTime);
     endTime.value = getHoursAndMinsFromDate(reservation.value.endTime);
@@ -213,40 +253,20 @@ onMounted(async () => {
 // ------------------------------------------------
 // Obtener reservas periódicas
 // ------------------------------------------------
-async function getReservations() {
-
-  const day = reservation.value.startTime.split('T')[0];
-
-  let oneShot = [];
-  try {
-    const d1 = await reservationService.getReservationsByDate(day);
-    oneShot = d1.data.reservations || [];
-  } catch (e) {
-    if (e.response?.status === 404) {
-      // no hay reservas: lo tomamos como un array vacío
-      oneShot = [];
-    } else throw e;
-  }
-  reservationsByDate.value = oneShot.filter(reservation => {
-    return reservation.spaceId == space.value._id
-  }) || [];
-
+async function getPeriodicReservations() {
   let periodic = [];
   try {
-    const d2 = await reservationService.getPeriodicReservations();
-    periodic = d2.data.periodicReservations || [];
+    const pr = await reservationService.getPeriodicReservations();
+    periodic = pr.data.periodicReservations || [];
   } catch (e) {
     if (e.response?.status === 404) {
-      // no hay reservas periódicas: lo tomamos como un array vacío
+      // no hay reservas periódicas, lo tomamos como un array vacío
       periodic = [];
     } else throw e;
   }
-  periodicReservations.value = periodic.filter(reservation => {
-    return reservation.spaceId == space.value._id
+  periodicReservations.value = periodic.filter(r => {
+    return (reservation.value.spaceId ? r.spaceId === space.value._id : r.materialId === material.value._id)
   }) || [];
-
-  hoursReserved.value.push(...reservationsByDate.value);
-  hoursReserved.value.push(...periodicReservations.value);
 
 };
 // ------------------------------------------------
@@ -260,11 +280,21 @@ const submit = async () => {
   isLoading.value = true;
 
   const formData = new FormData();
-  formData.append('spaceId', reservation.value.spaceId);
+
+  if (reservation.value.item === 'space') {
+    formData.append('spaceId', reservation.value.spaceId);
+    formData.append('seatsReserved', reservationSeats.value);
+    formData.append('materialId', null);
+  } else {
+    formData.append('materialId', reservation.value.materialId);
+    formData.append('spaceId', null);
+  }
+
   formData.append('userId', reservation.value.userId);
   formData.append('startTime', reservation.value.startTime);
   formData.append('endTime', reservation.value.endTime);
-  formData.append('seatsReserved', reservationSeats.value);
+
+  formData.append('isPaid', true);
 
   try {
     let res;
@@ -290,8 +320,8 @@ const submit = async () => {
     isLoading.value = false;
     toast.success(res.data.message);
 
-    const conflictObjects = res.data.conflictObjects;
-    if (conflictObjects) {
+    const conflictObjects = res.data.conflictObjects || [];
+    if (conflictObjects.length > 0) {
       toast.warning(`Se han producido ${conflictObjects.length} conflictos. Debe reservar manualmente los días donde ha habido un error.`);
     }
 
@@ -375,13 +405,12 @@ function checkPeriodicReservations() {
         else {
           // Comprobamos los asientos de la reserva periódica
           if (reservationSeats.value <= (space.value.seats - periodicReservation.seatsReserved)) {
-            console.log("Retorna false");
+            //console.log("Retorna false");
             return false;
           }
-          console.log("Retorna true");
-          console.log(reservationSeats.value);
-          console.log(space.value.seats - periodicReservation.seatsReserved);
-
+          //console.log("Retorna true");
+          //console.log(reservationSeats.value);
+          //console.log(space.value.seats - periodicReservation.seatsReserved);
 
           return true;
         }
@@ -429,7 +458,7 @@ async function sendReservation(formData) {
 // Watcher validar número de asientos
 // ------------------------------------------------
 watch(reservationSeats, (newValue) => {
-  if (newValue > maxSeatsAllowed.value) {
+  if (newValue > maxAllowed.value) {
     reservationSeats.value = reservationSeats.value - 1;
   }
 });
@@ -442,8 +471,15 @@ watch(reservationSeats, (newValue) => {
 const calculatePrice = computed(() => {
   const startStr = reservation.value.startTime
   const endStr = reservation.value.endTime
-  const dur = space.value.duration      // duración de un bloque, en minutos
-  const pricePer = space.value.pricing       // precio por bloque
+  let dur = 0;
+  let pricePer = 0;
+  if (reservation.value.item === 'space') {
+    dur = space.value.duration      // duración de un bloque, en minutos
+    pricePer = space.value.pricing       // precio por bloque
+  } else {
+    dur = material.value.duration      // duración de un bloque, en minutos
+    pricePer = material.value.pricing       // precio por bloque
+  }
 
   // convierto fecha ISO en minutos
   const startMin = makeMinutesFromIsoLocal(startStr)
@@ -451,8 +487,7 @@ const calculatePrice = computed(() => {
 
   // calculo cuántos bloques completos caben
   const blocks = (endMin - startMin) / dur
-  console.log(blocks)
-
+  //console.log(blocks)
 
   // en caso de que no sea un múltiplo exacto, redondeamos hacia abajo
   const fullBlocks = Math.floor(blocks)

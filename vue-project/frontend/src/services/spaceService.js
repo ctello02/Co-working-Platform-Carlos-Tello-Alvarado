@@ -3,29 +3,31 @@ import axiosInstance from '@/plugins/axiosConfig'; // Importamos la configuraci√
 const API_URL = '/spaces';
 
 export const spaceService = {
+  getSpaces() {
+    return axiosInstance.get(`${API_URL}/getSpaces`);
+  },
 
-    getSpaces() {
-        return axiosInstance.get(`${API_URL}/getSpaces`);
-    },
+  createSpace(formData) {
+    return axiosInstance.post(`${API_URL}/createSpace`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+  },
 
-    createSpace(formData) {
-        return axiosInstance.post(`${API_URL}/createSpace`, formData, {
-            headers: {
-                'Content-Type': 'multipart/form-data',
-            }
-        });
-    },
+  updateSpace(formData) {
+    return axiosInstance.put(`${API_URL}/updateSpace`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+  },
 
-    updateSpace(formData) {
-        return axiosInstance.put(`${API_URL}/updateSpace`, formData, {
-            headers: {
-                'Content-Type': 'multipart/form-data'
-            }
-        });
-    },
+  deleteSpace(id) {
+    return axiosInstance.delete(`${API_URL}/deleteSpace/${id}`);
+  },
 
-    deleteSpace(id) {
-        return axiosInstance.delete(`${API_URL}/deleteSpace/${id}`);
-    },
-
+  bulkDeleteSpace(id) {
+    return axiosInstance.delete(`${API_URL}/bulkDeleteSpace/${id}`);
+  },
 };

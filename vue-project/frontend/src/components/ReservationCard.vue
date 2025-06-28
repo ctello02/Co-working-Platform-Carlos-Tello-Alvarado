@@ -2,7 +2,10 @@
     <v-container>
         <v-card @click="infoEvent(reservation)" class="text-center main-container" :ripple="false" elevation="0">
             <v-card-title>
-                <span class="text-h6">Reserva de {{ reservation?.spaceId.name }}</span>
+                <span class="text-h6">
+                    Reserva de
+                    {{ reservation?.spaceId?.name || reservation?.materialId?.name }}
+                </span>
                 <v-divider class="mt-1" />
             </v-card-title>
             <v-card-text>
