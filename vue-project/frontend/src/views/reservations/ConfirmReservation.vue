@@ -191,7 +191,6 @@ const {
 // Variables Reactivas
 // ------------------------------------------------
 const reservation = ref(null);
-const reservationsByDate = ref([]);
 const periodicReservations = ref([]);
 const startTime = ref(null);
 const endTime = ref(null);
@@ -200,7 +199,6 @@ const pricing = ref(null);
 
 const space = ref(null);
 const material = ref(null);
-const hoursReserved = ref([]);
 const showSpaceModal = ref(false);
 const showMaterialModal = ref(false);
 const periodicReservedModal = ref(false);
@@ -226,7 +224,6 @@ const repetitionOptions = [
 onMounted(async () => {
   reservation.value = reservationStore.getReservation;
 
-
   if (!reservationStore.getReservation) {
     router.push('/createReservation');
   } else {
@@ -240,7 +237,7 @@ onMounted(async () => {
       pricing.value = material.value.pricing;
     }
 
-    await getReservations();
+    await getPeriodicReservations();
 
     if (reservation.value.item === 'space') {
       reservationSeats.value = reservation.value.seatsReserved;
@@ -256,40 +253,20 @@ onMounted(async () => {
 // ------------------------------------------------
 // Obtener reservas periódicas
 // ------------------------------------------------
-async function getReservations() {
-
-  const day = reservation.value.startTime.split('T')[0];
-
-  let oneShot = [];
-  try {
-    const d1 = await reservationService.getReservationsByDate(day);
-    oneShot = d1.data.reservations || [];
-  } catch (e) {
-    if (e.response?.status === 404) {
-      // no hay reservas: lo tomamos como un array vacío
-      oneShot = [];
-    } else throw e;
-  }
-  reservationsByDate.value = oneShot.filter(reservation => {
-    return reservation.spaceId == space.value._id
-  }) || [];
-
+async function getPeriodicReservations() {
   let periodic = [];
   try {
-    const d2 = await reservationService.getPeriodicReservations();
-    periodic = d2.data.periodicReservations || [];
+    const pr = await reservationService.getPeriodicReservations();
+    periodic = pr.data.periodicReservations || [];
   } catch (e) {
     if (e.response?.status === 404) {
-      // no hay reservas periódicas: lo tomamos como un array vacío
+      // no hay reservas periódicas, lo tomamos como un array vacío
       periodic = [];
     } else throw e;
   }
-  periodicReservations.value = periodic.filter(reservation => {
-    return reservation.spaceId == space.value._id
+  periodicReservations.value = periodic.filter(r => {
+    return (reservation.value.spaceId ? r.spaceId === space.value._id : r.materialId === material.value._id)
   }) || [];
-
-  hoursReserved.value.push(...reservationsByDate.value);
-  hoursReserved.value.push(...periodicReservations.value);
 
 };
 // ------------------------------------------------
@@ -341,8 +318,8 @@ const submit = async () => {
     isLoading.value = false;
     toast.success(res.data.message);
 
-    const conflictObjects = res.data.conflictObjects;
-    if (conflictObjects) {
+    const conflictObjects = res.data.conflictObjects || [];
+    if (conflictObjects.length > 0) {
       toast.warning(`Se han producido ${conflictObjects.length} conflictos. Debe reservar manualmente los días donde ha habido un error.`);
     }
 
@@ -508,7 +485,7 @@ const calculatePrice = computed(() => {
 
   // calculo cuántos bloques completos caben
   const blocks = (endMin - startMin) / dur
-  console.log(blocks)
+  //console.log(blocks)
 
   // en caso de que no sea un múltiplo exacto, redondeamos hacia abajo
   const fullBlocks = Math.floor(blocks)

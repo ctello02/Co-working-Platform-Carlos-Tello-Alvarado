@@ -153,8 +153,6 @@ export function useItemSlots({
         // chequear cada sub-slot del bloque
         for (let k = 0; k < duration / interval; k++) {
           const sub = slots[idx + k];
-          console.log('sub', sub);
-
           if (
             !sub ||
             sub.unitsLeft <= 0 ||
@@ -177,7 +175,13 @@ export function useItemSlots({
 
     for (let e = startMin + duration; e <= closing; e += duration) {
       const block = slots.filter((x) => x.minutes >= startMin && x.minutes < e);
-      if (block.some((x) => x.unitsLeft === 0)) break;
+      if (
+        block.some(
+          (x) =>
+            x.unitsLeft === 0 || (foreignKey === 'materialId' && x.isReserved)
+        )
+      )
+        break;
       const f = slots.find((x) => x.minutes === e);
       ends.push(f ? f.time : makeHoursAndMinutes(e));
     }

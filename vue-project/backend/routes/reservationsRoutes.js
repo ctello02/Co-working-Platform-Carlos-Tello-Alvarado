@@ -2,7 +2,6 @@ const express = require('express');
 const {
   createReservation,
   createPeriodicReservation,
-  getReservations,
   getPeriodicReservations,
   getUserReservations,
   getReservationsByDate,
@@ -27,7 +26,6 @@ router.post(
   upload.none(),
   createPeriodicReservation
 );
-router.get('/getReservations', verifyToken, getReservations);
 router.get('/getPeriodicReservations', verifyToken, getPeriodicReservations);
 router.get('/getUserReservations/:id', verifyToken, getUserReservations);
 router.get('/getReservationsByDate/:date', verifyToken, getReservationsByDate);
