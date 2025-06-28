@@ -10,8 +10,10 @@
                     <v-tab :ripple="false" value="next" class="no-hover text-none v-subtab-text">Próximas</v-tab>
                     <v-tab :ripple="false" value="past" class="no-hover text-none v-subtab-text">Anteriores</v-tab>
                 </v-tabs>
-                <v-spacer></v-spacer>
-                <TonalButton class="mr-1" color="blue" text="Crear reserva" @click="openCreateReservation" />
+                <v-spacer />
+                <TonalButton v-if="userStore.isAdmin" class="mr-1" color="grey" text="Ver reservas de hoy"
+                    @click="openTodayReservations" />
+                <TonalButton class="mr-1 ml-2" color="blue" text="Crear reserva" @click="openCreateReservation" />
             </v-row>
 
             <v-row>
@@ -217,15 +219,10 @@ const groupedByDate = computed(() => {
     else if (subTab.value === 'past')
         reservationsToSearch = filteredPastReservations.value;
 
-
-    if (dateDesc.value == true) {
-        //Filtrar por fecha descendente
+    if (dateDesc.value == true) //Filtrar por fecha descendente
         reservationsToSearch.sort((a, b) => new Date(b.startTime) - new Date(a.startTime));
-    }
-    else {
-        //Filtrar por fecha ascendente
+    else //Filtrar por fecha ascendente
         reservationsToSearch.sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
-    }
 
     reservationsToSearch.forEach((reservation) => {
         const dateKey = twoDigitsDate(new Date(reservation.startTime));
@@ -455,6 +452,10 @@ function setWindowParams() {
 function handleRowClick(item) {
     reservationStore.setReservation(item.object)
     router.push('/reservationInfo')
+};
+
+function openTodayReservations() {
+    router.push('/todayReservations');
 };
 
 function openCreateReservation() {

@@ -56,6 +56,8 @@
 import { useRouter } from 'vue-router';
 import { useTime } from '@/composables/useTime';
 import { useReservationStore } from '@/store/reservationStore';
+import { useSpaceStore } from '@/store/spaceStore';
+import { useMaterialStore } from '@/store/materialStore';
 
 const props = defineProps({
     reservation: { type: Object, required: true }
@@ -63,6 +65,8 @@ const props = defineProps({
 
 const router = useRouter();
 const reservationStore = useReservationStore();
+const spaceStore = useSpaceStore();
+const materialStore = useMaterialStore();
 
 // Extraemos funciones del composable useTime
 const {
@@ -71,6 +75,8 @@ const {
 } = useTime();
 
 const infoEvent = (reservation) => {
+    if (reservation.spaceId) spaceStore.setSelectedSpace(reservation.spaceId);
+    else materialStore.setSelectedMaterial(reservation.materialId);
     reservationStore.setReservation(reservation);
     router.push('/reservationInfo');
 }

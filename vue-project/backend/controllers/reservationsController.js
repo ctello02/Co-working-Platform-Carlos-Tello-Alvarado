@@ -47,8 +47,6 @@ exports.createPeriodicReservation = async (req, res) => {
     if (materialId == 'null') req.body.materialId = null;
     if (seatsReserved == 'null') req.body.seatsReserved = null;
 
-    console.log(req.body);
-
     if (
       !userId ||
       !startTime ||
@@ -110,8 +108,6 @@ exports.createPeriodicReservation = async (req, res) => {
         endTime: currentEnd,
         periodicReservationId: savedPeriodicReservation._id,
       };
-
-      console.log('newObject', newObject);
 
       if (conflict) {
         conflictCounter++;
@@ -192,6 +188,31 @@ exports.getUserReservations = async (req, res) => {
       pastReservations, // terminadas (endTime < now)
       nextReservations, // en curso o futuras (endTime >= now)
     });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+exports.getTodayReservations = async (req, res) => {
+  try {
+    // inicio de hoy (00:00) y de mañana (00:00)
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    // buscamos cualquier reserva que empiece antes de mañana
+    // y termine después de hoy (se solapa en algún punto)
+    const reservations = await Reservation.find({
+      startTime: { $lt: tomorrow },
+      endTime: { $gte: today },
+    })
+      .populate('spaceId')
+      .populate('materialId')
+      .sort({ startTime: 1 });
+
+    return res.json({ reservations });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -375,7 +396,7 @@ exports.deletePeriodicReservation = async (req, res) => {
     res.status(200).json({ message: 'Reserva periódica eliminada con éxito' });
   } catch (error) {
     await session.abortTransaction();
-    console.log('Error al eliminar la reserva periódica:', error);
+    console.error('Error al eliminar la reserva periódica:', error);
     res.status(500).json({ message: error.message });
   } finally {
     session.endSession();
@@ -385,5 +406,3 @@ exports.deletePeriodicReservation = async (req, res) => {
 // payReservation
 
 // markPaidReservation
-
-// getTodayReservations
