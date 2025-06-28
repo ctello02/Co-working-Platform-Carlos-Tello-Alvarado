@@ -294,6 +294,13 @@ async function submit() {
         } else {
             res = await reservationService.updateReservation(newReservation);
         }
+
+        const storeReservation = {
+            ...reservation.value,
+            ...newReservation,
+        }
+        reservationStore.setReservation(storeReservation);
+
         isLoading.value = false;
         toast.success(res.data.message);
 

@@ -66,7 +66,7 @@
                         </v-col>
                     </v-row>
 
-                    <v-row class="my-n3" cols="12">
+                    <!-- <v-row class="my-n3" cols="12">
                         <v-col cols="1" class="d-flex align-center">
                             <v-icon icon="mdi-repeat" size="small" />
                         </v-col>
@@ -76,9 +76,43 @@
                                     {{ parseRepetition(reservation.periodicReservationId.periodicity) }}
                                 </span>
                                 <span v-else>
-                                    No se repite
+                                    Sin repetición
                                 </span>
                             </span>
+                        </v-col>
+                    </v-row> -->
+                    <v-row class="my-n3 d-flex justify-center align-center" cols="12">
+                        <v-col>
+                            <v-row>
+                                <v-col cols="2" class="d-flex align-center">
+                                    <v-icon icon="mdi-repeat" size="small" />
+                                </v-col>
+                                <v-col>
+                                    <span class="pt-2 text-h6">
+                                        <span v-if="reservation.periodicReservationId">
+                                            {{ parseRepetition(reservation.periodicReservationId.periodicity) }}
+                                        </span>
+                                        <span v-else>
+                                            Sin repetición
+                                        </span>
+                                    </span>
+                                </v-col>
+                            </v-row>
+                        </v-col>
+                        <v-col>
+                            <v-row>
+                                <v-col cols="2" class="d-flex align-center">
+                                    <v-icon icon="mdi-hand-coin-outline" size="small" />
+                                </v-col>
+                                <v-col>
+                                    <span v-if="reservation.isPaid" class="text-h6">
+                                        Pagada ({{ calculatePrice }}€)
+                                    </span>
+                                    <span v-else class="text-h6">
+                                        Sin pagar ({{ calculatePrice }}€)
+                                    </span>
+                                </v-col>
+                            </v-row>
                         </v-col>
                     </v-row>
                 </v-col>
@@ -98,9 +132,10 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { useReservationStore } from '@/store/reservationStore';
 import { useSpaceStore } from '@/store/spaceStore';
+import { useMaterialStore } from '@/store/materialStore';
 import { useRouter } from 'vue-router';
 import TonalButton from '@/components/TonalButton.vue'
 import AskModal from '@/components/AskModal.vue';
@@ -111,10 +146,14 @@ import { useToast } from 'vue-toastification';
 // Instanciar stores
 const reservationStore = useReservationStore();
 const spaceStore = useSpaceStore();
+const materialStore = useMaterialStore();
 const router = useRouter();
 
 // Variables reactivas
+const space = ref(null);
+const material = ref(null);
 const reservation = ref(null);
+const reservationSeats = ref(1);
 const canEdit = ref(false);
 const deleteModal = ref(false);
 const bulkDeleteReservations = ref(false);
@@ -127,7 +166,8 @@ const {
     calcPastEvents,
     isWithinNext24Hours,
     isToday,
-    parseDateTo_YYYYMMDD_HHMM
+    parseDateTo_YYYYMMDD_HHMM,
+    makeMinutesFromIsoLocal
 } = useTime();
 
 // Al montar el componente, se asigna la reserva y se redirige si no existe
@@ -137,6 +177,12 @@ onMounted(() => {
     if (!reservation.value) {
         router.push('/reservations');
     } else {
+        if (reservation.value.spaceId) {
+            space.value = spaceStore.getSelectedSpace;
+            reservationSeats.value = reservation.value.seatsReserved;
+        } else {
+            material.value = materialStore.getSelectedMaterial;
+        }
 
         // si es el pasado, es hoy, o queda menos de 24 horas para que empiece, 
         // NO se puede editar
@@ -150,7 +196,12 @@ onMounted(() => {
 });
 
 function openEditReservationInfo() {
-    spaceStore.setSelectedSpace(reservation.value.spaceId);
+    if (reservation.value.spaceId) {
+        spaceStore.setSelectedSpace(reservation.value.spaceId);
+    } else {
+        materialStore.setSelectedMaterial(reservation.value.materialId);
+    }
+
     router.push('/editReservationInfo');
 }
 
@@ -187,6 +238,35 @@ function deleteReservation() {
             });
     }
 }
+
+const calculatePrice = computed(() => {
+    const startStr = reservation.value.startTime
+    const endStr = reservation.value.endTime
+    let dur = 0;
+    let pricePer = 0;
+    if (reservation.value.spaceId) {
+        dur = space?.value.duration      // duración de un bloque, en minutos
+        pricePer = space?.value.pricing       // precio por bloque
+    } else {
+        dur = material?.value.duration      // duración de un bloque, en minutos
+        pricePer = material?.value.pricing       // precio por bloque
+    }
+
+    // convierto fecha ISO en minutos
+    const startMin = makeMinutesFromIsoLocal(startStr)
+    const endMin = makeMinutesFromIsoLocal(endStr)
+
+    // calculo cuántos bloques completos caben
+    const blocks = (endMin - startMin) / dur
+    //console.log(blocks)
+
+    // en caso de que no sea un múltiplo exacto, redondeamos hacia abajo
+    const fullBlocks = Math.floor(blocks)
+    const total = fullBlocks * pricePer * reservationSeats?.value
+
+    // toFixed devuelve una string con dos decimales
+    return total.toFixed(2)
+})
 
 // Traduce el valor de repetición a un string legible
 const parseRepetition = (repetition) => {

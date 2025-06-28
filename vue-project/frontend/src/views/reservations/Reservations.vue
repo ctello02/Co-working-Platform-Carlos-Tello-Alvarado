@@ -462,6 +462,9 @@ function openCreateReservation() {
 };
 
 function openReservation() {
+    const reservation = reservationStore.getReservation;
+    if (reservation.spaceId) spaceStore.setSelectedSpace(reservation.spaceId);
+    else materialStore.setSelectedMaterial(reservation.materialId);
     router.push('/reservationInfo');
 };
 

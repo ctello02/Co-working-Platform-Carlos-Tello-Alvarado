@@ -294,6 +294,8 @@ const submit = async () => {
   formData.append('startTime', reservation.value.startTime);
   formData.append('endTime', reservation.value.endTime);
 
+  formData.append('isPaid', true);
+
   try {
     let res;
 
