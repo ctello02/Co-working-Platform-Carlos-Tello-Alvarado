@@ -66,21 +66,6 @@
                         </v-col>
                     </v-row>
 
-                    <!-- <v-row class="my-n3" cols="12">
-                        <v-col cols="1" class="d-flex align-center">
-                            <v-icon icon="mdi-repeat" size="small" />
-                        </v-col>
-                        <v-col>
-                            <span class="pt-2 text-h6">
-                                <span v-if="reservation.periodicReservationId">
-                                    {{ parseRepetition(reservation.periodicReservationId.periodicity) }}
-                                </span>
-                                <span v-else>
-                                    Sin repetición
-                                </span>
-                            </span>
-                        </v-col>
-                    </v-row> -->
                     <v-row class="my-n3 d-flex justify-center align-center" cols="12">
                         <v-col>
                             <v-row>
@@ -99,7 +84,7 @@
                                 </v-col>
                             </v-row>
                         </v-col>
-                        <v-col>
+                        <v-col v-if="reservation">
                             <v-row>
                                 <v-col cols="2" class="d-flex align-center">
                                     <v-icon icon="mdi-hand-coin-outline" size="small" />
@@ -171,8 +156,8 @@ const {
 } = useTime();
 
 // Al montar el componente, se asigna la reserva y se redirige si no existe
-onMounted(() => {
-    reservation.value = reservationStore.getReservation;
+onMounted(async () => {
+    reservation.value = await reservationStore.getReservation;
 
     if (!reservation.value) {
         router.push('/reservations');
@@ -244,7 +229,7 @@ const calculatePrice = computed(() => {
     const endStr = reservation.value.endTime
     let dur = 0;
     let pricePer = 0;
-    if (reservation.value.spaceId) {
+    if (reservationStore.getReservation?.spaceId) {
         dur = space?.value.duration      // duración de un bloque, en minutos
         pricePer = space?.value.pricing       // precio por bloque
     } else {
@@ -282,6 +267,6 @@ const parseRepetition = (repetition) => {
 };
 
 const routerBack = () => {
-    router.push('/reservations');
+    router.go(-1);
 };
 </script>
