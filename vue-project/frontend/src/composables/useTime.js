@@ -160,11 +160,14 @@ export function useTime() {
    * al formato "DD/MM/YYYY".
    */
   const twoDigitsDate = (date) => {
+    // date = "2025-06-30T22:00:00.000Z", o un Date.toISOString()
+    const d = new Date(date);
     return new Intl.DateTimeFormat('es-ES', {
+      timeZone: 'UTC',
       day: '2-digit',
       month: '2-digit',
       year: 'numeric',
-    }).format(date);
+    }).format(d);
   };
 
   /**

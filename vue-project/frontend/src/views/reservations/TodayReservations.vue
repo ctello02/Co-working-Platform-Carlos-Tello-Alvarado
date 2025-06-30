@@ -21,7 +21,7 @@
 
             <v-row class="mt-n6 mx-n5">
                 <!-- Mensaje si no hay reservas -->
-                <v-col cols="12" v-if="reservations.length === 0" class="text-center mt-3">
+                <v-col cols="12" v-if="reservations.length === 0" class="text-center mt-10">
                     <span class="text-h5">No hay reservas para hoy</span>
                 </v-col>
 
@@ -43,7 +43,7 @@
                             <v-row v-else>
                                 <v-col v-for="reservation in displayedReservations" :key="reservation._id" lg="3" md="4"
                                     sm="12" xs="12" class="ma-0 pa-0">
-                                    <ReservationCard :reservation="reservation" />
+                                    <ReservationCard :reservation="reservation" :showMoreDetails="true" />
                                 </v-col>
                             </v-row>
                         </v-col>
@@ -67,7 +67,7 @@
                                         </v-col>
                                         <v-col v-else v-for="reservation in reservs" :key="reservation._id" cols="12"
                                             sm="6" md="4">
-                                            <ReservationCard :reservation="reservation" />
+                                            <ReservationCard :reservation="reservation" :showMoreDetails="true" />
                                         </v-col>
                                     </v-row>
                                 </v-card>
@@ -93,7 +93,7 @@
                                         </v-col>
                                         <v-col v-else v-for="reservation in reservs" :key="reservation._id" cols="12"
                                             sm="6" md="4">
-                                            <ReservationCard :reservation="reservation" />
+                                            <ReservationCard :reservation="reservation" :showMoreDetails="true" />
                                         </v-col>
                                     </v-row>
                                 </v-card>
@@ -118,7 +118,7 @@
                             <v-row v-else>
                                 <v-col v-for="reservation in displayedReservations" :key="reservation._id" lg="3" md="4"
                                     sm="12" xs="12" class="ma-0 pa-0">
-                                    <ReservationCard :reservation="reservation" />
+                                    <ReservationCard :reservation="reservation" :showMoreDetails="true" />
                                 </v-col>
                             </v-row>
                         </v-col>
@@ -142,7 +142,7 @@
                                         </v-col>
                                         <v-col v-else v-for="reservation in reservs" :key="reservation._id" cols="12"
                                             sm="6" md="4">
-                                            <ReservationCard :reservation="reservation" />
+                                            <ReservationCard :reservation="reservation" :showMoreDetails="true" />
                                         </v-col>
                                     </v-row>
                                 </v-card>
@@ -168,7 +168,7 @@
                                         </v-col>
                                         <v-col v-else v-for="reservation in reservs" :key="reservation._id" cols="12"
                                             sm="6" md="4">
-                                            <ReservationCard :reservation="reservation" />
+                                            <ReservationCard :reservation="reservation" :showMoreDetails="true" />
                                         </v-col>
                                     </v-row>
                                 </v-card>
@@ -192,7 +192,7 @@
                             <v-row v-else>
                                 <v-col v-for="reservation in displayedReservations" :key="reservation._id" lg="3" md="4"
                                     sm="12" xs="12" class="ma-0 pa-0">
-                                    <ReservationCard :reservation="reservation" />
+                                    <ReservationCard :reservation="reservation" :showMoreDetails="true" />
                                 </v-col>
                             </v-row>
                         </v-col>
@@ -216,7 +216,7 @@
                                         </v-col>
                                         <v-col v-else v-for="reservation in reservs" :key="reservation._id" cols="12"
                                             sm="6" md="4">
-                                            <ReservationCard :reservation="reservation" />
+                                            <ReservationCard :reservation="reservation" :showMoreDetails="true" />
                                         </v-col>
                                     </v-row>
                                 </v-card>
@@ -242,7 +242,7 @@
                                         </v-col>
                                         <v-col v-else v-for="reservation in reservs" :key="reservation._id" cols="12"
                                             sm="6" md="4">
-                                            <ReservationCard :reservation="reservation" />
+                                            <ReservationCard :reservation="reservation" :showMoreDetails="true" />
                                         </v-col>
                                     </v-row>
                                 </v-card>

@@ -10,6 +10,20 @@
             </v-card-title>
             <v-card-text>
                 <v-row>
+                    <v-col cols="12" v-if="showMoreDetails">
+                        <v-row>
+                            <v-col style="color: grey">
+                                <span class="text-h7">Usuario:
+                                </span>
+                            </v-col>
+                        </v-row>
+                        <v-row>
+                            <v-col class="mt-n7">
+                                <span class="text-h6"> {{ reservation.userId.name }}
+                                </span>
+                            </v-col>
+                        </v-row>
+                    </v-col>
                     <v-col cols="12">
                         <v-row>
                             <v-col style="color: grey">
@@ -53,6 +67,7 @@
 </template>
 
 <script setup>
+import { ref, onMounted, onUnmounted, computed, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useTime } from '@/composables/useTime';
 import { useReservationStore } from '@/store/reservationStore';
@@ -60,7 +75,13 @@ import { useSpaceStore } from '@/store/spaceStore';
 import { useMaterialStore } from '@/store/materialStore';
 
 const props = defineProps({
-    reservation: { type: Object, required: true }
+    reservation: { type: Object, required: true },
+    showMoreDetails: { type: Boolean, required: false },
+});
+
+onMounted(() => {
+    console.log(props.reservation);
+
 })
 
 const router = useRouter();

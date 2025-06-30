@@ -208,6 +208,7 @@ exports.getTodayReservations = async (req, res) => {
       startTime: { $lt: tomorrow },
       endTime: { $gte: today },
     })
+      .populate('userId')
       .populate('spaceId')
       .populate('materialId')
       .sort({ startTime: 1 });
