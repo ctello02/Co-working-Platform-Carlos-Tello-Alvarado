@@ -77,16 +77,14 @@ export function useTime() {
   }
 
   /**
-   * Obtiene la hora y los minutos de una fecha (usando UTC) en formato "HH:MM".
+   * Dada una ISO-string "2025-06-30T22:30:00.000Z"
+   * devuelve "22:30" sin tocar husos locales.
    */
-  const getHoursAndMinsFromDate = (dateString) => {
-    const date = parseDateTo_YYYYMMDD_HHMM(dateString);
-
-    const [datePart, hourPart] = date.split(' ');
-
-    // Se envía con el formato "HH:mm"
-    return hourPart;
-  };
+  function getHoursAndMinsFromDate(isoString) {
+    const timePart = isoString.split('T')[1]; // "22:30:00.000Z"
+    const [hh, mm] = timePart.split(':'); // ["22","30","00.000Z"]
+    return `${hh}:${mm}`;
+  }
 
   /**
    * Parsea una fecha y la formatea a un string legible en español.
@@ -94,6 +92,7 @@ export function useTime() {
    */
   const parseToStringDate = (date) => {
     return new Intl.DateTimeFormat('es-ES', {
+      timeZone: 'UTC',
       weekday: 'long',
       day: 'numeric',
       month: 'long',
