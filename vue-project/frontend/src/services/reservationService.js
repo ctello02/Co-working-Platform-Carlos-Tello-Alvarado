@@ -24,12 +24,12 @@ export const reservationService = {
     );
   },
 
-  getPeriodicReservations() {
-    return axiosInstance.get(`${API_URL}/getPeriodicReservations`);
-  },
-
   getUserReservations(id) {
     return axiosInstance.get(`${API_URL}/getUserReservations/${id}`);
+  },
+
+  getPeriodicReservations() {
+    return axiosInstance.get(`${API_URL}/getPeriodicReservations`);
   },
 
   getTodayReservations() {
@@ -38,6 +38,10 @@ export const reservationService = {
 
   getReservationsByDate(date) {
     return axiosInstance.get(`${API_URL}/getReservationsByDate/${date}`);
+  },
+
+  getUserByReservationId(id) {
+    return axiosInstance.get(`${API_URL}/getUserByReservationId/${id}`);
   },
 
   updateReservation(reservation) {

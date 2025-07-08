@@ -1,6 +1,6 @@
 <template>
     <v-container class="pa-5 container">
-        <v-card v-if="reservation" class="mx-auto" max-width="600">
+        <v-card v-if="reservation && reservationUser" class="mx-auto" max-width="600">
             <v-img :src="reservation.spaceId?.image || reservation.materialId?.image" color="surface-variant"
                 height="300px" cover />
             <v-card-text v-if="reservation">
@@ -24,6 +24,15 @@
                         <v-col>
                             <span class="text-h6">{{ reservation.spaceId?.description ||
                                 reservation.materialId?.description }}</span>
+                        </v-col>
+                    </v-row>
+
+                    <v-row v-if="userStore.isAdmin" class="my-n3" cols="12">
+                        <v-col cols="1" class="d-flex align-center">
+                            <v-icon icon="mdi-account-outline" />
+                        </v-col>
+                        <v-col>
+                            <span class="text-h6">{{ reservationUser?.name }}, {{ reservationUser?.email }}</span>
                         </v-col>
                     </v-row>
 
@@ -118,6 +127,7 @@
 
 <script setup>
 import { ref, onMounted, computed } from 'vue';
+import { useUserStore } from '@/store/userStore';
 import { useReservationStore } from '@/store/reservationStore';
 import { useSpaceStore } from '@/store/spaceStore';
 import { useMaterialStore } from '@/store/materialStore';
@@ -129,12 +139,14 @@ import { useTime } from '@/composables/useTime';
 import { useToast } from 'vue-toastification';
 
 // Instanciar stores
+const userStore = useUserStore();
 const reservationStore = useReservationStore();
 const spaceStore = useSpaceStore();
 const materialStore = useMaterialStore();
 const router = useRouter();
 
 // Variables reactivas
+const reservationUser = ref(null);
 const space = ref(null);
 const material = ref(null);
 const reservation = ref(null);
@@ -169,6 +181,8 @@ onMounted(async () => {
             material.value = materialStore.getSelectedMaterial;
         }
 
+        getUserByReservationId(reservation.value._id);
+
         // si es el pasado, es hoy, o queda menos de 24 horas para que empiece, 
         // NO se puede editar
         if (calcPastEvents(reservation.value.startTime) ||
@@ -179,6 +193,18 @@ onMounted(async () => {
         else canEdit.value = true;
     }
 });
+
+function getUserByReservationId() {
+    reservationService.getUserByReservationId(reservation.value._id)
+        .then(res => {
+            reservationUser.value = res.data.reservation.userId;
+            console.log(reservationUser.value);
+
+        })
+        .catch(error => {
+            console.error('Error al obtener el usuario:', error);
+        });
+};
 
 function openEditReservationInfo() {
     if (reservation.value.spaceId) {

@@ -34,7 +34,7 @@
                             <v-row v-if="list">
                                 <v-col>
                                     <v-card class="ma-1">
-                                        <Table :headers="tableHeaders" :fields="['name', 'date', 'schedule']"
+                                        <Table :headers="tableHeaders" :fields="['name', 'user', 'date', 'schedule']"
                                             :items="tableItems" @rowClick="onClick" clickable />
                                     </v-card>
                                 </v-col>
@@ -61,7 +61,7 @@
                                     </v-card-title>
                                     <v-row v-if="expandedNames[itemName]">
                                         <v-col v-if="list">
-                                            <Table :headers="tableHeaders" :fields="['date', 'schedule']"
+                                            <Table :headers="tableHeaders" :fields="['user', 'date', 'schedule']"
                                                 :items="tableDropdownItems(reservs)" @rowClick="onClick" clickable
                                                 style="width: 100%;" />
                                         </v-col>
@@ -87,7 +87,7 @@
                                     </v-card-title>
                                     <v-row v-if="expandedDates[dateKey]">
                                         <v-col v-if="list">
-                                            <Table :headers="tableHeaders" :fields="['name', 'schedule']"
+                                            <Table :headers="tableHeaders" :fields="['name', 'user', 'schedule']"
                                                 :items="tableDropdownItems(reservs)" @rowClick="onClick" clickable
                                                 style="width: 100%;" />
                                         </v-col>
@@ -109,7 +109,7 @@
                             <v-row v-if="list">
                                 <v-col>
                                     <v-card class="ma-1">
-                                        <Table :headers="tableHeaders" :fields="['name', 'date', 'schedule']"
+                                        <Table :headers="tableHeaders" :fields="['name', 'user', 'date', 'schedule']"
                                             :items="tableItems" @rowClick="onClick" clickable />
                                     </v-card>
                                 </v-col>
@@ -136,7 +136,7 @@
                                     </v-card-title>
                                     <v-row v-if="expandedNames[itemName]">
                                         <v-col v-if="list">
-                                            <Table :headers="tableHeaders" :fields="['date', 'schedule']"
+                                            <Table :headers="tableHeaders" :fields="['user', 'date', 'schedule']"
                                                 :items="tableDropdownItems(reservs)" @rowClick="onClick" clickable
                                                 style="width: 100%;" />
                                         </v-col>
@@ -162,7 +162,7 @@
                                     </v-card-title>
                                     <v-row v-if="expandedDates[dateKey]">
                                         <v-col v-if="list">
-                                            <Table :headers="tableHeaders" :fields="['name', 'schedule']"
+                                            <Table :headers="tableHeaders" :fields="['name', 'user', 'schedule']"
                                                 :items="tableDropdownItems(reservs)" @rowClick="onClick" clickable
                                                 style="width: 100%;" />
                                         </v-col>
@@ -183,7 +183,7 @@
                             <v-row v-if="list">
                                 <v-col>
                                     <v-card class="ma-1">
-                                        <Table :headers="tableHeaders" :fields="['name', 'date', 'schedule']"
+                                        <Table :headers="tableHeaders" :fields="['name', 'user', 'date', 'schedule']"
                                             :items="tableItems" @rowClick="onClick" clickable />
                                     </v-card>
                                 </v-col>
@@ -210,7 +210,7 @@
                                     </v-card-title>
                                     <v-row v-if="expandedNames[itemName]">
                                         <v-col v-if="list">
-                                            <Table :headers="tableHeaders" :fields="['date', 'schedule']"
+                                            <Table :headers="tableHeaders" :fields="['user', 'date', 'schedule']"
                                                 :items="tableDropdownItems(reservs)" @rowClick="onClick" clickable
                                                 style="width: 100%;" />
                                         </v-col>
@@ -236,7 +236,7 @@
                                     </v-card-title>
                                     <v-row v-if="expandedDates[dateKey]">
                                         <v-col v-if="list">
-                                            <Table :headers="tableHeaders" :fields="['name', 'schedule']"
+                                            <Table :headers="tableHeaders" :fields="['name', 'user', 'schedule']"
                                                 :items="tableDropdownItems(reservs)" @rowClick="onClick" clickable
                                                 style="width: 100%;" />
                                         </v-col>
@@ -372,48 +372,6 @@ const groupedByTime = computed(() => {
     return groups;
 });
 
-// const groupedByName = computed(() => {
-//     const groups = {};
-
-//     if (dateDesc.value == true) //Filtrar por fecha descendente
-//         reservations.value.sort((a, b) => new Date(b.startTime) - new Date(a.startTime));
-//     else //Filtrar por fecha ascendente
-//         reservations.value.sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
-
-//     reservations.value.forEach(reservation => {
-//         const nameKey = reservation.spaceId?.name || reservation.materialId?.name;
-//         if (!groups[nameKey]) {
-//             groups[nameKey] = [];
-//         }
-//         groups[nameKey].push(reservation);
-//     });
-
-//     //Ordenamos los nombres de los espacios
-//     const orderedGroups = {};
-//     Object.keys(groups).sort().forEach(key => {
-//         orderedGroups[key] = groups[key];
-//     });
-
-//     return orderedGroups;
-// });
-
-// const groupedByTime = computed(() => {
-//     const groups = {};
-
-//     if (dateDesc.value == true) //Filtrar por fecha descendente
-//         reservations.value.sort((a, b) => new Date(b.startTime) - new Date(a.startTime));
-//     else //Filtrar por fecha ascendente
-//         reservations.value.sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
-
-//     reservations.value.forEach((reservation) => {
-//         const dateKey = getHoursAndMinsFromDate(reservation.startTime);
-
-//         if (!groups[dateKey]) groups[dateKey] = [];
-//         groups[dateKey].push(reservation);
-//     });
-//     return groups;
-// });
-
 function toggleItem(nameKey) {
     expandedNames.value[nameKey] = !expandedNames.value[nameKey];
 };
@@ -428,8 +386,9 @@ function toggleDate(dateKey) {
 const headers = [
     { label: '#', width: '10%' },
     { label: 'Nombre', width: '15%' },
-    { label: 'Fecha', width: '20%' },
-    { label: 'Horario', width: '20%' }
+    { label: 'Usuario', width: '20%' },
+    { label: 'Fecha', width: '15%' },
+    { label: 'Horario', width: '15%' }
 ];
 
 const tableHeaders = computed(() => {
@@ -461,6 +420,7 @@ function tableDropdownItems(reservations) {
             id: reservation._id,        // key para v-for
             date: `${twoDigitsDate(new Date(reservation.startTime))}`,
             name: reservation.spaceId?.name || reservation.materialId?.name,
+            user: reservation.userId?.name + ', ' + reservation.userId?.email,
             schedule: `${getHoursAndMinsFromDate(reservation.startTime)}h - ${getHoursAndMinsFromDate(reservation.endTime)}h`,
             object: reservation,      // guardamos el objeto para usarlo en las acciones
         }
@@ -474,6 +434,7 @@ const tableItems = computed(() => {
             id: reservation._id,        // key para v-for
             date: `${twoDigitsDate(new Date(reservation.startTime))}`,
             name: reservation.spaceId?.name || reservation.materialId?.name,
+            user: reservation.userId?.name + ', ' + reservation.userId?.email,
             schedule: `${getHoursAndMinsFromDate(reservation.startTime)}h - ${getHoursAndMinsFromDate(reservation.endTime)}h`,
             object: reservation,      // guardamos el objeto para usarlo en las acciones
         }

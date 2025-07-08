@@ -6,6 +6,7 @@ const {
   getUserReservations,
   getTodayReservations,
   getReservationsByDate,
+  getUserByReservationId,
   updateReservation,
   updatePeriodicReservation,
   deleteReservation,
@@ -31,6 +32,7 @@ router.get('/getPeriodicReservations', verifyToken, getPeriodicReservations);
 router.get('/getUserReservations/:id', verifyToken, getUserReservations);
 router.get('/getTodayReservations', verifyToken, getTodayReservations);
 router.get('/getReservationsByDate/:date', verifyToken, getReservationsByDate);
+router.get('/getUserByReservationId/:id', verifyToken, getUserByReservationId);
 router.put('/updateReservation', verifyToken, updateReservation);
 router.put(
   '/updatePeriodicReservation',

@@ -246,6 +246,21 @@ exports.getReservationsByDate = async (req, res) => {
   }
 };
 
+exports.getUserByReservationId = async (req, res) => {
+  try {
+    const reservation = await Reservation.findOne({
+      _id: req.params.id,
+    }).populate('userId');
+
+    if (!reservation) {
+      return res.status(404).json({ message: 'Reserva no encontrada' });
+    }
+    res.json({ reservation });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 exports.updateReservation = async (req, res) => {
   try {
     let reservation = await Reservation.findOne({ _id: req.body._id });
