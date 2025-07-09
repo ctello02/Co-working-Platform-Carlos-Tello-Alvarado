@@ -197,7 +197,7 @@ exports.getTodayReservations = async (req, res) => {
   try {
     // inicio de hoy (00:00) y de mañana (00:00)
     const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    //today.setHours(0, 0, 0, 0);
 
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);

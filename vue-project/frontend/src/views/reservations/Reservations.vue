@@ -421,7 +421,6 @@ function roundToNearestQuarterHour(timeString) {
 
 function getWindowParams() {
     const storedWindow = reservationStore.getWindowParams;
-    console.log(storedWindow);
 
     if (storedWindow) {
         mainTab.value = storedWindow?.mainTab || 'calendar';

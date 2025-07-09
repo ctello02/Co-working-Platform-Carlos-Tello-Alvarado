@@ -21,7 +21,8 @@
 
             <v-row class="mt-n6 mx-n5">
                 <!-- Mensaje si no hay reservas -->
-                <v-col cols="12" v-if="reservations.length === 0" class="text-center mt-10">
+                <v-col cols="12" v-if="reservations.length === 0 || tableItems.length === 0 ||
+                    displayedReservations.length === 0" class="text-center mt-10">
                     <span class="text-h5">No hay reservas para hoy</span>
                 </v-col>
 
@@ -34,8 +35,9 @@
                             <v-row v-if="list">
                                 <v-col>
                                     <v-card class="ma-1">
-                                        <Table :headers="tableHeaders" :fields="['name', 'user', 'date', 'schedule']"
-                                            :items="tableItems" @rowClick="onClick" clickable />
+                                        <Table v-if="tableItems.length > 0" :headers="tableHeaders"
+                                            :fields="['name', 'user', 'date', 'schedule']" :items="tableItems"
+                                            @rowClick="onClick" clickable />
                                     </v-card>
                                 </v-col>
                             </v-row>
@@ -61,7 +63,8 @@
                                     </v-card-title>
                                     <v-row v-if="expandedNames[itemName]">
                                         <v-col v-if="list">
-                                            <Table :headers="tableHeaders" :fields="['user', 'date', 'schedule']"
+                                            <Table v-if="tableItems.length > 0" :headers="tableHeaders"
+                                                :fields="['user', 'date', 'schedule']"
                                                 :items="tableDropdownItems(reservs)" @rowClick="onClick" clickable
                                                 style="width: 100%;" />
                                         </v-col>
@@ -87,7 +90,8 @@
                                     </v-card-title>
                                     <v-row v-if="expandedDates[dateKey]">
                                         <v-col v-if="list">
-                                            <Table :headers="tableHeaders" :fields="['name', 'user', 'schedule']"
+                                            <Table v-if="tableItems.length > 0" :headers="tableHeaders"
+                                                :fields="['name', 'user', 'schedule']"
                                                 :items="tableDropdownItems(reservs)" @rowClick="onClick" clickable
                                                 style="width: 100%;" />
                                         </v-col>
@@ -109,8 +113,9 @@
                             <v-row v-if="list">
                                 <v-col>
                                     <v-card class="ma-1">
-                                        <Table :headers="tableHeaders" :fields="['name', 'user', 'date', 'schedule']"
-                                            :items="tableItems" @rowClick="onClick" clickable />
+                                        <Table v-if="tableItems.length > 0" :headers="tableHeaders"
+                                            :fields="['name', 'user', 'date', 'schedule']" :items="tableItems"
+                                            @rowClick="onClick" clickable />
                                     </v-card>
                                 </v-col>
                             </v-row>
@@ -136,7 +141,8 @@
                                     </v-card-title>
                                     <v-row v-if="expandedNames[itemName]">
                                         <v-col v-if="list">
-                                            <Table :headers="tableHeaders" :fields="['user', 'date', 'schedule']"
+                                            <Table v-if="tableItems.length > 0" :headers="tableHeaders"
+                                                :fields="['user', 'date', 'schedule']"
                                                 :items="tableDropdownItems(reservs)" @rowClick="onClick" clickable
                                                 style="width: 100%;" />
                                         </v-col>
@@ -162,7 +168,8 @@
                                     </v-card-title>
                                     <v-row v-if="expandedDates[dateKey]">
                                         <v-col v-if="list">
-                                            <Table :headers="tableHeaders" :fields="['name', 'user', 'schedule']"
+                                            <Table v-if="tableItems.length > 0" :headers="tableHeaders"
+                                                :fields="['name', 'user', 'schedule']"
                                                 :items="tableDropdownItems(reservs)" @rowClick="onClick" clickable
                                                 style="width: 100%;" />
                                         </v-col>
@@ -183,8 +190,9 @@
                             <v-row v-if="list">
                                 <v-col>
                                     <v-card class="ma-1">
-                                        <Table :headers="tableHeaders" :fields="['name', 'user', 'date', 'schedule']"
-                                            :items="tableItems" @rowClick="onClick" clickable />
+                                        <Table v-if="tableItems.length > 0" :headers="tableHeaders"
+                                            :fields="['name', 'user', 'date', 'schedule']" :items="tableItems"
+                                            @rowClick="onClick" clickable />
                                     </v-card>
                                 </v-col>
                             </v-row>
@@ -210,7 +218,8 @@
                                     </v-card-title>
                                     <v-row v-if="expandedNames[itemName]">
                                         <v-col v-if="list">
-                                            <Table :headers="tableHeaders" :fields="['user', 'date', 'schedule']"
+                                            <Table v-if="tableItems.length > 0" :headers="tableHeaders"
+                                                :fields="['user', 'date', 'schedule']"
                                                 :items="tableDropdownItems(reservs)" @rowClick="onClick" clickable
                                                 style="width: 100%;" />
                                         </v-col>
@@ -236,7 +245,8 @@
                                     </v-card-title>
                                     <v-row v-if="expandedDates[dateKey]">
                                         <v-col v-if="list">
-                                            <Table :headers="tableHeaders" :fields="['name', 'user', 'schedule']"
+                                            <Table v-if="tableItems.length > 0" :headers="tableHeaders"
+                                                :fields="['name', 'user', 'schedule']"
                                                 :items="tableDropdownItems(reservs)" @rowClick="onClick" clickable
                                                 style="width: 100%;" />
                                         </v-col>
@@ -250,6 +260,9 @@
                         </v-col>
                     </v-tabs-window-item>
                 </v-tabs-window>
+            </v-row>
+            <v-row>
+
             </v-row>
         </v-col>
     </v-container>
@@ -308,7 +321,7 @@ async function getTodayReservations() {
         .then(res => {
             originalReservations.value = res.data.reservations;
             reservations.value = res.data.reservations;
-            //console.log(reservations.value);
+            console.log(reservations.value);
         })
         .catch(error => {
             console.log(error);
