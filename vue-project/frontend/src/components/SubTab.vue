@@ -1,7 +1,7 @@
 <template>
     <v-row>
         <!-- Mensaje si no hay reservas -->
-        <v-col cols="12" v-if="reservations.length === 0" class="text-center mt-3">
+        <v-col cols="12" v-if="reservations.length === 0" class="text-center mt-8">
             <span class="text-h5">{{ noReservationsMessage }}</span>
         </v-col>
 
@@ -27,18 +27,18 @@
         </v-col>
 
         <!-- Mostrar reservas agrupadas por espacio -->
-        <v-col v-else-if="filter === 'spacesName'" class="ma-1">
-            <v-row v-for="(reservs, spaceName) in groupedByName" :key="spaceName">
+        <v-col v-else-if="filter === 'itemsName'" class="ma-1">
+            <v-row v-for="(reservs, itemName) in groupedByName" :key="itemName">
                 <v-card style="width: 100%; cursor: pointer; border: 1px solid black;" class="ma-4" elevation="0">
-                    <v-card-title @click="() => $emit('toggleSpace', spaceName)" class="d-flex">
-                        <h3>{{ spaceName }}</h3>
+                    <v-card-title @click="() => $emit('toggleItem', itemName)" class="d-flex">
+                        <h3>{{ itemName }}</h3>
                         <v-spacer />
-                        <v-btn :ripple="false" :icon="expandedSpaces[spaceName] ? 'mdi-chevron-up' : 'mdi-chevron-down'"
+                        <v-btn :ripple="false" :icon="expandedNames[itemName] ? 'mdi-chevron-up' : 'mdi-chevron-down'"
                             variant="text" size="small" />
                     </v-card-title>
 
                     <!-- Contenido expandido/colapsado -->
-                    <v-row v-if="expandedSpaces[spaceName]">
+                    <v-row v-if="expandedNames[itemName]">
                         <!-- Modo tabla -->
                         <v-col v-if="list">
                             <Table :headers="tableHeaders" :fields="['date', 'schedule']"
@@ -97,7 +97,7 @@ const props = defineProps({
     filteredReservations: { type: Array, default: () => [] },
     groupedByDate: { type: Object, default: () => ({}) },
     groupedByName: { type: Object, default: () => ({}) },
-    expandedSpaces: { type: Object, default: () => ({}) },
+    expandedNames: { type: Object, default: () => ({}) },
     expandedDates: { type: Object, default: () => ({}) },
     list: { type: Boolean, default: false },
     filter: { type: String, default: null },

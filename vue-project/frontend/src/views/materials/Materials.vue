@@ -2,18 +2,18 @@
     <v-container fluid>
         <v-col>
             <v-row>
-                <span class="text-h4">Espacios</span>
+                <span class="text-h4">Materiales</span>
                 <v-spacer />
                 <div class="d-flex align-center">
-                    <TonalButton color="blue" text="Crear espacio" class="mr-3" v-if="userStore.getIsAdmin"
-                        @click="openCreateSpace" />
+                    <TonalButton color="blue" text="Crear material" class="mr-3" v-if="userStore.getIsAdmin"
+                        @click="openCreateMaterial" />
                     <v-btn variant="text" :ripple="false"
                         :icon="list ? 'mdi-format-list-bulleted' : 'mdi-view-grid-outline'" @click="list = !list" />
                 </div>
             </v-row>
 
-            <v-row v-if="!spaces">
-                <span class="text-h5">Aún no hay espacios creados</span>
+            <v-row v-if="!materials">
+                <span class="text-h5">Aún no hay materiales creados</span>
             </v-row>
 
             <v-row v-else class="py-3 mx-n11">
@@ -30,23 +30,24 @@
                 <v-col v-else class="pa-0">
                     <v-container fluid>
                         <v-row>
-                            <v-col cols="12" sm="6" md="4" lg="3" v-for="space in spaces" :key="space._id">
-                                <SpaceCard :space="space" :adminActions="userStore.getIsAdmin" :reserveActions="false"
-                                    :maxWidth="'300px'" :isPreview="true" @edit-space="openEditSpaceInfo(space)"
-                                    @delete-space="deleteSpace()" @click="openSpace(space)" />
+                            <v-col cols="12" sm="6" md="4" lg="3" v-for="material in materials" :key="material._id">
+                                <MaterialCard :material="material" :adminActions="userStore.getIsAdmin"
+                                    :reserveActions="false" :maxWidth="'300px'" :isPreview="true"
+                                    @edit-material="openEditMaterialInfo(material)" @delete-material="deleteMaterial()"
+                                    @click="openMaterial(material)" />
                             </v-col>
                         </v-row>
                     </v-container>
                 </v-col>
             </v-row>
 
-            <AskModal v-model="deleteModal" :title="'¿Borrar espacio?'"
-                :message="'¿Estás seguro de que quieres borrar este espacio?'" :actionText="'Borrar espacio'"
-                :closeModal="closeDialog" :action="deleteSpace" />
+            <AskModal v-model="deleteModal" :title="'¿Borrar material?'"
+                :message="'¿Estás seguro de que quieres borrar este material?'" :actionText="'Borrar material'"
+                :closeModal="closeDialog" :action="deleteMaterial" />
 
-            <AskModal v-model="bulkDeleteModal" :maxWidth="'600px'" :title="'Este espacio tiene reservas pendientes'"
-                :message="'Este espacio tiene reservas pendientes, ¿Estás seguro de que quieres borrarlo?'"
-                :actionText="'Borrar espacio'" :closeModal="closeBulkDeleteDialog" :action="bulkDeleteSpace" />
+            <AskModal v-model="bulkDeleteModal" :maxWidth="'600px'" :title="'Este material tiene reservas pendientes'"
+                :message="'Este material tiene reservas pendientes, ¿Estás seguro de que quieres borrarlo?'"
+                :actionText="'Borrar material'" :closeModal="closeBulkDeleteDialog" :action="bulkDeleteMaterial" />
 
         </v-col>
     </v-container>
@@ -56,11 +57,11 @@
 import { ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useUserStore } from '@/store/userStore';
-import { useSpaceStore } from '@/store/spaceStore';
-import { spaceService } from '@/services/spaceService';
+import { useMaterialStore } from '@/store/materialStore';
+import { materialService } from '@/services/materialService';
 import { useToast } from 'vue-toastification';
 import TonalButton from '@/components/TonalButton.vue'
-import SpaceCard from '@/components/SpaceCard.vue';
+import MaterialCard from '@/components/MaterialCard.vue';
 import AskModal from '@/components/AskModal.vue';
 import Table from '@/components/Table.vue';
 import { useTime } from '@/composables/useTime';
@@ -68,7 +69,7 @@ import { useTime } from '@/composables/useTime';
 // Router, notificaciones y stores
 const router = useRouter();
 const toast = useToast();
-const spaceStore = useSpaceStore();
+const materialStore = useMaterialStore();
 const userStore = computed(() => {
     return useUserStore();
 });
@@ -78,8 +79,8 @@ const isAdmin = computed(() => userStore.value.getIsAdmin)
 
 // Variables reactivas
 const list = ref(false);
-const spaces = ref(null);
-//const selectedSpace = ref(null);
+const materials = ref(null);
+//const selectedMaterial = ref(null);
 const deleteModal = ref(false);
 const bulkDeleteModal = ref(false);
 
@@ -93,30 +94,30 @@ const {
 
 /* ------------------------- Ciclo de vida ------------------------- */
 onMounted(() => {
-    // Llamamos a getSpaces para obtener los espacios al montar el componente
-    getSpaces();
+    // Llamamos a getMaterials para obtener los materiales al montar el componente
+    getMaterials();
 })
 
 /* ------------------------- Funciones del componente ------------------------- */
-// Obtiene los espacios a través del servicio
-function getSpaces() {
-    spaceService.getSpaces()
+// Obtiene los materiales a través del servicio
+function getMaterials() {
+    materialService.getMaterials()
         .then(res => {
-            spaces.value = res.data.spaces;
+            materials.value = res.data.materials;
         })
         .catch(error => {
             console.log(error);
-            spaces.value = null;
+            materials.value = null;
         });
 };
 
 
-// Borrar el espacio. Si se pasa el id, se borra ese espacio, 
-// si no, se borra el espacio seleccionado de la SpaceStore
-const deleteSpace = (id) => {
-    spaceService.deleteSpace(id ? id : spaceStore.getSelectedSpace._id)
+// Borrar el material. Si se pasa el id, se borra ese material, 
+// si no, se borra el material seleccionado de la MaterialStore
+const deleteMaterial = (id) => {
+    materialService.deleteMaterial(id ? id : materialStore.getSelectedMaterial._id)
         .then(res => {
-            getSpaces();
+            getMaterials();
             deleteModal.value = false;
             toast.error('Espacio eliminado con éxito');
         })
@@ -128,11 +129,11 @@ const deleteSpace = (id) => {
         });
 };
 
-// Borrar el espacio y todas sus reservas. Se borra el espacio seleccionado de la SpaceStore
-const bulkDeleteSpace = () => {
-    spaceService.bulkDeleteSpace(spaceStore.getSelectedSpace._id)
+// Borrar el material y todas sus reservas. Se borra el material seleccionado de la MaterialStore
+const bulkDeleteMaterial = () => {
+    materialService.bulkDeleteMaterial(materialStore.getSelectedMaterial._id)
         .then(res => {
-            getSpaces();
+            getMaterials();
             bulkDeleteModal.value = false;
             toast.error('Espacio eliminado con éxito');
         })
@@ -142,21 +143,21 @@ const bulkDeleteSpace = () => {
 };
 
 
-//Funciones auxiliares para acciones como ver, crear o editar el espacio
-const openSpace = (space) => {
-    spaceStore.setSelectedSpace(space); // Guardar el espacio seleccionado en el store
-    router.push('/spaceInfo');    // Navegar a la nueva ruta
+//Funciones auxiliares para acciones como ver, crear o editar el material
+const openMaterial = (material) => {
+    materialStore.setSelectedMaterial(material); // Guardar el material seleccionado en el store
+    router.push('/materialInfo');    // Navegar a la nueva ruta
 };
-const openCreateSpace = () => {
-    router.push('/createSpace');
+const openCreateMaterial = () => {
+    router.push('/createMaterial');
 };
-const openEditSpaceInfo = (space) => {
-    spaceStore.setSelectedSpace(space); // Guardar el espacio seleccionado en el store
-    router.push('/editSpaceInfo');
+const openEditMaterialInfo = (material) => {
+    materialStore.setSelectedMaterial(material); // Guardar el material seleccionado en el store
+    router.push('/editMaterialInfo');
 };
-const openDeleteModal = (space) => {
-    //selectedSpace.value = { ...space }; // Hacer una copia del espacio seleccionado
-    spaceStore.setSelectedSpace(space);
+const openDeleteModal = (material) => {
+    //selectedMaterial.value = { ...material }; // Hacer una copia del material seleccionado
+    materialStore.setSelectedMaterial(material);
     deleteModal.value = true;
 };
 const closeDialog = () => {
@@ -191,25 +192,25 @@ const tableFields = computed(() => {
     return fields
 });
 
-// Transformamos 'spaces' en 'tableItems'
+// Transformamos 'materials' en 'tableItems'
 const tableItems = computed(() => {
-    return (spaces.value || []).map((space, i) => {
+    return (materials.value || []).map((material, i) => {
         const item = {
-            id: space._id,        // key para v-for
-            name: space.name,
-            description: space.description,
-            schedule: `${makeHoursAndMinutes(space.opening)}h - ${makeHoursAndMinutes(space.closing)}h`,
-            object: space,      // guardamos el objeto para usarlo en las acciones
+            id: material._id,        // key para v-for
+            name: material.name,
+            description: material.description,
+            schedule: `${makeHoursAndMinutes(material.opening)}h - ${makeHoursAndMinutes(material.closing)}h`,
+            object: material,      // guardamos el objeto para usarlo en las acciones
         }
 
         // Si NO es admin, mostramos la duración en la última columna
         if (!isAdmin.value) {
-            if (space.duration < 60) {
-                item.duration = `Reservas de ${space.duration} minutos`
-            } else if (space.duration === 60) {
-                item.duration = `Reservas de ${space.duration / 60} hora`
+            if (material.duration < 60) {
+                item.duration = `Reservas de ${material.duration} minutos`
+            } else if (material.duration === 60) {
+                item.duration = `Reservas de ${material.duration / 60} hora`
             } else {
-                item.duration = `Reservas de ${space.duration / 60} horas`
+                item.duration = `Reservas de ${material.duration / 60} horas`
             }
         }
         return item
@@ -220,7 +221,7 @@ const tableItems = computed(() => {
 const actionButtons = [
     {
         icon: 'mdi-pencil',
-        action: (item) => openEditSpaceInfo(item.object)
+        action: (item) => openEditMaterialInfo(item.object)
     },
     {
         icon: 'mdi-trash-can-outline',
@@ -230,9 +231,9 @@ const actionButtons = [
 ];
 
 
-// Cuando se hace click en una fila, abrimos el espacio
+// Cuando se hace click en una fila, abrimos el material
 function handleRowClick(item) {
-    openSpace(item.object)
+    openMaterial(item.object)
 }
 
 </script>
@@ -265,7 +266,7 @@ th,
 td {
     text-align: left;
     padding: 10px;
-    white-space: nowrap;
+    white-material: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }

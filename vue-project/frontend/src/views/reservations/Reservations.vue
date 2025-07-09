@@ -10,8 +10,10 @@
                     <v-tab :ripple="false" value="next" class="no-hover text-none v-subtab-text">Próximas</v-tab>
                     <v-tab :ripple="false" value="past" class="no-hover text-none v-subtab-text">Anteriores</v-tab>
                 </v-tabs>
-                <v-spacer></v-spacer>
-                <TonalButton class="mr-1" color="blue" text="Crear reserva" @click="openCreateReservation" />
+                <v-spacer />
+                <TonalButton v-if="userStore.isAdmin" class="mr-1" color="grey" text="Ver reservas de hoy"
+                    @click="openTodayReservations" />
+                <TonalButton class="mr-1 ml-2" color="blue" text="Crear reserva" @click="openCreateReservation" />
             </v-row>
 
             <v-row>
@@ -20,20 +22,23 @@
                         <ScheduleXCalendar class="mt-4 mx-1" :calendar-app="calendarApp">
                             <template #timeGridEvent="{ calendarEvent }">
                                 <div
-                                    :style="calcPastEvents(calendarEvent) ? timeGridEventStyles : timeGridPastEventStyles">
+                                    :style="calcPastEvents(calendarEvent) ? timeGridPastEventStyles : timeGridEventStyles">
+                                    <span v-if="calendarEvent.options === true">🔁</span>
                                     {{ calendarEvent.title }}
                                 </div>
                             </template>
 
                             <template #monthGridEvent="{ calendarEvent }">
-                                <div :style="calcPastEvents(calendarEvent) ? eventStyles : pastEventStyles">
+                                <div :style="calcPastEvents(calendarEvent) ? pastEventStyles : eventStyles">
+                                    <span v-if="calendarEvent.options === true">🔁</span>
                                     {{ calendarEvent.title }}
                                 </div>
                             </template>
 
                             <template #eventModal="{ calendarEvent }">
                                 <CustomEventCalendar :reservation="reservationStore.getReservation"
-                                    @see-event="openReservation" @close="closeModal" />
+                                    @see-event="openReservation" @edit-event="editReservation"
+                                    @delete-event="openDeleteReservation" @close="closeModal" />
                             </template>
 
                         </ScheduleXCalendar>
@@ -41,7 +46,7 @@
 
                     <v-tabs-window-item value="reservations">
                         <!-- Filtro -->
-                        <v-row class="mt-4 mx-1 d-flex ga-3 ">
+                        <v-row class="mt-5 mx-1 d-flex ga-3 ">
                             <v-btn variant="text" :ripple="false" size="small"
                                 :icon="list ? 'mdi-format-list-bulleted' : 'mdi-view-grid-outline'"
                                 @click="list = !list" />
@@ -49,7 +54,7 @@
                             <v-select variant="outlined" density="compact" label="Mostar reservas" v-model="filter"
                                 item-title="label" item-value="value" :items="filterItems" style="max-width: 250px;" />
 
-                            <v-btn v-if="filter === 'date'" variant="text" :ripple="false" size="small" class="mt-2"
+                            <v-btn variant="text" :ripple="false" size="small" class="mt-2"
                                 :prepend-icon="dateDesc ? 'mdi-arrow-down' : 'mdi-arrow-up'"
                                 @click="dateDesc = !dateDesc">
                                 {{ dateDesc ? 'Descendente' : 'Ascendente' }}
@@ -63,8 +68,8 @@
                                     :list="list" :filteredReservations="filteredNextReservations"
                                     :groupedByName="groupedByName" :groupedByDate="groupedByDate"
                                     :tableHeaders="tableHeaders" :tableItems="tableItems"
-                                    :tableDropdownItems="tableDropdownItems" :expandedSpaces="expandedSpaces"
-                                    :expandedDates="expandedDates" @toggleSpace="toggleSpace" @toggleDate="toggleDate"
+                                    :tableDropdownItems="tableDropdownItems" :expandedNames="expandedNames"
+                                    :expandedDates="expandedDates" @toggleItem="toggleItem" @toggleDate="toggleDate"
                                     @rowClick="handleRowClick" />
                             </v-tabs-window-item>
 
@@ -75,7 +80,7 @@
                                     :groupedByName="groupedByName" :groupedByDate="groupedByDate"
                                     :tableHeaders="tableHeaders" :tableItems="tableItems"
                                     :tableDropdownItems="tableDropdownItems" :expandedDates="expandedDates"
-                                    :expandedSpaces="expandedSpaces" @toggleSpace="toggleSpace" @toggleDate="toggleDate"
+                                    :expandedNames="expandedNames" @toggleItem="toggleItem" @toggleDate="toggleDate"
                                     @rowClick="handleRowClick" />
                             </v-tabs-window-item>
                         </v-tabs-window>
@@ -85,6 +90,10 @@
                 <AskModal title="Nueva reserva" :message="message" :modelValue="dialog" actionText="Ir a reservar"
                     colorText="black" colorButton="blue" :closeModal="closeDialog" :action="openCreateReservation" />
 
+                <AskModal v-model="deleteModal" :title="'¿Borrar reserva?'"
+                    :message="'¿Estás seguro de que quieres borrar esta reserva?'" :actionText="'Borrar reserva'"
+                    :closeModal="closeDialog" :action="deleteReservation"
+                    :checkboxAction="reservationStore.getReservation?.periodicReservationId ? toggleCheckbox : null" />
             </v-row>
         </v-col>
     </v-container>
@@ -94,6 +103,8 @@
 import { ref, onMounted, computed, onUnmounted, watch } from 'vue';
 import { useUserStore } from '@/store/userStore';
 import { useReservationStore } from '@/store/reservationStore';
+import { useSpaceStore } from '@/store/spaceStore';
+import { useMaterialStore } from '@/store/materialStore';
 import { useRouter } from 'vue-router';
 import { useTime } from '@/composables/useTime';
 import TonalButton from '@/components/TonalButton.vue';
@@ -114,6 +125,7 @@ import {
     createViewWeek,
 } from '@schedule-x/calendar';
 import '@schedule-x/theme-default/dist/index.css';
+import { useToast } from 'vue-toastification';
 /* -------------------------------------------------------------------- */
 
 
@@ -121,6 +133,8 @@ import '@schedule-x/theme-default/dist/index.css';
 const userStore = useUserStore();
 const router = useRouter();
 const reservationStore = useReservationStore();
+const spaceStore = useSpaceStore();
+const materialStore = useMaterialStore();
 const eventsServicePlugin = createEventsServicePlugin();
 const eventModal = createEventModalPlugin();
 const currentTimePlugin = createCurrentTimePlugin();
@@ -134,6 +148,8 @@ const {
     parseDateTo_YYYYMMDD_HHMM,
     parseToStringDate,
     calcPastEvents,
+    isWithinNext24Hours,
+    isToday,
     calcPastDates,
     twoDigitsDate,
     getHoursAndMinsFromDate,
@@ -148,19 +164,21 @@ const filteredPastReservations = ref([]);
 const nextReservations = ref([]);
 const pastReservations = ref([]);
 const list = ref(false);
-const dateDesc = ref(true);
-const mainTab = ref(null);
+const dateDesc = ref(false);
+const mainTab = ref('calendar');
 const subTab = ref('next');
 const message = ref(null);
 const dialog = ref(false);
+const deleteAllReservations = ref(false);
+const deleteModal = ref(false);
 const filter = ref(null);
 const filterItems = ref([
     { label: 'Todas', value: null },
-    { label: 'Por nombre de espacios', value: 'spacesName' },
+    { label: 'Por nombre de espacios/materiales', value: 'itemsName' },
     { label: 'Por fecha', value: 'date' },
 ]);
 
-const expandedSpaces = ref({});    // Almacena el estado abierto/cerrado del desplegable de cada nombre del espacio. 
+const expandedNames = ref({});    // Almacena el estado abierto/cerrado del desplegable de cada nombre del espacio/material. 
 const expandedDates = ref({});    // Almacena el estado abierto/cerrado del desplegable de cada fecha.
 
 const groupedByName = computed(() => {
@@ -170,34 +188,41 @@ const groupedByName = computed(() => {
     if (subTab.value === 'next') reservationsToSearch = filteredNextReservations.value;
     else if (subTab.value === 'past') reservationsToSearch = filteredPastReservations.value;
 
+    if (dateDesc.value == true) //Filtrar por nombre descendente
+        reservationsToSearch.sort((a, b) => new Date(b.startTime) - new Date(a.startTime));
+    else //Filtrar por nombre ascendente
+        reservationsToSearch.sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
+
     reservationsToSearch.forEach(reservation => {
-        const nameKey = reservation.spaceId.name;
+        const nameKey = reservation.spaceId?.name || reservation.materialId?.name;
         if (!groups[nameKey]) {
             groups[nameKey] = [];
         }
         groups[nameKey].push(reservation);
     });
-    return groups;
+
+    //Ordenamos los nombres de los espacios
+    const orderedGroups = {};
+    Object.keys(groups).sort().forEach(key => {
+        orderedGroups[key] = groups[key];
+    });
+
+    return orderedGroups;
 });
 
 const groupedByDate = computed(() => {
     const groups = {};
     let reservationsToSearch = [];
 
-    if (subTab.value === 'next') {
+    if (subTab.value === 'next')
         reservationsToSearch = filteredNextReservations.value;
-    } else if (subTab.value === 'past') {
+    else if (subTab.value === 'past')
         reservationsToSearch = filteredPastReservations.value;
-    }
 
-    if (dateDesc.value == true) {
-        //Filtrar por fecha descendente
+    if (dateDesc.value == true) //Filtrar por fecha descendente
         reservationsToSearch.sort((a, b) => new Date(b.startTime) - new Date(a.startTime));
-    }
-    else {
-        //Filtrar por fecha ascendente
+    else //Filtrar por fecha ascendente
         reservationsToSearch.sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
-    }
 
     reservationsToSearch.forEach((reservation) => {
         const dateKey = twoDigitsDate(new Date(reservation.startTime));
@@ -208,8 +233,8 @@ const groupedByDate = computed(() => {
     return groups;
 });
 
-function toggleSpace(nameKey) {
-    expandedSpaces.value[nameKey] = !expandedSpaces.value[nameKey];
+function toggleItem(nameKey) {
+    expandedNames.value[nameKey] = !expandedNames.value[nameKey];
 };
 
 function toggleDate(dateKey) {
@@ -253,10 +278,20 @@ const calendarApp = createCalendar({
     callbacks: {
         onEventClick(calendarEvent) {
             const selectedReservation = allReservations.value.find(reservation => reservation._id === calendarEvent.id);
+
+            // si es el pasado, es hoy, o queda menos de 24 horas para que empiece, 
+            // NO se puede editar
+            if (calcPastEvents(calendarEvent) ||
+                isToday(calendarEvent.start) ||
+                isWithinNext24Hours(calendarEvent)
+            )
+                selectedReservation.canEdit = false;
+            else selectedReservation.canEdit = true;
+
             reservationStore.setReservation(selectedReservation);
         },
         onClickDate(date) { // p.e. YYYY-MM-DD
-            if (!calcPastDates(new Date(date))) return;      // Si se hace clic en una fecha pasada, se ignora
+            if (calcPastDates(new Date(date))) return;      // Si se hace clic en una fecha pasada, se ignora
 
             const stringDate = parseToStringDate(new Date(date));
 
@@ -270,7 +305,7 @@ const calendarApp = createCalendar({
             dialog.value = true;
         },
         onClickDateTime(dateTime) {
-            if (!calcPastEvents(dateTime)) return;      // Si se hace clic en una fecha pasada, se ignora
+            if (calcPastEvents(dateTime)) return;      // Si se hace clic en una fecha pasada, se ignora
 
             // Se dividen las fechas y horas en partes separadas
             let [datePart, timePart] = dateTime.split(" ");
@@ -315,6 +350,7 @@ function getAllEvents() {
                 eventsServicePlugin.set(addCalendarEvents(allReservations.value));
             })
             .catch(error => {
+                eventsServicePlugin.set([]);
                 console.error('Error al obtener reservas:', error);
             });
     } catch (error) {
@@ -327,12 +363,14 @@ function addCalendarEvents(reservations) {
         // Usamos la función del composable useTime para transformar startTime y endTime
         const formattedStart = parseDateTo_YYYYMMDD_HHMM(reservation.startTime);
         const formattedEnd = parseDateTo_YYYYMMDD_HHMM(reservation.endTime);
+        const name = reservation.spaceId?.name || reservation.materialId?.name;
 
         return {
             id: reservation._id, // Usar el ID de la reserva como identificador único
-            title: `Reserva en ${reservation.spaceId.name}`,
+            title: `Reserva de ${name}`,
             start: formattedStart,  // start: '2024-06-28 08:00',
             end: formattedEnd,      // end: '2024-06-28 10:00',
+            options: reservation.periodicReservationId ? true : false,
         };
     });
 };
@@ -350,8 +388,8 @@ watch(
     groupedByName,
     (newVal) => {
         for (const nameKey in newVal) {
-            if (expandedSpaces.value[nameKey] === undefined) {
-                expandedSpaces.value[nameKey] = true;
+            if (expandedNames.value[nameKey] === undefined) {
+                expandedNames.value[nameKey] = true;
             }
         }
     },
@@ -382,14 +420,16 @@ function roundToNearestQuarterHour(timeString) {
 
 
 function getWindowParams() {
-    const storedWindow = reservationStore.getWindow; // o localStorage, etc.
+    const storedWindow = reservationStore.getWindowParams;
+
     if (storedWindow) {
-        mainTab.value = storedWindow.mainTab;
-        subTab.value = storedWindow.subTab;
-        list.value = storedWindow.list;
-        filter.value = storedWindow.filter;
-        if (storedWindow.expandedSpaces) {
-            expandedSpaces.value = storedWindow.expandedSpaces;
+        mainTab.value = storedWindow?.mainTab || 'calendar';
+        subTab.value = storedWindow?.subTab || 'next';
+        list.value = storedWindow?.list || false;
+        dateDesc.value = storedWindow?.dateDesc || false;
+        filter.value = storedWindow?.filter || null;
+        if (storedWindow.expandedNames) {
+            expandedNames.value = storedWindow.expandedNames;
         }
         if (storedWindow.expandedDates) {
             expandedDates.value = storedWindow.expandedDates;
@@ -403,10 +443,11 @@ function setWindowParams() {
         subTab: subTab.value,
         list: list.value,
         filter: filter.value,
-        expandedSpaces: expandedSpaces.value,
+        dateDesc: dateDesc.value,
+        expandedNames: expandedNames.value,
         expandedDates: expandedDates.value
     };
-    reservationStore.setWindow(storedWindow);
+    reservationStore.setWindowParams(storedWindow);
 };
 
 
@@ -416,12 +457,61 @@ function handleRowClick(item) {
     router.push('/reservationInfo')
 };
 
+function openTodayReservations() {
+    router.push('/todayReservations');
+};
+
 function openCreateReservation() {
     router.push('/createReservation');
 };
 
 function openReservation() {
+    const reservation = reservationStore.getReservation;
+    if (reservation.spaceId) spaceStore.setSelectedSpace(reservation.spaceId);
+    else materialStore.setSelectedMaterial(reservation.materialId);
     router.push('/reservationInfo');
+};
+
+function editReservation() {
+    const reservation = reservationStore.getReservation;
+    if (reservation.spaceId) spaceStore.setSelectedSpace(reservation.spaceId);
+    else materialStore.setSelectedMaterial(reservation.materialId);
+    router.push('/editReservationInfo');
+};
+
+function openDeleteReservation() {
+    deleteModal.value = true;
+};
+
+function deleteReservation() {
+    const toast = useToast();
+    const reservation = reservationStore.getReservation;
+    if (reservation.periodicReservationId && deleteAllReservations.value) {
+        reservationService.deletePeriodicReservation(reservation.periodicReservationId._id)
+            .then(res => {
+                closeModal();
+                getAllEvents();
+                toast.success('Reserva periódica eliminada con éxito');
+            })
+            .catch(error => {
+                console.error('Error al borrar reserva:', error);
+            });
+
+    } else {
+        reservationService.deleteReservation(reservation._id)
+            .then(res => {
+                closeModal();
+                getAllEvents();
+                toast.success('Reserva eliminada con éxito');
+            })
+            .catch(error => {
+                console.error('Error al borrar reserva:', error);
+            });
+    }
+};
+
+function toggleCheckbox() {
+    deleteAllReservations.value = !deleteAllReservations.value;
 };
 
 const closeModal = () => {
@@ -445,7 +535,7 @@ const headers = [
 const tableHeaders = computed(() => {
     if (filter.value === null) return headers;
     return headers.filter(header => {
-        if (filter.value === 'spacesName') {
+        if (filter.value === 'itemsName') {
             if (header.label === 'Nombre') return;
             return {
                 label: header.label,
@@ -470,7 +560,7 @@ function tableDropdownItems(reservations) {
         return {
             id: reservation._id,        // key para v-for
             date: `${twoDigitsDate(new Date(reservation.startTime))}`,
-            name: reservation.spaceId.name,
+            name: reservation.spaceId?.name || reservation.materialId?.name,
             schedule: `${getHoursAndMinsFromDate(reservation.startTime)}h - ${getHoursAndMinsFromDate(reservation.endTime)}h`,
             object: reservation,      // guardamos el objeto para usarlo en las acciones
         }
@@ -488,7 +578,7 @@ const tableItems = computed(() => {
         return {
             id: reservation._id,        // key para v-for
             date: `${twoDigitsDate(new Date(reservation.startTime))}`,
-            name: reservation.spaceId.name,
+            name: reservation.spaceId?.name || reservation.materialId?.name,
             schedule: `${getHoursAndMinsFromDate(reservation.startTime)}h - ${getHoursAndMinsFromDate(reservation.endTime)}h`,
             object: reservation,      // guardamos el objeto para usarlo en las acciones
         }

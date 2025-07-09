@@ -70,6 +70,10 @@
       :message="'¿Estás seguro de que quieres borrar tu cuenta de la plataforma?'" :actionText="'Borrar cuenta'"
       :closeModal="closeDialog" :action="deleteUser" />
 
+    <AskModal v-model="bulkDeleteModal" :maxWidth="'600px'" :title="'Aún tienes reservas pendientes'"
+      :message="'Tienes reservas pendientes, ¿Estás seguro de que quieres borrar tu cuenta?'"
+      :actionText="'Borrar cuenta'" :closeModal="closeBulkDeleteDialog" :action="bulkDeleteUser" />
+
   </v-container>
 </template>
 
@@ -90,6 +94,7 @@ export default {
       payment_method: null,
       logOutModal: false,
       deleteModal: false,
+      bulkDeleteModal: false,
     };
   },
   components: {
@@ -98,7 +103,7 @@ export default {
   },
   mounted() {
     this.userStore = useUserStore();
-    this.user = this.userStore.getUser;
+    this.user = this.userStore.getThisUser;
     if (!this.user) {
       this.getUser(); // Redirigir al componente padre
     }
@@ -121,17 +126,39 @@ export default {
       this.logOutModal = false;
       this.deleteModal = false;
     },
+    openBulkDeleteModal() {
+      this.bulkDeleteModal = true;
+    },
+    closeBulkDeleteDialog() {
+      this.bulkDeleteModal = false;
+    },
     logOutUser() {
-      this.userStore.clearUsers();
+      this.userStore.clearStore();
       this.logOutModal = false;
       this.$router.push("/login");
     },
     deleteUser() {
       const toast = useToast();
       userService.deleteUser(this.user._id)
-        .then(res => {
-          this.userStore.clearUsers();
-          this.deleteModal = false;
+        .then(() => {
+          this.userStore.clearStore();
+          this.closeDialog();
+          this.$router.push("/login");
+          toast.error('Cuenta eliminada con éxito');
+        })
+        .catch(error => {
+          console.log(error);
+          if (error.response.status === 409) {
+            this.openBulkDeleteModal();
+          }
+        });
+    },
+    bulkDeleteUser() {
+      const toast = useToast();
+      userService.bulkDeleteUser(this.user._id)
+        .then(() => {
+          this.closeBulkDeleteDialog();
+          this.userStore.clearStore();
           this.$router.push("/login");
           toast.error('Cuenta eliminada con éxito');
         })

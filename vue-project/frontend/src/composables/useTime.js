@@ -13,6 +13,26 @@ export function useTime() {
   ];
 
   /**
+   * Función para normalizar y verificar si ocurre un evento en una fecha
+   */
+  function occursOn(pr, date) {
+    const s = new Date(pr.startTime);
+
+    if (date < s) return false;
+
+    switch (pr.periodicity) {
+      case 'daily':
+        return true;
+      case 'weekly':
+        return date.getDay() === s.getDay();
+      case 'monthly':
+        return date.getDate() === s.getDate();
+      default:
+        return false;
+    }
+  }
+
+  /**
    * Genera un array con todos los horarios en formato "HH:MM"
    * en intervalos de 15 minutos para un día completo.
    */
@@ -47,14 +67,24 @@ export function useTime() {
   };
 
   /**
-   * Obtiene la hora y los minutos de una fecha (usando UTC) en formato "HH:MM".
+   * Devuelve los minutos totales de una fecha de tipo ISO.
    */
-  const getHoursAndMinsFromDate = (date) => {
-    const dateObj = new Date(date);
-    const hours = String(dateObj.getUTCHours()).padStart(2, '0');
-    const mins = String(dateObj.getUTCMinutes()).padStart(2, '0');
-    return `${hours}:${mins}`;
-  };
+  function makeMinutesFromIsoLocal(isoString) {
+    // isoString === "2025-04-27T09:00:00.000Z"
+    const timePart = isoString.split('T')[1]; // "09:00:00.000Z"
+    const [hh, mm] = timePart.split(':'); // ["09","00","00.000Z"]
+    return Number(hh) * 60 + Number(mm);
+  }
+
+  /**
+   * Dada una ISO-string "2025-06-30T22:30:00.000Z"
+   * devuelve "22:30" sin tocar husos locales.
+   */
+  function getHoursAndMinsFromDate(isoString) {
+    const timePart = isoString.split('T')[1]; // "22:30:00.000Z"
+    const [hh, mm] = timePart.split(':'); // ["22","30","00.000Z"]
+    return `${hh}:${mm}`;
+  }
 
   /**
    * Parsea una fecha y la formatea a un string legible en español.
@@ -62,11 +92,12 @@ export function useTime() {
    */
   const parseToStringDate = (date) => {
     return new Intl.DateTimeFormat('es-ES', {
+      timeZone: 'UTC',
       weekday: 'long',
       day: 'numeric',
       month: 'long',
       year: 'numeric',
-    }).format(date);
+    }).format(new Date(date));
   };
 
   /**
@@ -104,15 +135,23 @@ export function useTime() {
    * al formato "YYYY-MM-DD HH:mm". Se utiliza el año actual.
    */
   function parseDateTo_YYYYMMDD_HHMM(dateString) {
-    const date = new Date(dateString);
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    const hours = String(date.getUTCHours()).padStart(2, '0');
-    const minutes = String(date.getUTCMinutes()).padStart(2, '0');
+    // Partir la fecha manualmente
+    const [datePart, timePart] = dateString.split('T');
+    const [year, month, day] = datePart.split('-').map(Number);
+    const [hours, minutes] = timePart.split(':').map(Number);
 
-    // Retornamos en el formato "YYYY-MM-DD HH:mm"
-    return `${year}-${month}-${day} ${hours}:${minutes}`;
+    // Crear la fecha en horario local (ignora offset UTC)
+    const date = new Date(year, month - 1, day, hours, minutes);
+
+    // Formatear
+    const y = date.getFullYear();
+    const M = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    const h = String(date.getHours()).padStart(2, '0');
+    const m = String(date.getMinutes()).padStart(2, '0');
+
+    // Se envía con el formato "YYYY-MM-DD HH:mm"
+    return `${y}-${M}-${d} ${h}:${m}`;
   }
 
   /**
@@ -120,33 +159,67 @@ export function useTime() {
    * al formato "DD/MM/YYYY".
    */
   const twoDigitsDate = (date) => {
+    // date = "2025-06-30T22:00:00.000Z", o un Date.toISOString()
+    const d = new Date(date);
     return new Intl.DateTimeFormat('es-ES', {
+      timeZone: 'UTC',
       day: '2-digit',
       month: '2-digit',
       year: 'numeric',
-    }).format(date);
+    }).format(d);
   };
 
   /**
-   * Comprueba si el evento o la fecha pasada es posterior al día actual
+   * Comprueba si el evento o la fecha pasada es anterior al día actual
    * y devuelve true (si es una fecha pasada) o false (si es un evento futuro).
    */
   function calcPastEvents(calendarEvent) {
     const today = new Date();
     let selectedDate;
 
-    if (calendarEvent.end) selectedDate = new Date(calendarEvent.end);
-    else selectedDate = new Date(calendarEvent);
+    selectedDate = new Date(calendarEvent.end || calendarEvent);
 
-    if (today > selectedDate) {
+    if (selectedDate < today) {
+      return true;
+    }
+    return false;
+  }
+
+  /**
+   * Comprueba si el evento o la fecha pasada es igual al día actual
+   * y devuelve true si lo es o false en caso contrario.
+   */
+  function isToday(date) {
+    const today = new Date();
+    date = new Date(date);
+
+    if (
+      date.getDate() == today.getDate() &&
+      date.getMonth() == today.getMonth() &&
+      date.getFullYear() == today.getFullYear()
+    )
+      return true;
+    else {
       return false;
     }
-    return true;
+  }
+
+  /**
+   * Comprueba si estamos dentro de las 24 horas anteriores al inicio del evento que pasamos por parámetro
+   * y devuelve true si es < 24 horas o devuelve false en caso contrario.
+   */
+  function isWithinNext24Hours(calendarEvent) {
+    const now = new Date();
+    // extraemos el inicio del evento
+    const start = new Date(calendarEvent.start || calendarEvent);
+    const diffMs = start - now;
+    const oneDayMs = 24 * 60 * 60 * 1000;
+    return diffMs > 0 && diffMs <= oneDayMs;
   }
 
   /**
    * Comprueba si la fecha pasada es igual o posterior al día actual
-   * y devuelve true si es >= al día actual o devuelve false en caso contrario.
+   * y devuelve true si es < al día actual o devuelve false en caso contrario.
    */
   function calcPastDates(date) {
     const today = new Date();
@@ -156,24 +229,28 @@ export function useTime() {
       date.getMonth() == today.getMonth() &&
       date.getFullYear() == today.getFullYear()
     )
-      return true;
-    else if (today > date) {
       return false;
+    else if (date < today) {
+      return true;
     }
-    return true;
+    return false;
   }
 
   return {
     timeFrames,
+    occursOn,
     generateAllTimes,
     makeMinutes,
     makeHoursAndMinutes,
+    makeMinutesFromIsoLocal,
     getHoursAndMinsFromDate,
     parseToStringDate,
     parseToYYYYMMDD,
     parseDateTo_YYYYMMDD_HHMM,
     twoDigitsDate,
     calcPastEvents,
+    isToday,
+    isWithinNext24Hours,
     calcPastDates,
   };
 }

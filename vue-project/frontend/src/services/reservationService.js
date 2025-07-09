@@ -1,36 +1,65 @@
 import axiosInstance from '@/plugins/axiosConfig'; // Importamos la configuración de Axios con interceptores
+import { get } from '@vueuse/core';
 
 const API_URL = '/reservations';
 
 export const reservationService = {
+  createReservation(formData) {
+    return axiosInstance.post(`${API_URL}/createReservation`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+  },
 
-    createReservation(formData) {
-        return axiosInstance.post(`${API_URL}/createReservation`, formData, {
-            headers: {
-                'Content-Type': 'multipart/form-data'
-            }
-        });
-    },
+  createPeriodicReservation(formData) {
+    return axiosInstance.post(
+      `${API_URL}/createPeriodicReservation`,
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      }
+    );
+  },
 
-    getReservations() {
-        return axiosInstance.get(`${API_URL}/getReservations`);
-    },
+  getUserReservations(id) {
+    return axiosInstance.get(`${API_URL}/getUserReservations/${id}`);
+  },
 
-    getUserReservations(id) {
-        return axiosInstance.get(`${API_URL}/getUserReservations/${id}`);
-    },
+  getPeriodicReservations() {
+    return axiosInstance.get(`${API_URL}/getPeriodicReservations`);
+  },
 
-    getReservationsByDate(date) {
-        return axiosInstance.get(`${API_URL}/getReservationsByDate/${date}`);
-    },
+  getTodayReservations() {
+    return axiosInstance.get(`${API_URL}/getTodayReservations`);
+  },
 
-    // updateReservation(formData) {
-    //     return axiosInstance.put(`${API_URL}/updateReservation`, formData);
-    // },
+  getReservationsByDate(date) {
+    return axiosInstance.get(`${API_URL}/getReservationsByDate/${date}`);
+  },
 
-    // deleteReservation(id) {
-    //     return axiosInstance.delete(`${API_URL}/deleteReservation/${id}`);
-    // },
+  getUserByReservationId(id) {
+    return axiosInstance.get(`${API_URL}/getUserByReservationId/${id}`);
+  },
 
+  updateReservation(reservation) {
+    return axiosInstance.put(`${API_URL}/updateReservation`, reservation);
+  },
+
+  updatePeriodicReservation(periodicReservation) {
+    return axiosInstance.put(
+      `${API_URL}/updatePeriodicReservation`,
+      periodicReservation
+    );
+  },
+
+  deleteReservation(id) {
+    return axiosInstance.delete(`${API_URL}/deleteReservation/${id}`);
+  },
+
+  deletePeriodicReservation(id) {
+    return axiosInstance.delete(`${API_URL}/deletePeriodicReservation/${id}`);
+  },
 };
-

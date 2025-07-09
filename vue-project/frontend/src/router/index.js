@@ -87,9 +87,37 @@ const routes = [
     meta: { adminOnly: true }, // Solo accesible para usuarios administradores
   },
   {
+    path: '/materials',
+    name: 'materials',
+    component: () => import('../views/materials/Materials.vue'),
+  },
+  {
+    path: '/createMaterial',
+    name: 'createMaterial',
+    component: () => import('../views/materials/CreateMaterial.vue'),
+    meta: { adminOnly: true }, // Solo accesible para usuarios administradores
+  },
+  {
+    path: '/materialInfo',
+    name: 'materialInfo',
+    component: () => import('../views/materials/MaterialInfo.vue'),
+  },
+  {
+    path: '/editMaterialInfo',
+    name: 'editMaterialInfo',
+    component: () => import('../views/materials/EditMaterialInfo.vue'),
+    meta: { adminOnly: true }, // Solo accesible para usuarios administradores
+  },
+  {
     path: '/reservations',
     name: 'reservations',
     component: () => import('../views/reservations/Reservations.vue'),
+  },
+  {
+    path: '/todayReservations',
+    name: 'todayReservations',
+    component: () => import('../views/reservations/TodayReservations.vue'),
+    meta: { adminOnly: true }, // Solo accesible para usuarios administradores
   },
   {
     path: '/createReservation',
@@ -105,6 +133,11 @@ const routes = [
     path: '/reservationInfo',
     name: 'reservationInfo',
     component: () => import('../views/reservations/ReservationInfo.vue'),
+  },
+  {
+    path: '/editReservationInfo',
+    name: 'editReservationInfo',
+    component: () => import('../views/reservations/EditReservationInfo.vue'),
   },
 ];
 

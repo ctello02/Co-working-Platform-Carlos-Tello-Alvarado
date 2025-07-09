@@ -12,7 +12,7 @@
             </tr>
         </thead>
         <tbody>
-            <tr v-for="(item, rowIndex) in items" :key="item.id || rowIndex" @click="rowClicked(item)"
+            <tr v-for="(item, rowIndex) in items" :key="item.id || rowIndex" @click="onRowClick(item)"
                 :class="clickable ? 'cursor-pointer' : ''">
                 <td>{{ rowIndex + 1 }}</td>
                 <td v-for="(field, index) in fields" :key="index">
@@ -44,7 +44,7 @@ const props = defineProps({
 
 const emit = defineEmits(['rowClick'])
 
-function rowClicked(item) {
+function onRowClick(item) {
     emit('rowClick', item)
 }
 </script>

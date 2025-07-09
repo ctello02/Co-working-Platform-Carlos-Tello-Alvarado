@@ -1,7 +1,7 @@
 <template>
   <v-container class="container">
-    <v-card v-if="space" class="mx-auto" max-width="600">
-      <v-img :src="newSpace?.image" color="surface-variant" height="300px" cover class="img-container"
+    <v-card v-if="material" class="mx-auto" max-width="600">
+      <v-img :src="newMaterial?.image" color="surface-variant" height="300px" cover class="img-container"
         @click="triggerFileInput" style="cursor: pointer; border: 0; border-radius: 0">
         <v-icon class="mdi-camera camera-icon">mdi-camera</v-icon>
         <input type="file" ref="fileInput" accept="image/*" @change="onFileChange" style="display: none" />
@@ -11,26 +11,19 @@
         <v-col>
           <v-row>
             <v-col>
-              <v-text-field v-model="newSpace.name" label="Nombre" variant="outlined" required
+              <v-text-field v-model="newMaterial.name" label="Nombre" variant="outlined" required
                 :rules="[v => !!v || 'El texto es requerido']" class="my-n1" />
             </v-col>
             <v-col cols="4">
-              <v-text-field suffix="€" v-model.number="newSpace.pricing" label="Precio de reserva"
+              <v-text-field suffix="€" v-model.number="newMaterial.pricing" label="Precio de reserva"
                 prepend-icon="mdi-hand-coin-outline" type="number" variant="outlined" required
-                @input="newSpace.pricing = Math.max(0, newSpace.pricing)" class="my-n1" />
+                @input="newMaterial.pricing = Math.max(0, newMaterial.pricing)" class="my-n1" />
             </v-col>
           </v-row>
           <v-row>
             <v-col>
-              <v-text-field v-model="newSpace.description" label="Descripción" variant="outlined"
+              <v-text-field v-model="newMaterial.description" label="Descripción" variant="outlined"
                 prepend-icon="mdi-text" required :rules="[v => !!v || 'El texto es requerido']" class="my-n1" />
-            </v-col>
-          </v-row>
-          <v-row>
-            <v-col>
-              <v-text-field v-model.number="newSpace.seats" label="Número de asientos" prepend-icon="mdi-table-chair"
-                type="number" variant="outlined" required :rules="[v => !!v || 'El campo es obligatorio']"
-                @input="newSpace.seats = Math.max(0, newSpace.seats)" class="my-n1" />
             </v-col>
           </v-row>
           <v-row>
@@ -42,7 +35,7 @@
           </v-row>
           <v-row class="mt-1">
             <v-col>
-              <v-radio-group inline prepend-icon="mdi-repeat" v-model="newSpace.admitsRepetition"
+              <v-radio-group inline prepend-icon="mdi-repeat" v-model="newMaterial.admitsRepetition"
                 label="¿Permite repetición de reservas?">
                 <v-radio label="Si" :value="true" />
                 <v-radio label="No" :value="false" />
@@ -74,8 +67,8 @@
 import { ref, computed, watch, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useToast } from 'vue-toastification';
-import { useSpaceStore } from '@/store/spaceStore';
-import { spaceService } from '@/services/spaceService';
+import { useMaterialStore } from '@/store/materialStore';
+import { materialService } from '@/services/materialService';
 import TonalButton from '@/components/TonalButton.vue';
 
 import { useTime } from '@/composables/useTime';
@@ -84,11 +77,11 @@ import { useTime } from '@/composables/useTime';
 const router = useRouter();
 const successToastId = ref(null);
 const toast = useToast();
-const spaceStore = useSpaceStore();
+const materialStore = useMaterialStore();
 
 // Variables reactivas
-const space = ref(null);
-const newSpace = ref(null);
+const material = ref(null);
+const newMaterial = ref(null);
 const newImage = ref(null);
 const isNewImage = ref(false);
 const selectedTimeFrame = ref(null);
@@ -108,16 +101,16 @@ const {
 // Cargar datos al montar el componente
 onMounted(() => {
   allTimes.value = generateAllTimes();
-  space.value = spaceStore.getSelectedSpace;
+  material.value = materialStore.getSelectedMaterial;
 
-  if (!space.value) {
-    router.push('/spaces');
+  if (!material.value) {
+    router.push('/materials');
   }
 
-  newSpace.value = { ...space.value };
-  openingTime.value = makeHoursAndMinutes(space.value?.opening);
-  closingTime.value = makeHoursAndMinutes(space.value?.closing);
-  selectedTimeFrame.value = space.value?.duration;
+  newMaterial.value = { ...material.value };
+  openingTime.value = makeHoursAndMinutes(material.value?.opening);
+  closingTime.value = makeHoursAndMinutes(material.value?.closing);
+  selectedTimeFrame.value = material.value?.duration;
 });
 
 // Computed para filtrar las horas de cierre
@@ -148,7 +141,7 @@ const onFileChange = (e) => {
 
     const reader = new FileReader();
     reader.onload = (e) => {
-      newSpace.value.image = e.target.result;
+      newMaterial.value.image = e.target.result;
     };
     reader.readAsDataURL(file);
   }
@@ -156,7 +149,7 @@ const onFileChange = (e) => {
 
 // Validación de campos vacíos
 const emptyFields = () => {
-  return !newSpace.value.name || !newSpace.value.description || !newSpace.value.seats ||
+  return !newMaterial.value.name || !newMaterial.value.description ||
     !selectedTimeFrame.value || !openingTime.value || !closingTime.value;
 };
 
@@ -167,32 +160,31 @@ const submit = async () => {
     return;
   }
 
-  //Guardamos en el nuevo espacio los nuevos valores
-  newSpace.value.opening = makeMinutes(openingTime.value);
-  newSpace.value.closing = makeMinutes(closingTime.value);
-  newSpace.value.duration = parseFloat(selectedTimeFrame.value);
+  //Guardamos en el nuevo material los nuevos valores
+  newMaterial.value.opening = makeMinutes(openingTime.value);
+  newMaterial.value.closing = makeMinutes(closingTime.value);
+  newMaterial.value.duration = parseFloat(selectedTimeFrame.value);
 
   const formData = new FormData();
-  formData.append('id', newSpace.value._id);
-  formData.append('name', newSpace.value.name);
-  formData.append('description', newSpace.value.description);
-  formData.append('seats', newSpace.value.seats);
-  formData.append('admitsRepetition', newSpace.value.admitsRepetition);
-  formData.append('opening', newSpace.value.opening);
-  formData.append('closing', newSpace.value.closing);
-  formData.append('duration', newSpace.value.duration);
-  formData.append('pricing', newSpace.value.pricing);
+  formData.append('id', newMaterial.value._id);
+  formData.append('name', newMaterial.value.name);
+  formData.append('description', newMaterial.value.description);
+  formData.append('admitsRepetition', newMaterial.value.admitsRepetition);
+  formData.append('opening', newMaterial.value.opening);
+  formData.append('closing', newMaterial.value.closing);
+  formData.append('duration', newMaterial.value.duration);
+  formData.append('pricing', newMaterial.value.pricing);
 
   if (isNewImage.value && newImage.value) {
     formData.append('image', newImage.value);
   }
 
   try {
-    const res = await spaceService.updateSpace(formData);
+    const res = await materialService.updateMaterial(formData);
     console.log(res.data);
-    toast.success('¡Espacio actualizado con éxito!');
+    toast.success('¡Material actualizado con éxito!');
     router.go(-1);
-    spaceStore.setSelectedSpace(newSpace);
+    materialStore.setSelectedMaterial(newMaterial);
   } catch (error) {
     console.error(error);
   }

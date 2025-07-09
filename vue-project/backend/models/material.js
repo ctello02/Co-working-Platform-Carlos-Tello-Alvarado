@@ -1,11 +1,10 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
-const SpaceSchema = new Schema({
+const MaterialSchema = new Schema({
   name: { type: String, required: true },
   description: { type: String },
   image: { type: String, required: true },
-  seats: { type: Number, default: 0 },
   duration: { type: Number, default: 15 }, // 15 minutos
   admitsRepetition: { type: Boolean, default: false },
   opening: { type: Number, required: true }, // Ejemplo: 540 (09:00)
@@ -13,5 +12,5 @@ const SpaceSchema = new Schema({
   pricing: { type: Number, default: 0 }, // Ejemplo: 1.3€
 });
 
-const Space = mongoose.model('Space', SpaceSchema);
-module.exports = Space;
+const Material = mongoose.model('Material', MaterialSchema);
+module.exports = Material;
