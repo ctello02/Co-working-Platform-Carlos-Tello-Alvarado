@@ -114,6 +114,12 @@ const routes = [
     component: () => import('../views/reservations/Reservations.vue'),
   },
   {
+    path: '/todayReservations',
+    name: 'todayReservations',
+    component: () => import('../views/reservations/TodayReservations.vue'),
+    meta: { adminOnly: true }, // Solo accesible para usuarios administradores
+  },
+  {
     path: '/createReservation',
     name: 'createReservation',
     component: () => import('../views/reservations/CreateReservation.vue'),

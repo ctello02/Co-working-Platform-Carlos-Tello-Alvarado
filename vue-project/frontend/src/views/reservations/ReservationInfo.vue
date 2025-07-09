@@ -1,6 +1,6 @@
 <template>
     <v-container class="pa-5 container">
-        <v-card v-if="reservation" class="mx-auto" max-width="600">
+        <v-card v-if="reservation && reservationUser" class="mx-auto" max-width="600">
             <v-img :src="reservation.spaceId?.image || reservation.materialId?.image" color="surface-variant"
                 height="300px" cover />
             <v-card-text v-if="reservation">
@@ -24,6 +24,15 @@
                         <v-col>
                             <span class="text-h6">{{ reservation.spaceId?.description ||
                                 reservation.materialId?.description }}</span>
+                        </v-col>
+                    </v-row>
+
+                    <v-row v-if="userStore.isAdmin" class="my-n3" cols="12">
+                        <v-col cols="1" class="d-flex align-center">
+                            <v-icon icon="mdi-account-outline" />
+                        </v-col>
+                        <v-col>
+                            <span class="text-h6">{{ reservationUser?.name }}, {{ reservationUser?.email }}</span>
                         </v-col>
                     </v-row>
 
@@ -66,21 +75,6 @@
                         </v-col>
                     </v-row>
 
-                    <!-- <v-row class="my-n3" cols="12">
-                        <v-col cols="1" class="d-flex align-center">
-                            <v-icon icon="mdi-repeat" size="small" />
-                        </v-col>
-                        <v-col>
-                            <span class="pt-2 text-h6">
-                                <span v-if="reservation.periodicReservationId">
-                                    {{ parseRepetition(reservation.periodicReservationId.periodicity) }}
-                                </span>
-                                <span v-else>
-                                    Sin repetición
-                                </span>
-                            </span>
-                        </v-col>
-                    </v-row> -->
                     <v-row class="my-n3 d-flex justify-center align-center" cols="12">
                         <v-col>
                             <v-row>
@@ -99,7 +93,7 @@
                                 </v-col>
                             </v-row>
                         </v-col>
-                        <v-col>
+                        <v-col v-if="reservation">
                             <v-row>
                                 <v-col cols="2" class="d-flex align-center">
                                     <v-icon icon="mdi-hand-coin-outline" size="small" />
@@ -133,6 +127,7 @@
 
 <script setup>
 import { ref, onMounted, computed } from 'vue';
+import { useUserStore } from '@/store/userStore';
 import { useReservationStore } from '@/store/reservationStore';
 import { useSpaceStore } from '@/store/spaceStore';
 import { useMaterialStore } from '@/store/materialStore';
@@ -144,12 +139,14 @@ import { useTime } from '@/composables/useTime';
 import { useToast } from 'vue-toastification';
 
 // Instanciar stores
+const userStore = useUserStore();
 const reservationStore = useReservationStore();
 const spaceStore = useSpaceStore();
 const materialStore = useMaterialStore();
 const router = useRouter();
 
 // Variables reactivas
+const reservationUser = ref(null);
 const space = ref(null);
 const material = ref(null);
 const reservation = ref(null);
@@ -171,8 +168,8 @@ const {
 } = useTime();
 
 // Al montar el componente, se asigna la reserva y se redirige si no existe
-onMounted(() => {
-    reservation.value = reservationStore.getReservation;
+onMounted(async () => {
+    reservation.value = await reservationStore.getReservation;
 
     if (!reservation.value) {
         router.push('/reservations');
@@ -184,6 +181,8 @@ onMounted(() => {
             material.value = materialStore.getSelectedMaterial;
         }
 
+        getUserByReservationId(reservation.value._id);
+
         // si es el pasado, es hoy, o queda menos de 24 horas para que empiece, 
         // NO se puede editar
         if (calcPastEvents(reservation.value.startTime) ||
@@ -194,6 +193,18 @@ onMounted(() => {
         else canEdit.value = true;
     }
 });
+
+function getUserByReservationId() {
+    reservationService.getUserByReservationId(reservation.value._id)
+        .then(res => {
+            reservationUser.value = res.data.reservation.userId;
+            console.log(reservationUser.value);
+
+        })
+        .catch(error => {
+            console.error('Error al obtener el usuario:', error);
+        });
+};
 
 function openEditReservationInfo() {
     if (reservation.value.spaceId) {
@@ -244,7 +255,7 @@ const calculatePrice = computed(() => {
     const endStr = reservation.value.endTime
     let dur = 0;
     let pricePer = 0;
-    if (reservation.value.spaceId) {
+    if (reservationStore.getReservation?.spaceId) {
         dur = space?.value.duration      // duración de un bloque, en minutos
         pricePer = space?.value.pricing       // precio por bloque
     } else {
@@ -282,6 +293,6 @@ const parseRepetition = (repetition) => {
 };
 
 const routerBack = () => {
-    router.push('/reservations');
+    router.go(-1);
 };
 </script>

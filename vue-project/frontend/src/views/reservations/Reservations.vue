@@ -10,8 +10,10 @@
                     <v-tab :ripple="false" value="next" class="no-hover text-none v-subtab-text">Próximas</v-tab>
                     <v-tab :ripple="false" value="past" class="no-hover text-none v-subtab-text">Anteriores</v-tab>
                 </v-tabs>
-                <v-spacer></v-spacer>
-                <TonalButton class="mr-1" color="blue" text="Crear reserva" @click="openCreateReservation" />
+                <v-spacer />
+                <TonalButton v-if="userStore.isAdmin" class="mr-1" color="grey" text="Ver reservas de hoy"
+                    @click="openTodayReservations" />
+                <TonalButton class="mr-1 ml-2" color="blue" text="Crear reserva" @click="openCreateReservation" />
             </v-row>
 
             <v-row>
@@ -44,7 +46,7 @@
 
                     <v-tabs-window-item value="reservations">
                         <!-- Filtro -->
-                        <v-row class="mt-4 mx-1 d-flex ga-3 ">
+                        <v-row class="mt-5 mx-1 d-flex ga-3 ">
                             <v-btn variant="text" :ripple="false" size="small"
                                 :icon="list ? 'mdi-format-list-bulleted' : 'mdi-view-grid-outline'"
                                 @click="list = !list" />
@@ -163,7 +165,7 @@ const nextReservations = ref([]);
 const pastReservations = ref([]);
 const list = ref(false);
 const dateDesc = ref(false);
-const mainTab = ref(null);
+const mainTab = ref('calendar');
 const subTab = ref('next');
 const message = ref(null);
 const dialog = ref(false);
@@ -186,9 +188,9 @@ const groupedByName = computed(() => {
     if (subTab.value === 'next') reservationsToSearch = filteredNextReservations.value;
     else if (subTab.value === 'past') reservationsToSearch = filteredPastReservations.value;
 
-    if (dateDesc.value == true) //Filtrar por fecha descendente
+    if (dateDesc.value == true) //Filtrar por nombre descendente
         reservationsToSearch.sort((a, b) => new Date(b.startTime) - new Date(a.startTime));
-    else //Filtrar por fecha ascendente
+    else //Filtrar por nombre ascendente
         reservationsToSearch.sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
 
     reservationsToSearch.forEach(reservation => {
@@ -217,15 +219,10 @@ const groupedByDate = computed(() => {
     else if (subTab.value === 'past')
         reservationsToSearch = filteredPastReservations.value;
 
-
-    if (dateDesc.value == true) {
-        //Filtrar por fecha descendente
+    if (dateDesc.value == true) //Filtrar por fecha descendente
         reservationsToSearch.sort((a, b) => new Date(b.startTime) - new Date(a.startTime));
-    }
-    else {
-        //Filtrar por fecha ascendente
+    else //Filtrar por fecha ascendente
         reservationsToSearch.sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
-    }
 
     reservationsToSearch.forEach((reservation) => {
         const dateKey = twoDigitsDate(new Date(reservation.startTime));
@@ -423,12 +420,14 @@ function roundToNearestQuarterHour(timeString) {
 
 
 function getWindowParams() {
-    const storedWindow = reservationStore.getWindowParams; // o localStorage, etc.
+    const storedWindow = reservationStore.getWindowParams;
+
     if (storedWindow) {
-        mainTab.value = storedWindow.mainTab;
-        subTab.value = storedWindow.subTab;
-        list.value = storedWindow.list;
-        filter.value = storedWindow.filter;
+        mainTab.value = storedWindow?.mainTab || 'calendar';
+        subTab.value = storedWindow?.subTab || 'next';
+        list.value = storedWindow?.list || false;
+        dateDesc.value = storedWindow?.dateDesc || false;
+        filter.value = storedWindow?.filter || null;
         if (storedWindow.expandedNames) {
             expandedNames.value = storedWindow.expandedNames;
         }
@@ -444,6 +443,7 @@ function setWindowParams() {
         subTab: subTab.value,
         list: list.value,
         filter: filter.value,
+        dateDesc: dateDesc.value,
         expandedNames: expandedNames.value,
         expandedDates: expandedDates.value
     };
@@ -455,6 +455,10 @@ function setWindowParams() {
 function handleRowClick(item) {
     reservationStore.setReservation(item.object)
     router.push('/reservationInfo')
+};
+
+function openTodayReservations() {
+    router.push('/todayReservations');
 };
 
 function openCreateReservation() {
