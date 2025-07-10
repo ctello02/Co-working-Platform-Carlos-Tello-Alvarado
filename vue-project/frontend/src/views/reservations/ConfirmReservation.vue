@@ -432,17 +432,21 @@ async function sendReservation(formData) {
     // Si selecciona repetición, creamos una periodicReservation
     // Calculamos el campo lastOccurrenceGenerated. De momento se puede hacer en el front, pero a la hora de implementar la API, se debe hacer en el back
     const selectedOption = repetitionOptions.find(option => option.value === repetition.value);
-    const lastOccurrenceGenerated = new Date(reservation.value.startTime);
+    const last = new Date(reservation.value.startTime);
 
     if (repetition.value === 'daily') {
-      lastOccurrenceGenerated.setDate(lastOccurrenceGenerated.getDate() + selectedOption.occurrences);        // Para 'daily', se suman días 
-    } else if (repetition.value === 'weekly') {
-      lastOccurrenceGenerated.setDate(lastOccurrenceGenerated.getDate() + (selectedOption.occurrences * 7));  // Para 'weekly', son 16 semanas
-    } else if (repetition.value === 'monthly') {
-      lastOccurrenceGenerated.setMonth(lastOccurrenceGenerated.getMonth() + selectedOption.occurrences);      // Para 'monthly', se suman meses 
+      last.setUTCDate(last.getUTCDate() + selectedOption.occurrences);
+    }
+    else if (repetition.value === 'weekly') {
+      last.setUTCDate(last.getUTCDate() + selectedOption.occurrences * 7);
+    }
+    else if (repetition.value === 'monthly') {
+      last.setUTCMonth(last.getUTCMonth() + selectedOption.occurrences);
     }
 
-    formData.append('lastOccurrenceGenerated', lastOccurrenceGenerated.toISOString());
+    console.log("después", last.toISOString());
+
+    formData.append('lastOccurrenceGenerated', last.toISOString());
     formData.append('periodicity', repetition.value);
 
     res = await reservationService.createPeriodicReservation(formData);
