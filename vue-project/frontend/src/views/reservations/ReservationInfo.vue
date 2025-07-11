@@ -112,15 +112,14 @@
                 </v-col>
             </v-card-text>
 
-            <v-card-actions class="d-flex justify-end ga-3 mt-n3 mb-3 mr-5">
-                <TonalButton color="grey" text="Volver" @click="routerBack" />
-                <div v-if="!paymentStarted && reservation.isPaid === false">
-                    <TonalButton color="blue" text="Pagar" @click="startPayPalPayment" />
-                </div>
-                <div v-else-if="reservation.isPaid === false" class="mb-n1" id="paypal-button-container"></div>
-                <template v-if="isLoading == true">
-                    <v-progress-circular indeterminate size="20" color="white" />
-                </template>
+            <v-card-actions :class="buttonsRendered ? 'd-flex flex-column-reverse mt-n5 ma-5 justify-end' :
+                'd-flex justify-end ga-3 mt-n3 mb-3 mr-5'">
+
+                <TonalButton color="grey" :block="buttonsRendered ? true : false" text="Volver" @click="routerBack" />
+                <TonalButton v-if="!buttonsRendered && !reservation.isPaid" color="blue" :loading="isLoading"
+                    text="Pagar" @click="startPayPalPayment" />
+                <div style="width: 100%;" v-show="buttonsRendered && !reservation.isPaid"
+                    id="paypal-button-container" />
 
             </v-card-actions>
         </v-card>
@@ -165,7 +164,7 @@ const bulkDeleteReservations = ref(false);
 
 const paymentStarted = ref(false);
 const paypalLoaded = ref(false);
-
+const buttonsRendered = ref(false);
 const isLoading = ref(false);
 
 // Extraemos funciones del composable useTime
@@ -290,7 +289,6 @@ const calculatePrice = computed(() => {
 
 // Carga dinámica del SDK de PayPal
 function loadPayPalSdk() {
-    isLoading.value = true;
     if (paypalLoaded.value) return Promise.resolve();
     return new Promise((resolve, reject) => {
         const script = document.createElement('script');
@@ -304,16 +302,14 @@ function loadPayPalSdk() {
 async function startPayPalPayment() {
     const toast = useToast();
     paymentStarted.value = true;
+    isLoading.value = true;
 
     try {
         await loadPayPalSdk();
         // Crear orden en backend
         const amount = calculatePrice.value;
         const res = await reservationService.createOrder(reservation.value._id, amount);
-        isLoading.value = false;
-
         const orderID = res.data.orderID;
-
         paypal.Buttons({
             createOrder: () => orderID,
             onApprove: async (data) => {
@@ -328,9 +324,13 @@ async function startPayPalPayment() {
                 toast.error('Error en el pago');
             }
         }).render('#paypal-button-container');
+        buttonsRendered.value = true;
     } catch (err) {
         console.error(err);
+        paymentStarted.value = false;
         toast.error('No se pudo cargar PayPal o crear la orden');
+    } finally {
+        isLoading.value = false;
     }
 }
 
