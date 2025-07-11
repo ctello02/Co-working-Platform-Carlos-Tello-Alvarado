@@ -15,7 +15,7 @@ const usersRoutes = require('./routes/usersRoutes');
 const spacesRoutes = require('./routes/spacesRoutes');
 const materialsRoutes = require('./routes/materialsRoutes');
 const reservationsRoutes = require('./routes/reservationsRoutes');
-//const imagesRoutes = require('./routes/imagesRoutes');
+const paypalRoutes = require('./routes/paypal');
 
 const app = express();
 
@@ -33,7 +33,7 @@ app.use('/api/users', usersRoutes);
 app.use('/api/spaces', spacesRoutes);
 app.use('/api/materials', materialsRoutes);
 app.use('/api/reservations', reservationsRoutes);
-//app.use('/api/images', imagesRoutes);
+app.use('/api/paypal', paypalRoutes);
 
 // Ruta principal
 app.get('/', (req, res) => {
