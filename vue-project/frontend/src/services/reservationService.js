@@ -1,7 +1,7 @@
 import axiosInstance from '@/plugins/axiosConfig'; // Importamos la configuración de Axios con interceptores
-import { get } from '@vueuse/core';
 
 const API_URL = '/reservations';
+const PAYPAL_URL = '/paypal';
 
 export const reservationService = {
   createReservation(formData) {
@@ -61,5 +61,19 @@ export const reservationService = {
 
   deletePeriodicReservation(id) {
     return axiosInstance.delete(`${API_URL}/deletePeriodicReservation/${id}`);
+  },
+
+  createOrder(reservationId, total) {
+    return axiosInstance.post(`${PAYPAL_URL}/createOrder/`, {
+      total,
+      reservationId,
+    });
+  },
+
+  captureOrder(orderID, reservationId) {
+    return axiosInstance.post(`${PAYPAL_URL}/captureOrder/`, {
+      orderID,
+      reservationId,
+    });
   },
 };

@@ -6,7 +6,7 @@ const {
 const verifyToken = require('../middleware/verify_tokens');
 const router = express.Router();
 
-router.post('/create-order', verifyToken, createOrder);
-router.post('/capture-order', verifyToken, captureOrder);
+router.post('/createOrder', verifyToken, createOrder);
+router.post('/captureOrder', verifyToken, captureOrder);
 
 module.exports = router;

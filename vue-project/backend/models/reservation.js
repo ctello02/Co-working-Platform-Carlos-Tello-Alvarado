@@ -28,8 +28,9 @@ const ReservationSchema = new Schema({
   paypalOrderId: { type: String, default: null },
   paymentStatus: {
     type: String,
-    enum: ['CREATED', 'APPROVED', 'COMPLETED', 'FAILED'],
-    default: 'CREATED',
+    enum: ['CREATED', 'COMPLETED', 'FAILED'],
+    default: null,
+    nullable: true,
   },
 });
 
