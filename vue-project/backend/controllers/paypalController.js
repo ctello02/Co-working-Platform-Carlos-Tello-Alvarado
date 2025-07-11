@@ -43,9 +43,6 @@ exports.createOrder = async (req, res) => {
 exports.captureOrder = async (req, res) => {
   const { orderID, reservationId } = req.body;
 
-  //const session = await mongoose.startSession();
-  //session.startTransaction();
-
   const request = new checkout.orders.OrdersCaptureRequest(orderID);
   request.requestBody({});
 
@@ -57,7 +54,11 @@ exports.captureOrder = async (req, res) => {
         { _id: reservationId },
         { $set: { isPaid: true, paymentStatus: 'COMPLETED' } }
       );
-      return res.status(201).json({ capture: capture.result });
+      return res.status(201).json({
+        capture: capture.result,
+        paymentStatus: 'COMPLETED',
+        message: 'Orden completada',
+      });
     }
     res.status(400).json({ error: 'No se pudo capturar el pago' });
   } catch (err) {
