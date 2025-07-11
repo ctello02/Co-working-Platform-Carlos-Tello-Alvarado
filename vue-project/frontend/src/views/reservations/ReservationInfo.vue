@@ -112,8 +112,15 @@
                 </v-col>
             </v-card-text>
 
-            <v-card-actions class="d-flex justify-end ga-3 mt-n3 mb-3 mr-5">
-                <TonalButton color="grey" text="Volver" @click="routerBack" />
+            <v-card-actions :class="buttonsRendered ? 'd-flex flex-column-reverse mt-n5 ma-5 justify-end' :
+                'd-flex justify-end ga-3 mt-n3 mb-3 mr-5'">
+
+                <TonalButton color="grey" :block="buttonsRendered ? true : false" text="Volver" @click="routerBack" />
+                <TonalButton v-if="!buttonsRendered && !reservation.isPaid" color="blue" :loading="isLoading"
+                    text="Pagar" @click="startPayPalPayment" />
+                <div style="width: 100%;" v-show="buttonsRendered && !reservation.isPaid"
+                    id="paypal-button-container" />
+
             </v-card-actions>
         </v-card>
 
@@ -155,6 +162,10 @@ const canEdit = ref(false);
 const deleteModal = ref(false);
 const bulkDeleteReservations = ref(false);
 
+const paymentStarted = ref(false);
+const paypalLoaded = ref(false);
+const buttonsRendered = ref(false);
+const isLoading = ref(false);
 
 // Extraemos funciones del composable useTime
 const {
@@ -198,8 +209,6 @@ function getUserByReservationId() {
     reservationService.getUserByReservationId(reservation.value._id)
         .then(res => {
             reservationUser.value = res.data.reservation.userId;
-            console.log(reservationUser.value);
-
         })
         .catch(error => {
             console.error('Error al obtener el usuario:', error);
@@ -228,7 +237,7 @@ function deleteReservation() {
     const toast = useToast();
     if (reservation.value.periodicReservationId && bulkDeleteReservations.value) {
         reservationService.deletePeriodicReservation(reservation.value.periodicReservationId._id)
-            .then(res => {
+            .then(() => {
                 closeDialog();
                 toast.success('Reserva periódica eliminada con éxito');
                 routerBack();
@@ -239,7 +248,7 @@ function deleteReservation() {
 
     } else {
         reservationService.deleteReservation(reservation.value._id)
-            .then(res => {
+            .then(() => {
                 closeDialog();
                 toast.success('Reserva eliminada con éxito');
                 routerBack();
@@ -269,7 +278,6 @@ const calculatePrice = computed(() => {
 
     // calculo cuántos bloques completos caben
     const blocks = (endMin - startMin) / dur
-    //console.log(blocks)
 
     // en caso de que no sea un múltiplo exacto, redondeamos hacia abajo
     const fullBlocks = Math.floor(blocks)
@@ -277,7 +285,54 @@ const calculatePrice = computed(() => {
 
     // toFixed devuelve una string con dos decimales
     return total.toFixed(2)
-})
+});
+
+// Carga dinámica del SDK de PayPal
+function loadPayPalSdk() {
+    if (paypalLoaded.value) return Promise.resolve();
+    return new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = `https://www.paypal.com/sdk/js?client-id=${import.meta.env.VITE_PAYPAL_CLIENT_ID}&currency=EUR`;
+        script.onload = () => { paypalLoaded.value = true; resolve(); };
+        script.onerror = reject;
+        document.head.appendChild(script);
+    });
+}
+
+async function startPayPalPayment() {
+    const toast = useToast();
+    paymentStarted.value = true;
+    isLoading.value = true;
+
+    try {
+        await loadPayPalSdk();
+        // Crear orden en backend
+        const amount = calculatePrice.value;
+        const res = await reservationService.createOrder(reservation.value._id, amount);
+        const orderID = res.data.orderID;
+        paypal.Buttons({
+            createOrder: () => orderID,
+            onApprove: async (data) => {
+                await reservationService.captureOrder(data.orderID, reservation.value._id);
+                toast.success('Pago completado con éxito');
+                reservation.value.isPaid = true;
+                paymentStarted.value = false;
+                reservationStore.setReservation(reservation.value);
+            },
+            onError: (err) => {
+                console.error(err);
+                toast.error('Error en el pago');
+            }
+        }).render('#paypal-button-container');
+        buttonsRendered.value = true;
+    } catch (err) {
+        console.error(err);
+        paymentStarted.value = false;
+        toast.error('No se pudo cargar PayPal o crear la orden');
+    } finally {
+        isLoading.value = false;
+    }
+}
 
 // Traduce el valor de repetición a un string legible
 const parseRepetition = (repetition) => {
