@@ -49,35 +49,79 @@ exports.createOrder = async (req, res) => {
 exports.captureOrder = async (req, res) => {
   const { orderID, reservationId } = req.body;
 
-  console.log(req.body);
-
   const request = new checkout.orders.OrdersCaptureRequest(orderID);
   request.requestBody({});
 
   try {
     const capture = await client().execute(request);
     if (capture.statusCode === 201) {
+      const captureId =
+        capture.result.purchase_units[0].payments.captures[0].id;
+
       // Marcar la reserva como pagada
       await Reservation.updateOne(
         { _id: reservationId },
-        { $set: { isPaid: true, paymentStatus: 'COMPLETED' } }
+        {
+          $set: {
+            paypalCaptureId: captureId,
+            isPaid: true,
+            paymentStatus: 'COMPLETED',
+          },
+        }
       );
       return res.status(201).json({
-        capture: capture.result,
+        capture: captureId,
         paymentStatus: 'COMPLETED',
       });
     }
+
+    //Ha fallado:
     await Reservation.updateOne(
       { _id: reservationId },
-      { $set: { paypalOrderId: orderID, paymentStatus: 'FAILED' } }
+      { $set: { paymentStatus: 'FAILED' } }
     );
     res.status(400).json({ error: 'No se pudo capturar el pago' });
   } catch (err) {
     console.error(err);
     await Reservation.updateOne(
       { _id: reservationId },
-      { $set: { paypalOrderId: orderID, paymentStatus: 'FAILED' } }
+      { $set: { paymentStatus: 'FAILED' } }
     );
     res.status(500).json({ error: 'Error capturando pago' });
+  }
+};
+
+exports.refundPayment = async (req, res) => {
+  const { reservationId } = req.body;
+
+  const reserva = await Reservation.findById(reservationId);
+  const captureId = reserva.paypalCaptureId;
+  if (!captureId) {
+    return res.status(400).json({ error: 'No hay captura para reembolsar' });
+  }
+
+  const refundRequest = new checkout.payments.CapturesRefundRequest(captureId);
+  refundRequest.requestBody({});
+
+  try {
+    const refund = await client().execute(refundRequest);
+
+    await Reservation.updateOne(
+      { _id: reservationId },
+      {
+        $set: {
+          isPaid: false,
+          paymentStatus: 'REFUNDED',
+        },
+      }
+    );
+
+    res.status(200).json({
+      refundId: refund.result.id,
+      status: 'REFUNDED',
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Error al reembolsar el pago' });
   }
 };
