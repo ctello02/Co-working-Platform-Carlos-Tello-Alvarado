@@ -76,4 +76,8 @@ export const reservationService = {
       reservationId,
     });
   },
+
+  markAsPaid(reservationId) {
+    return axiosInstance.put(`${API_URL}/markAsPaid/${reservationId}`);
+  },
 };

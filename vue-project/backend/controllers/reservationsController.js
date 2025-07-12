@@ -419,6 +419,20 @@ exports.deletePeriodicReservation = async (req, res) => {
   }
 };
 
-// payReservation
+exports.markAsPaid = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const reservation = await Reservation.findById(id);
+    if (!reservation) {
+      throw new Error('Reserva no encontrada');
+    }
+    reservation.isPaid = true;
+    await reservation.save();
+    res.status(200).json({ message: 'Reserva marcada como pagada con éxito' });
+  } catch (error) {
+    console.error('Error al marcar la reserva como pagada:', error);
+    res.status(500).json({ message: error.message });
+  }
+};
 
-// markPaidReservation
+// payReservation

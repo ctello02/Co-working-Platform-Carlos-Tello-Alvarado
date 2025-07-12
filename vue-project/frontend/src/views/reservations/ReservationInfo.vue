@@ -113,11 +113,13 @@
             </v-card-text>
 
             <v-card-actions :class="buttonsRendered ? 'd-flex flex-column-reverse mt-n5 ma-5 justify-end' :
-                'd-flex justify-end ga-3 mt-n3 mb-3 mr-5'">
-
+                'd-flex justify-end ga-3 mt-n3 mb-4 mr-5'">
                 <TonalButton color="grey" :block="buttonsRendered ? true : false" text="Volver" @click="routerBack" />
-                <TonalButton v-if="!buttonsRendered && !reservation.isPaid" color="blue" :loading="isLoading"
-                    text="Pagar" @click="startPayPalPayment" />
+
+                <TonalButton v-if="!buttonsRendered && !reservation.isPaid && reservationUser._id !== userStore.getId"
+                    color="blue" text="Marcar como pagada" @click="markPaidModal = true" />
+                <TonalButton v-if="!buttonsRendered && !reservation.isPaid && reservationUser._id === userStore.getId"
+                    color="blue" :loading="isLoading" text="Pagar" @click="startPayPalPayment" />
                 <div style="width: 100%;" v-show="buttonsRendered && !reservation.isPaid"
                     id="paypal-button-container" />
 
@@ -128,6 +130,10 @@
             :message="'¿Estás seguro de que quieres borrar esta reserva?'" :actionText="'Borrar reserva'"
             :closeModal="closeDialog" :action="deleteReservation"
             :checkboxAction="reservationStore.getReservation?.periodicReservationId ? toggleCheckbox : null" />
+
+        <AskModal v-model="markPaidModal" :title="'¿Se ha pagado la reserva?'"
+            :message="'¿Ha pagado el cliente el importe de la reserva?'" :actionText="'Marcar como pagada'"
+            :closeModal="() => markPaidModal = false" :action="markAsPaid" />
 
     </v-container>
 </template>
@@ -160,6 +166,7 @@ const reservation = ref(null);
 const reservationSeats = ref(1);
 const canEdit = ref(false);
 const deleteModal = ref(false);
+const markPaidModal = ref(false);
 const bulkDeleteReservations = ref(false);
 
 const paymentStarted = ref(false);
@@ -332,6 +339,20 @@ async function startPayPalPayment() {
     } finally {
         isLoading.value = false;
     }
+}
+
+function markAsPaid() {
+    const toast = useToast();
+
+    reservationService.markAsPaid(reservation.value._id)
+        .then(() => {
+            reservation.value.isPaid = true;
+            reservationStore.setReservation(reservation.value);
+            toast.success('Reserva marcada como pagada');
+        })
+        .catch(error => {
+            console.error('Error al marcar reserva como pagada:', error);
+        });
 }
 
 // Traduce el valor de repetición a un string legible
