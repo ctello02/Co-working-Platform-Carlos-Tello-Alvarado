@@ -112,21 +112,22 @@
                 </v-col>
             </v-card-text>
 
-            <v-card-actions :class="buttonsRendered ? 'd-flex flex-column-reverse mt-n5 ma-5 justify-end' :
-                'd-flex justify-end ga-3 mt-n3 mb-4 mr-5'">
-                <TonalButton color="grey" :block="buttonsRendered ? true : false" text="Volver" @click="routerBack" />
+            <v-card-actions class="d-flex justify-end ga-3 mt-n3 mb-5 mr-5">
+                <TonalButton color="grey" text="Volver" @click="routerBack" />
 
                 <TonalButton v-if="!buttonsRendered && !reservation.isPaid && reservationUser._id !== userStore.getId"
                     color="blue" text="Marcar como pagada" @click="markPaidModal = true" />
-                <TonalButton v-if="!buttonsRendered && !reservation.isPaid && reservationUser._id === userStore.getId"
-                    color="blue" :loading="isLoading" text="Pagar" @click="startPayPalPayment" />
-                <div style="width: 100%;" v-show="buttonsRendered && !reservation.isPaid"
-                    id="paypal-button-container" />
 
-                <v-btn class="align-self-end" v-if="buttonsRendered && !reservation.isPaid" @click="closePayPal"
-                    variant="text" size="x-small" icon="mdi-close" />
-
+                <TonalButton :color="show ? 'grey' : 'blue'" :loading="isLoading"
+                    v-if="!buttonsRendered && !reservation.isPaid && reservationUser._id === userStore.getId"
+                    :text="show ? 'Cancelar pago' : 'Pagar'" @click="show ? closePayPal() : startPayPalPayment()" />
             </v-card-actions>
+
+            <v-expand-transition>
+                <div v-show="show" class="mt-n2 ma-7">
+                    <div style="width: 100%;" id="paypal-button-container" />
+                </div>
+            </v-expand-transition>
         </v-card>
 
         <AskModal v-model="deleteModal" :title="'¿Borrar reserva?'"
@@ -176,6 +177,8 @@ const paymentStarted = ref(false);
 const paypalLoaded = ref(false);
 const buttonsRendered = ref(false);
 const isLoading = ref(false);
+
+const show = ref(false);
 
 // Extraemos funciones del composable useTime
 const {
@@ -315,33 +318,38 @@ function loadPayPalSdk() {
 
 async function startPayPalPayment() {
     const toast = useToast();
-    paymentStarted.value = true;
     isLoading.value = true;
 
     try {
         await loadPayPalSdk();
+
         // Crear orden en backend
         const amount = calculatePrice.value;
         const res = await reservationService.createOrder(reservation.value._id, amount);
         const orderID = res.data.orderID;
-        paypal.Buttons({
-            createOrder: () => orderID,
-            onApprove: async (data) => {
-                await reservationService.captureOrder(data.orderID, reservation.value._id);
-                toast.success('Pago completado con éxito');
-                reservation.value.isPaid = true;
-                paymentStarted.value = false;
-                reservationStore.setReservation(reservation.value);
-            },
-            onError: (err) => {
-                console.error(err);
-                toast.error('Error en el pago');
-            }
-        }).render('#paypal-button-container');
-        buttonsRendered.value = true;
+
+        // Sólo renderizamos los botones si aún no existen
+        const container = document.getElementById('paypal-button-container');
+        if (container && !container.hasChildNodes()) {
+            console.log("Renderizamos");
+
+            paypal.Buttons({
+                createOrder: () => orderID,
+                onApprove: async (data) => {
+                    await reservationService.captureOrder(data.orderID, reservation.value._id);
+                    toast.success('Pago completado con éxito');
+                    reservation.value.isPaid = true;
+                    reservationStore.setReservation(reservation.value);
+                },
+                onError: (err) => {
+                    console.error(err);
+                    toast.error('Error en el pago');
+                }
+            }).render(container);
+        }
+        show.value = true;
     } catch (err) {
         console.error(err);
-        paymentStarted.value = false;
         toast.error('No se pudo cargar PayPal o crear la orden');
     } finally {
         isLoading.value = false;
@@ -376,13 +384,7 @@ const parseRepetition = (repetition) => {
 };
 
 function closePayPal() {
-    const container = document.getElementById('paypal-button-container')
-    if (container) {
-        container.innerHTML = ''
-    }
-
-    buttonsRendered.value = false
-    paymentStarted.value = false
+    show.value = false
 }
 
 const routerBack = () => {
