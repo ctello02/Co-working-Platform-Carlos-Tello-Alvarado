@@ -123,6 +123,9 @@
                 <div style="width: 100%;" v-show="buttonsRendered && !reservation.isPaid"
                     id="paypal-button-container" />
 
+                <v-btn class="align-self-end" v-if="buttonsRendered && !reservation.isPaid" @click="closePayPal"
+                    variant="text" size="x-small" icon="mdi-close" />
+
             </v-card-actions>
         </v-card>
 
@@ -197,6 +200,10 @@ onMounted(async () => {
             reservationSeats.value = reservation.value.seatsReserved;
         } else {
             material.value = materialStore.getSelectedMaterial;
+        }
+
+        if (reservation.value.toPayment) {
+            startPayPalPayment();
         }
 
         getUserByReservationId(reservation.value._id);
@@ -367,6 +374,16 @@ const parseRepetition = (repetition) => {
         return 'Se repite todas los meses este día';
     }
 };
+
+function closePayPal() {
+    const container = document.getElementById('paypal-button-container')
+    if (container) {
+        container.innerHTML = ''
+    }
+
+    buttonsRendered.value = false
+    paymentStarted.value = false
+}
 
 const routerBack = () => {
     router.go(-1);

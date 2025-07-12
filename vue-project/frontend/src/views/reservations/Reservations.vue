@@ -37,8 +37,9 @@
 
                             <template #eventModal="{ calendarEvent }">
                                 <CustomEventCalendar :reservation="reservationStore.getReservation"
-                                    @see-event="openReservation" @edit-event="editReservation"
-                                    @delete-event="openDeleteReservation" @close="closeModal" />
+                                    @see-event="openReservation" @pay-event="openReservationToPay"
+                                    @edit-event="editReservation" @delete-event="openDeleteReservation"
+                                    @close="closeModal" />
                             </template>
 
                         </ScheduleXCalendar>
@@ -469,6 +470,17 @@ function openReservation() {
     const reservation = reservationStore.getReservation;
     if (reservation.spaceId) spaceStore.setSelectedSpace(reservation.spaceId);
     else materialStore.setSelectedMaterial(reservation.materialId);
+    router.push('/reservationInfo');
+};
+
+function openReservationToPay() {
+    const reservation = reservationStore.getReservation;
+    if (reservation.spaceId) spaceStore.setSelectedSpace(reservation.spaceId);
+    else materialStore.setSelectedMaterial(reservation.materialId);
+
+    reservation.toPayment = true;
+    reservationStore.setReservation(reservation);
+
     router.push('/reservationInfo');
 };
 

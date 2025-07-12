@@ -76,7 +76,8 @@
                             </v-col>
                         </v-row>
                     </v-col>
-                    <v-col cols="12" v-if="showMoreDetails">
+                    <v-divider class="mt-n2 mx-3" v-if="!isExpired" />
+                    <v-col cols="12" class="mb-n1 mt-n3">
                         <v-row>
                             <v-col class="">
                                 <span v-if="reservation.isPaid" class="text-h6">
