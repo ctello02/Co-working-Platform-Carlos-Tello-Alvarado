@@ -92,7 +92,7 @@ exports.captureOrder = async (req, res) => {
 };
 
 exports.refundPayment = async (req, res) => {
-  const { reservationId } = req.body;
+  const { reservationId } = req.params;
 
   const reserva = await Reservation.findById(reservationId);
   const captureId = reserva.paypalCaptureId;

@@ -15,7 +15,7 @@ const usersRoutes = require('./routes/usersRoutes');
 const spacesRoutes = require('./routes/spacesRoutes');
 const materialsRoutes = require('./routes/materialsRoutes');
 const reservationsRoutes = require('./routes/reservationsRoutes');
-const paypalRoutes = require('./routes/paypal');
+const paypalRoutes = require('./routes/paypalRoutes');
 
 const app = express();
 

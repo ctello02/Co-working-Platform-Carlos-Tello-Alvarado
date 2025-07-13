@@ -152,6 +152,7 @@ import { useRouter } from 'vue-router';
 import TonalButton from '@/components/TonalButton.vue'
 import AskModal from '@/components/AskModal.vue';
 import { reservationService } from '@/services/reservationService';
+import { paypalService } from '@/services/paypalService';
 import { useTime } from '@/composables/useTime';
 import { useToast } from 'vue-toastification';
 
@@ -325,21 +326,20 @@ async function startPayPalPayment() {
 
         // Crear orden en backend
         const amount = calculatePrice.value;
-        const res = await reservationService.createOrder(reservation.value._id, amount);
+        const res = await paypalService.createOrder(reservation.value._id, amount);
         const orderID = res.data.orderID;
 
         // Sólo renderizamos los botones si aún no existen
         const container = document.getElementById('paypal-button-container');
         if (container && !container.hasChildNodes()) {
-            console.log("Renderizamos");
-
             paypal.Buttons({
                 createOrder: () => orderID,
                 onApprove: async (data) => {
-                    await reservationService.captureOrder(data.orderID, reservation.value._id);
+                    await paypalService.captureOrder(data.orderID, reservation.value._id);
                     toast.success('Pago completado con éxito');
                     reservation.value.isPaid = true;
                     reservationStore.setReservation(reservation.value);
+                    show.value = false;
                 },
                 onError: (err) => {
                     console.error(err);

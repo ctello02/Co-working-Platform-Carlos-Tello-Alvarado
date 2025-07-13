@@ -69,7 +69,7 @@
                                     </v-col>
                                 </v-row>
                                 <v-divider />
-                                <v-row class="mt-3 mb-n9 d-flex justify-center">
+                                <v-row class="mt-3 d-flex justify-center">
                                     <v-col v-if="reservation.spaceId">
                                         <v-row>
                                             <v-col cols="1" class="d-flex align-center"><v-icon size="small"
@@ -100,22 +100,62 @@
                                         </v-row>
                                     </v-col>
                                 </v-row>
-                                <v-row v-if="reservation.periodicReservationId" class="mt-5">
+
+                                <v-fade-transition>
+                                    <!-- Tengo que arreglar esto que es un lío y tengo que poner un tooltip de que
+                                     el dinero se devolverá y se hará otro cobro -->
+                                    <v-row class="my-2 mb-n9" v-if="reservationTimes.end">
+                                        <v-divider class="mt-4 mx-3" />
+                                        <v-col>
+                                            <v-fade-transition>
+                                                <v-row>
+                                                    <v-col cols="1" class="d-flex align-center ">
+                                                        <v-icon icon="mdi-hand-coin-outline" size="small" />
+                                                    </v-col>
+                                                    <v-col class="d-flex align-start ml-n3">
+                                                        <span class="text-h6">
+                                                            Precio original: {{ initialPrice }}€
+                                                            <span v-if="reservation.isPaid">(Pagado)</span>
+                                                            <span v-else>
+                                                                (Sin pagar)
+                                                            </span>
+                                                        </span>
+                                                    </v-col>
+                                                </v-row>
+                                            </v-fade-transition>
+                                            <v-fade-transition>
+                                                <v-row v-if="initialPrice !== calculatePrice()">
+                                                    <v-col cols="1" class="d-flex align-center ">
+                                                        <v-icon icon="mdi-hand-coin-outline" size="small" />
+                                                    </v-col>
+                                                    <v-col class="d-flex align-start ml-n3">
+                                                        <span class="text-h6">Precio actual: {{ calculatePrice() }}€
+                                                            <span>(Sin pagar)</span>
+                                                        </span>
+                                                    </v-col>
+                                                </v-row>
+                                            </v-fade-transition>
+                                        </v-col>
+                                    </v-row>
+                                </v-fade-transition>
+
+                                <v-row v-if="reservation.periodicReservationId && reservationTimes.end"
+                                    class="mt-5 outline">
                                     <v-col class="d-flex ml-n2 mt-n2 mb-n8">
                                         <v-checkbox label="Aplicar a todas las reservas periódicas"
                                             @click="applyToAll = !applyToAll" />
                                     </v-col>
                                 </v-row>
-                                <v-row :class="reservation.periodicReservationId ? 'mt-n5 mb-n4' : 'mt-7 mb-n9'">
+                                <v-row v-if="reservationTimes.end || reservationSeats >= maxAllowed"
+                                    :class="reservation.periodicReservationId ? 'mt-n5 mb-n4' : 'mt-7 mb-n9'">
                                     <v-col>
                                         <v-fade-transition>
                                             <v-alert v-if="reservationTimes.end && maxAllowed === 0" type="error"
                                                 variant="tonal" density="compact">
                                                 Ya tienes una reserva en ese horario.
                                             </v-alert>
-                                            <v-alert
-                                                v-if="reservationSeats >= maxAllowed && reservationTimes.end != null"
-                                                type="warning" density="compact" variant="tonal">
+                                            <v-alert v-if="reservationSeats >= maxAllowed" type="warning"
+                                                density="compact" variant="tonal">
                                                 No se pueden reservar más de {{ maxAllowed }} asientos.
                                             </v-alert>
                                         </v-fade-transition>
@@ -156,6 +196,7 @@ import { useReservationStore } from '@/store/reservationStore';
 import { useSpaceStore } from '@/store/spaceStore';
 import { useMaterialStore } from '@/store/materialStore';
 import { reservationService } from '@/services/reservationService';
+import { paypalService } from '@/services/paypalService';
 import { useTime } from '@/composables/useTime';
 import { useSpaceSlots } from '@/composables/useSpaceSlots';
 import { useMaterialSlots } from '@/composables/useMaterialSlots';
@@ -172,6 +213,7 @@ const materialStore = useMaterialStore();
 const {
     parseToStringDate,
     getHoursAndMinsFromDate,
+    makeMinutes
 } = useTime();
 
 // refs
@@ -179,6 +221,7 @@ const space = ref(null);
 const material = ref(null);
 const reservation = ref(null);
 const initialReservation = ref(null);
+const initialPrice = ref(null);
 const reservationDate = ref(null);
 const reservationsByDate = ref([]);
 const periodicReservations = ref([]);
@@ -269,6 +312,60 @@ const maxAllowed = computed(
 function updateReservation(key, val) {
     return slotsApi.value.updateReservation(key, val);
 }
+
+function calculatePrice() {
+    const startMin = makeMinutes(reservationTimes.value.start)
+    const endMin = makeMinutes(reservationTimes.value.end)
+    let dur = 0;
+    let pricePer = 0;
+    if (reservationStore.getReservation?.spaceId) {
+        dur = space?.value.duration      // duración de un bloque, en minutos
+        pricePer = space?.value.pricing       // precio por bloque
+    } else {
+        dur = material?.value.duration      // duración de un bloque, en minutos
+        pricePer = material?.value.pricing       // precio por bloque
+    }
+
+    // calculo cuántos bloques completos caben
+    const blocks = (endMin - startMin) / dur
+
+    // en caso de que no sea un múltiplo exacto, redondeamos hacia abajo
+    const fullBlocks = Math.floor(blocks)
+    const total = fullBlocks * pricePer * reservationSeats?.value
+
+    // toFixed devuelve una string con dos decimales
+    if (!initialPrice.value) initialPrice.value = total.toFixed(2)
+
+    return total.toFixed(2)
+}
+
+// const calculatePrice = computed(() => {
+//     const startStr = reservation.value.startTime
+//     const endStr = reservation.value.endTime
+//     let dur = 0;
+//     let pricePer = 0;
+//     if (reservationStore.getReservation?.spaceId) {
+//         dur = space?.value.duration      // duración de un bloque, en minutos
+//         pricePer = space?.value.pricing       // precio por bloque
+//     } else {
+//         dur = material?.value.duration      // duración de un bloque, en minutos
+//         pricePer = material?.value.pricing       // precio por bloque
+//     }
+
+//     // convierto fecha ISO en minutos
+//     const startMin = makeMinutesFromIsoLocal(startStr)
+//     const endMin = makeMinutesFromIsoLocal(endStr)
+
+//     // calculo cuántos bloques completos caben
+//     const blocks = (endMin - startMin) / dur
+
+//     // en caso de que no sea un múltiplo exacto, redondeamos hacia abajo
+//     const fullBlocks = Math.floor(blocks)
+//     const total = fullBlocks * pricePer * reservationSeats?.value
+
+//     // toFixed devuelve una string con dos decimales
+//     return total.toFixed(2)
+// });
 
 async function submit() {
     const toast = useToast();

@@ -189,7 +189,6 @@ const submit = async () => {
 
   try {
     const res = await spaceService.updateSpace(formData);
-    console.log(res.data);
     toast.success('¡Espacio actualizado con éxito!');
     router.go(-1);
     spaceStore.setSelectedSpace(newSpace);

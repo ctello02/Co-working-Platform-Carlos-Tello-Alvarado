@@ -158,7 +158,6 @@ const submit = async () => {
 
   try {
     const res = await spaceService.createSpace(formData);
-    console.log(res.data);
     toast.success('¡Espacio creado con éxito!');
     clearFields();
   } catch (error) {
