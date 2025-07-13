@@ -49,6 +49,8 @@ exports.createOrder = async (req, res) => {
 exports.captureOrder = async (req, res) => {
   const { orderID, reservationId } = req.body;
 
+  console.log(orderID, reservationId);
+
   const request = new checkout.orders.OrdersCaptureRequest(orderID);
   request.requestBody({});
 

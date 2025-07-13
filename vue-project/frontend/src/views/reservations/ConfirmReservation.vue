@@ -96,19 +96,19 @@
                 </v-row>
 
                 <v-divider class="mt-6" />
-                <v-row class="mt-3 mb-n8 d-flex align-center justify-center">
-                  <v-col cols="5">
-                    <span class="text-h6" v-if="pricing > 0">
-                      Precio por reserva: {{ calculatePrice }}€
-                    </span>
-                    <span class="text-h6" v-else>
-                      La reserva será gratis
+                <v-row class="mt-3 mb-n6 d-flex align-start ">
+                  <v-col cols="1" class="d-flex align-center ">
+                    <v-icon icon="mdi-hand-coin-outline" />
+                  </v-col>
+                  <v-col class="d-flex ml-n1 mt-n1">
+                    <span class="text-h6">
+                      Precio: {{ calculatePrice }}€
                     </span>
                   </v-col>
                 </v-row>
 
-                <v-row class="mb-n4">
-                  <v-col class="" style="display: flex; flex-direction: column; gap: 15px;">
+                <v-row class="mb-n3" v-if="reservationSeats >= maxAllowed">
+                  <v-col class="mt-1" style="display: flex; flex-direction: column; gap: 15px;">
                     <v-fade-transition>
                       <v-alert v-if="reservationSeats >= maxAllowed && reservation.item === 'space'" type="warning"
                         density="compact" variant="tonal">
@@ -125,7 +125,7 @@
               </v-col>
             </v-card-text>
             <v-card-actions>
-              <v-row class="mt-n6 mb-3 mr-2 d-flex justify-end ga-3">
+              <v-row class="mt-n5 mb-5 mr-5 d-flex justify-end ga-3">
                 <TonalButton color="grey" text="Volver" @click="routerBack" />
                 <TonalButton color="blue" text="Reservar" :loading="isLoading" @click="submit">
                 </TonalButton>

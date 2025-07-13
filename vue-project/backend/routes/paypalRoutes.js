@@ -9,6 +9,6 @@ const router = express.Router();
 
 router.post('/createOrder', verifyToken, createOrder);
 router.post('/captureOrder', verifyToken, captureOrder);
-router.post('/refundPayment', verifyToken, refundPayment);
+router.post('/refundPayment/:reservationId', verifyToken, refundPayment);
 
 module.exports = router;

@@ -174,7 +174,6 @@ const deleteModal = ref(false);
 const markPaidModal = ref(false);
 const bulkDeleteReservations = ref(false);
 
-const paymentStarted = ref(false);
 const paypalLoaded = ref(false);
 const buttonsRendered = ref(false);
 const isLoading = ref(false);

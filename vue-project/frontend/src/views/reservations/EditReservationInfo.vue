@@ -82,13 +82,14 @@
                                             </v-col>
                                         </v-row>
                                     </v-col>
-                                    <v-col>
-                                        <v-row class="d-flex align-center justify-center">
+                                    <v-col :cols="admitsRepetition ? '6' : '7'" class="mt-1">
+                                        <v-row class="d-flex align-center justify-center ">
                                             <v-col cols="1" class="d-flex align-center">
                                                 <v-icon size="small"
                                                     :icon="admitsRepetition ? 'mdi-repeat' : 'mdi-repeat-off'" />
                                             </v-col>
-                                            <v-col class="d-flex" :class="reservation.spaceId ? 'ml-2' : 'ml-n2'">
+                                            <v-col class="d-flex align-start"
+                                                :class="reservation.spaceId ? 'ml-2' : 'ml-n2'">
                                                 <span class="text-h6">
                                                     {{
                                                         admitsRepetition ?
@@ -102,35 +103,55 @@
                                 </v-row>
 
                                 <v-fade-transition>
-                                    <!-- Tengo que arreglar esto que es un lío y tengo que poner un tooltip de que
-                                     el dinero se devolverá y se hará otro cobro -->
-                                    <v-row class="my-2 mb-n9" v-if="reservationTimes.end">
-                                        <v-divider class="mt-4 mx-3" />
+                                    <v-row class="my-2 mb-n9">
                                         <v-col>
                                             <v-fade-transition>
-                                                <v-row>
+                                                <v-row
+                                                    v-if="!reservation.isPaid && reservationTimes.end && maxAllowed !== 0"
+                                                    class="mb-0">
+                                                    <v-divider class="mt-4 mb-1 mx-3" />
                                                     <v-col cols="1" class="d-flex align-center ">
                                                         <v-icon icon="mdi-hand-coin-outline" size="small" />
                                                     </v-col>
                                                     <v-col class="d-flex align-start ml-n3">
                                                         <span class="text-h6">
-                                                            Precio original: {{ initialPrice }}€
-                                                            <span v-if="reservation.isPaid">(Pagado)</span>
-                                                            <span v-else>
-                                                                (Sin pagar)
-                                                            </span>
+                                                            Precio:
+                                                            {{
+                                                                calculatePrice(reservationTimes.start, reservationTimes.end)
+                                                            }}€ (Sin pagar)
                                                         </span>
                                                     </v-col>
                                                 </v-row>
                                             </v-fade-transition>
                                             <v-fade-transition>
-                                                <v-row v-if="initialPrice !== calculatePrice()">
+                                                <v-row v-if="reservation.isPaid" class="mb-0">
+                                                    <v-divider class="mt-4 mb-1 mx-3" />
                                                     <v-col cols="1" class="d-flex align-center ">
                                                         <v-icon icon="mdi-hand-coin-outline" size="small" />
                                                     </v-col>
                                                     <v-col class="d-flex align-start ml-n3">
-                                                        <span class="text-h6">Precio actual: {{ calculatePrice() }}€
-                                                            <span>(Sin pagar)</span>
+                                                        <span class="text-h6">
+                                                            Precio pagado: {{ initialPrice }}€
+                                                        </span>
+                                                    </v-col>
+                                                    <v-col v-if="reservationTimes.end && initialPrice != calculatePrice(reservationTimes.start,
+                                                        reservationTimes.end)" class="d-flex align-center ml-n8 ga-3">
+                                                        <v-tooltip v-model="showTooltip" location="top">
+                                                            <template v-slot:activator="{ props }">
+                                                                <v-icon v-bind="props" size="small">
+                                                                    mdi-information-outline
+                                                                </v-icon>
+                                                            </template>
+                                                            <span>Se devolverá el pago y se efectuará el cobro del nuevo
+                                                                importe.</span>
+                                                            <span v-if="applyToAll">
+                                                                <br> Solo se pagará esta reserva.
+                                                            </span>
+                                                        </v-tooltip>
+
+                                                        <span class="text-h6">
+                                                            Precio a pagar: {{ calculatePrice(reservationTimes.start,
+                                                                reservationTimes.end) }}€
                                                         </span>
                                                     </v-col>
                                                 </v-row>
@@ -139,36 +160,38 @@
                                     </v-row>
                                 </v-fade-transition>
 
-                                <v-row v-if="reservation.periodicReservationId && reservationTimes.end"
-                                    class="mt-5 outline">
-                                    <v-col class="d-flex ml-n2 mt-n2 mb-n8">
-                                        <v-checkbox label="Aplicar a todas las reservas periódicas"
+                                <v-row v-if="reservation.periodicReservationId && reservationTimes.end" class="mt-5">
+                                    <v-col class="d-flex ml-n2 mt-n4 mb-n8">
+                                        <v-checkbox label="Aplicar a todas las reservas periódicas" v-model="applyToAll"
                                             @click="applyToAll = !applyToAll" />
                                     </v-col>
                                 </v-row>
-                                <v-row v-if="reservationTimes.end || reservationSeats >= maxAllowed"
-                                    :class="reservation.periodicReservationId ? 'mt-n5 mb-n4' : 'mt-7 mb-n9'">
-                                    <v-col>
-                                        <v-fade-transition>
+                                <v-fade-transition>
+                                    <v-row v-if="reservationSeats >= maxAllowed"
+                                        :class="reservation.periodicReservationId ? 'mt-n3 mb-n4' : 'mt-3 mb-n9'">
+                                        <v-col class="d-flex flex-column ga-2">
                                             <v-alert v-if="reservationTimes.end && maxAllowed === 0" type="error"
                                                 variant="tonal" density="compact">
                                                 Ya tienes una reserva en ese horario.
                                             </v-alert>
-                                            <v-alert v-if="reservationSeats >= maxAllowed" type="warning"
-                                                density="compact" variant="tonal">
+                                            <v-alert v-if="reservationSeats >= maxAllowed && maxAllowed !== 0"
+                                                type="warning" density="compact" variant="tonal">
                                                 No se pueden reservar más de {{ maxAllowed }} asientos.
                                             </v-alert>
-                                        </v-fade-transition>
-                                    </v-col>
-                                </v-row>
+                                        </v-col>
+                                    </v-row>
+                                </v-fade-transition>
                             </v-col>
                         </v-card-text>
                         <v-card-actions>
-                            <v-row class="mb-6 mr-5 d-flex justify-end ga-3"
-                                :class="reservation.periodicReservationId ? 'mt-n5' : 'mt-0'">
-                                <TonalButton color="grey" text="Volver" @click="routerBack" />
-                                <TonalButton color="blue" text="Actualizar" :loading="isLoading"
-                                    :disabled="reservationSeats > maxAllowed || maxAllowed === 0" @click="submit" />
+                            <v-row class="mb-6 mr-5" :class="reservation.periodicReservationId ? 'mt-n5' : 'mt-0'">
+                                <TonalButton class="ml-8" color="grey" text="Reiniciar" @click="initialValues" />
+                                <v-spacer></v-spacer>
+                                <div class="d-flex ga-3">
+                                    <TonalButton color="grey" text="Volver" @click="routerBack" />
+                                    <TonalButton color="blue" text="Actualizar" :loading="isLoading"
+                                        :disabled="isUpdateDisabled" @click="submit" />
+                                </div>
                             </v-row>
                         </v-card-actions>
                     </v-card>
@@ -213,7 +236,7 @@ const materialStore = useMaterialStore();
 const {
     parseToStringDate,
     getHoursAndMinsFromDate,
-    makeMinutes
+    makeMinutes,
 } = useTime();
 
 // refs
@@ -232,6 +255,7 @@ const repetition = ref('no_repeat');
 const applyToAll = ref(false);
 const showSpaceModal = ref(false);
 const showMaterialModal = ref(false);
+const showTooltip = ref(false)
 const isLoading = ref(false);
 
 const repetitionOptions = [
@@ -256,23 +280,53 @@ onMounted(async () => {
     }
 
     initialReservation.value = reservationStore.getReservation;
+    let start = getHoursAndMinsFromDate(reservation.value.startTime);
+    let end = getHoursAndMinsFromDate(reservation.value.endTime);
+    initialPrice.value = calculatePrice(start, end);
     reservationSeats.value = reservation.value.seatsReserved;
     repetition.value = reservation.value.periodicReservationId?.periodicity || 'no_repeat';
     reservationDate.value = new Date(reservation.value.startTime);
     reservationDate.value.setHours(0, 0, 0, 0);
 
-    // fetch de reservas puntuales y periódicas…
-    const [rawRes, rawPerRes] = await Promise.all([
-        reservationService.getReservationsByDate(reservationDate.value),
-        reservationService.getPeriodicReservations()
-    ]);
-    const res = rawRes.data.reservations || [];
-    const perRes = rawPerRes.data.periodicReservations || [];
+    try {
+        const [resResult, perResResult] = await Promise.allSettled([
+            reservationService.getReservationsByDate(reservationDate.value),
+            reservationService.getPeriodicReservations()
+        ]);
 
-    reservationsByDate.value = res
-        .filter(r => (reservation.value.spaceId ? r.spaceId === space.value._id : r.materialId === material.value._id));
-    periodicReservations.value = perRes
-        .filter(pr => (reservation.value.spaceId ? pr.spaceId === space.value._id : pr.materialId === material.value._id));
+        let rawRes = { data: { reservations: [] } };
+        let rawPerRes = { data: { periodicReservations: [] } };
+
+        if (resResult.status === 'fulfilled') {
+            rawRes = resResult.value;
+        } else {
+            console.error('Error al obtener reservas puntuales:', resResult.reason);
+        }
+
+        if (perResResult.status === 'fulfilled') {
+            rawPerRes = perResResult.value;
+        } else {
+            console.error('Error al obtener reservas periódicas:', perResResult.reason);
+        }
+
+        const res = rawRes.data.reservations || [];
+        const perRes = rawPerRes.data.periodicReservations || [];
+
+        reservationsByDate.value = res.filter(r =>
+            reservation.value.spaceId
+                ? r.spaceId === space.value._id
+                : r.materialId === material.value._id
+        );
+
+        periodicReservations.value = perRes.filter(pr =>
+            reservation.value.spaceId
+                ? pr.spaceId === space.value._id
+                : pr.materialId === material.value._id
+        );
+
+    } catch (err) {
+        console.error('Error inesperado al gestionar las reservas:', err);
+    }
 });
 
 // Instanciamos ambos composables 
@@ -313,9 +367,9 @@ function updateReservation(key, val) {
     return slotsApi.value.updateReservation(key, val);
 }
 
-function calculatePrice() {
-    const startMin = makeMinutes(reservationTimes.value.start)
-    const endMin = makeMinutes(reservationTimes.value.end)
+function calculatePrice(start, end) {
+    const startMin = makeMinutes(start)
+    const endMin = makeMinutes(end)
     let dur = 0;
     let pricePer = 0;
     if (reservationStore.getReservation?.spaceId) {
@@ -333,56 +387,38 @@ function calculatePrice() {
     const fullBlocks = Math.floor(blocks)
     const total = fullBlocks * pricePer * reservationSeats?.value
 
-    // toFixed devuelve una string con dos decimales
-    if (!initialPrice.value) initialPrice.value = total.toFixed(2)
-
     return total.toFixed(2)
 }
-
-// const calculatePrice = computed(() => {
-//     const startStr = reservation.value.startTime
-//     const endStr = reservation.value.endTime
-//     let dur = 0;
-//     let pricePer = 0;
-//     if (reservationStore.getReservation?.spaceId) {
-//         dur = space?.value.duration      // duración de un bloque, en minutos
-//         pricePer = space?.value.pricing       // precio por bloque
-//     } else {
-//         dur = material?.value.duration      // duración de un bloque, en minutos
-//         pricePer = material?.value.pricing       // precio por bloque
-//     }
-
-//     // convierto fecha ISO en minutos
-//     const startMin = makeMinutesFromIsoLocal(startStr)
-//     const endMin = makeMinutesFromIsoLocal(endStr)
-
-//     // calculo cuántos bloques completos caben
-//     const blocks = (endMin - startMin) / dur
-
-//     // en caso de que no sea un múltiplo exacto, redondeamos hacia abajo
-//     const fullBlocks = Math.floor(blocks)
-//     const total = fullBlocks * pricePer * reservationSeats?.value
-
-//     // toFixed devuelve una string con dos decimales
-//     return total.toFixed(2)
-// });
 
 async function submit() {
     const toast = useToast();
     isLoading.value = true;
-    const day = reservation.value.startTime.split('T')[0];
 
+    // Guardamos original para poder revertir si hay algún error
+    const original = {
+        _id: reservation.value._id,
+        startTime: reservation.value.startTime,
+        endTime: reservation.value.endTime,
+        seatsReserved: reservation.value.seatsReserved,
+    };
+
+    const day = reservation.value.startTime.split('T')[0];
     const start = reservationTimes.value.start;
     const end = reservationTimes.value.end;
+
     const startISO = new Date(`${day}T${start}:00Z`).toISOString();
     const endISO = new Date(`${day}T${end}:00Z`).toISOString();
 
     const newReservation = {
-        _id: applyToAll.value ? reservation.value.periodicReservationId : reservation.value._id,
+        _id: applyToAll.value
+            ? reservation.value.periodicReservationId
+            : reservation.value._id,
         startTime: startISO,
         endTime: endISO,
         seatsReserved: reservationSeats.value,
     };
+
+    const newPrice = calculatePrice(start, end);
 
     try {
         let res;
@@ -392,24 +428,102 @@ async function submit() {
             res = await reservationService.updateReservation(newReservation);
         }
 
-        const storeReservation = {
+        if (res.data.conflictCount?.length) {
+            toast.warning(
+                `Se han producido ${res.data.conflictCount.length} conflictos. ` +
+                `Debe reservar manualmente los días donde ha habido un error.`
+            );
+        }
+
+        if (reservation.value.isPaid) {
+            try {
+                // Reembolso completo
+                await paypalService.refundPayment(reservation.value._id);
+                toast.success('Pago original reembolsado con éxito.');
+
+                // Crear orden nueva por el nuevo importe
+                const orderRes = await paypalService.createOrder(
+                    reservation.value._id,
+                    newPrice
+                );
+
+                console.log(orderRes.data)
+                console.log(orderRes.data.orderID)
+
+                // Capturar nueva orden
+                await paypalService.captureOrder(
+                    orderRes.data.orderID,
+                    reservation.value._id
+                );
+                toast.success('Nuevo pago completado con éxito.');
+            } catch (err) {
+                console.error('Error de PayPal:', err);
+                if (applyToAll.value) {
+                    await reservationService.updatePeriodicReservation({
+                        _id: reservation.value.periodicReservationId,
+                        ...original
+                    });
+                } else {
+                    await reservationService.updateReservation(original);
+                }
+
+                reservationStore.setReservation({
+                    ...reservation.value,
+                    ...original
+                });
+
+                toast.error('Hubo un error con PayPal. La reserva ha sido revertida.');
+                router.go(-1);
+                return;
+            }
+        }
+
+        reservationStore.setReservation({
             ...reservation.value,
-            ...newReservation,
-        }
-        reservationStore.setReservation(storeReservation);
+            ...newReservation
+        });
 
-        isLoading.value = false;
         toast.success(res.data.message);
-
-        const conflictCount = res.data.conflictCount;
-        if (conflictCount) {
-            toast.warning(`Se han producido ${conflictCount.length} conflictos. Debe reservar manualmente los días donde ha habido un error.`);
-        }
         router.go(-1);
-        console.log(res.data);
-    } catch (e) {
-        toast.error("No se pudo actualizar: " + e.message);
+    } catch (err) {
+        console.error('Error al actualizar la reserva:', err);
+        toast.error("No se pudo actualizar la reserva: " + err.message);
     } finally { isLoading.value = false; }
+}
+
+const isUpdateDisabled = computed(() => {
+    if (!reservation.value) return true
+
+    // hora original
+    const originalStart = getHoursAndMinsFromDate(reservation.value.startTime)
+    const originalEnd = getHoursAndMinsFromDate(reservation.value.endTime)
+
+    // No ha cambiado nada (start, end y seats)
+    const sameAsOriginal =
+        reservationTimes.value.start === originalStart &&
+        reservationTimes.value.end === originalEnd &&
+        reservationSeats.value === reservation.value.seatsReserved
+
+    // No hay fin seleccionado
+    const noEndSelected = !reservationTimes.value.end
+
+    // Más asientos de los permitidos
+    const tooManySeats = reservationSeats.value > maxAllowed.value
+
+    // Flag para cuando el usuario ya tiene reservado esa hora (maxAllowed === 0)
+    const isReservedByMe = maxAllowed.value === 0
+
+    return sameAsOriginal
+        || noEndSelected
+        || tooManySeats
+        || isReservedByMe
+})
+
+function initialValues() {
+    reservationTimes.value.start = getHoursAndMinsFromDate(reservation.value.startTime);
+    reservationTimes.value.end = getHoursAndMinsFromDate(reservation.value.endTime);
+    reservationSeats.value = reservation.value.seatsReserved;
+    applyToAll.value = false;
 }
 
 function routerBack() { router.go(-1); }
@@ -423,17 +537,29 @@ watch(reservationSeats, (newValue) => {
 });
 // Watchers para resetear reservationSeats al cambiar reservationTimes.start o reservationTimes.end
 // ------------------------------------------------
-watch(() => reservationTimes.start, () => {
-    reservationSeats.value = 1;
-});
-watch(() => reservationTimes.end, () => {
-    if (reservationTimes.start === getHoursAndMinsFromDate(reservation.value.startTime) &&
-        reservationTimes.end === getHoursAndMinsFromDate(reservation.value.endTime)) {
-        reservationSeats.value = reservation.value.seatsReserved;
-    } else
-        reservationSeats.value = 1;
+watch(
+    () => reservationTimes.value.start,
+    () => {
+        reservationSeats.value = 1
+    }
+)
 
-});
+watch(
+    () => reservationTimes.value.end,
+    () => {
+
+        const initialStart = getHoursAndMinsFromDate(reservation.value.startTime)
+        const initialEnd = getHoursAndMinsFromDate(reservation.value.endTime)
+
+        if (reservationTimes.value.start === initialStart &&
+            reservationTimes.value.end === initialEnd) {
+            reservationSeats.value = reservation.value.seatsReserved
+        } else if (maxAllowed.value === 0) {
+            reservationSeats.value = 0
+        }
+
+    }
+)
 </script>
 
 <style scoped>
