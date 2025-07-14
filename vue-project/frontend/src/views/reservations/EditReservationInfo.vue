@@ -501,6 +501,21 @@ async function submit() {
             }).render(container);
             show.value = true;
         } else {
+
+            let res;
+            if (applyToAll.value === true) {
+                res = await reservationService.updatePeriodicReservation(newReservation);
+            } else {
+                res = await reservationService.updateReservation(newReservation);
+            }
+
+            if (res.data.conflictCount?.length) {
+                toast.warning(
+                    `Se han producido ${res.data.conflictCount.length} conflictos. ` +
+                    `Debe reservar manualmente los días donde ha habido un error.`
+                );
+            }
+
             // Si no estaba pagada, sólo confirmamos la actualización
             toast.success('Reserva actualizada con éxito.');
             reservationStore.setReservation({

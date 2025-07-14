@@ -503,7 +503,7 @@ function deleteReservation() {
             .then(res => {
                 closeModal();
                 getAllEvents();
-                toast.success('Reserva periódica eliminada con éxito');
+                toast.success(res.data.message);
             })
             .catch(error => {
                 console.error('Error al borrar reserva:', error);
@@ -514,7 +514,7 @@ function deleteReservation() {
             .then(res => {
                 closeModal();
                 getAllEvents();
-                toast.success('Reserva eliminada con éxito');
+                toast.success(res.data.message);
             })
             .catch(error => {
                 console.error('Error al borrar reserva:', error);

@@ -29,7 +29,7 @@ const ReservationSchema = new Schema({
   paypalCaptureId: { type: String, default: null },
   paymentStatus: {
     type: String,
-    enum: ['CREATED', 'COMPLETED', 'UPDATED', 'REFUNDED', 'FAILED'],
+    enum: ['CREATED', 'COMPLETED', 'UPDATED', 'FAILED'],
     default: null,
     nullable: true,
   },

@@ -405,12 +405,8 @@ function checkPeriodicReservations() {
         else {
           // Comprobamos los asientos de la reserva periódica
           if (reservationSeats.value <= (space.value.seats - periodicReservation.seatsReserved)) {
-            //console.log("Retorna false");
             return false;
           }
-          //console.log("Retorna true");
-          //console.log(reservationSeats.value);
-          //console.log(space.value.seats - periodicReservation.seatsReserved);
 
           return true;
         }
@@ -443,8 +439,6 @@ async function sendReservation(formData) {
     else if (repetition.value === 'monthly') {
       last.setUTCMonth(last.getUTCMonth() + selectedOption.occurrences);
     }
-
-    console.log("después", last.toISOString());
 
     formData.append('lastOccurrenceGenerated', last.toISOString());
     formData.append('periodicity', repetition.value);
@@ -491,7 +485,6 @@ const calculatePrice = computed(() => {
 
   // calculo cuántos bloques completos caben
   const blocks = (endMin - startMin) / dur
-  //console.log(blocks)
 
   // en caso de que no sea un múltiplo exacto, redondeamos hacia abajo
   const fullBlocks = Math.floor(blocks)

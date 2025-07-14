@@ -253,9 +253,9 @@ function deleteReservation() {
     const toast = useToast();
     if (reservation.value.periodicReservationId && bulkDeleteReservations.value) {
         reservationService.deletePeriodicReservation(reservation.value.periodicReservationId._id)
-            .then(() => {
+            .then((res) => {
                 closeDialog();
-                toast.success('Reserva periódica eliminada con éxito');
+                toast.success(res.data.message);
                 routerBack();
             })
             .catch(error => {
@@ -264,9 +264,10 @@ function deleteReservation() {
 
     } else {
         reservationService.deleteReservation(reservation.value._id)
-            .then(() => {
+            .then((res) => {
                 closeDialog();
-                toast.success('Reserva eliminada con éxito');
+                toast.success(res.data.message);
+
                 routerBack();
             })
             .catch(error => {

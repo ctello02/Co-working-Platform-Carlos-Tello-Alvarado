@@ -174,7 +174,6 @@ exports.getUserReservations = async (req, res) => {
     // Obtenemos todas las reservas
     const reservations = await Reservation.find({
       userId: req.params.id,
-      paymentStatus: { $ne: 'REFUNDED' },
     })
       .populate('spaceId')
       .populate('materialId')
@@ -390,6 +389,7 @@ exports.updatePeriodicReservation = async (req, res) => {
 };
 
 exports.deleteReservation = async (req, res) => {
+  let arePaid = false;
   try {
     const reservation = await Reservation.findOne({ _id: req.params.id });
     if (!reservation) {
@@ -405,18 +405,15 @@ exports.deleteReservation = async (req, res) => {
       refundRequest.requestBody({});
 
       await client().execute(refundRequest);
+      arePaid = true;
     }
 
-    await Reservation.updateOne(
-      { _id: req.params.id },
-      {
-        $set: {
-          isPaid: false,
-          paymentStatus: 'REFUNDED',
-        },
-      }
-    );
-    res.json({ message: 'Reserva eliminada con éxito' });
+    await Reservation.deleteOne({ _id: req.params.id });
+    res.json({
+      message: arePaid
+        ? 'Reserva eliminada y pago reembolsado'
+        : 'Reserva eliminada',
+    });
   } catch (error) {
     console.error('Error al eliminar la reserva:', error);
     res.status(500).json({ message: error.message });
@@ -424,17 +421,37 @@ exports.deleteReservation = async (req, res) => {
 };
 
 exports.deletePeriodicReservation = async (req, res) => {
+  let arePaid = false;
   const session = await mongoose.startSession();
   session.startTransaction();
   try {
-    await Reservation.deleteMany({
-      periodicReservationId: req.params.id,
+    const periodicId = req.params.id;
+    const reservations = await Reservation.find({
+      periodicReservationId: periodicId,
     }).session(session);
-    await PeriodicReservation.deleteOne({ _id: req.params.id }).session(
+
+    for (const r of reservations) {
+      if (r.isPaid && r.paypalCaptureId) {
+        const refundReq = new checkout.payments.CapturesRefundRequest(
+          r.paypalCaptureId
+        );
+        refundReq.requestBody({});
+        await client().execute(refundReq);
+        if (!arePaid) arePaid = true;
+      }
+    }
+
+    await Reservation.deleteMany({ periodicReservationId: periodicId }).session(
       session
     );
+    await PeriodicReservation.deleteOne({ _id: periodicId }).session(session);
+
     await session.commitTransaction();
-    res.status(200).json({ message: 'Reserva periódica eliminada con éxito' });
+    res.status(200).json({
+      message: arePaid
+        ? 'Reservas periódicas eliminadas y pagos reembolsados con éxito'
+        : 'Reservas periódicas eliminadas con éxito',
+    });
   } catch (error) {
     await session.abortTransaction();
     console.error('Error al eliminar la reserva periódica:', error);
