@@ -131,9 +131,10 @@
         </v-card>
 
         <AskModal v-model="deleteModal" :title="'¿Borrar reserva?'"
-            :message="'¿Estás seguro de que quieres borrar esta reserva?'" :actionText="'Borrar reserva'"
-            :closeModal="closeDialog" :action="deleteReservation"
-            :checkboxAction="reservationStore.getReservation?.periodicReservationId ? toggleCheckbox : null" />
+            :message="reservation?.isPaid ? '¿Estás seguro de que quieres borrar esta reserva? Se te devolverá el importe de esta reserva y de otras que hayas pagado.' : '¿Estás seguro de que quieres borrar esta reserva?'"
+            :actionText="'Borrar reserva'" :closeModal="closeDialog" :action="deleteReservation"
+            :checkboxAction="reservationStore.getReservation?.periodicReservationId ? toggleCheckbox : null"
+            :warnPaymentRefund="!reservationStore.getReservation?.isPaid && reservationStore.getReservation?.periodicReservationId" />
 
         <AskModal v-model="markPaidModal" :title="'¿Se ha pagado la reserva?'"
             :message="'¿Ha pagado el cliente el importe de la reserva?'" :actionText="'Marcar como pagada'"

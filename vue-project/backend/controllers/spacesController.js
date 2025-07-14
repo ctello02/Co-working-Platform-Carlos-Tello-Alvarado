@@ -1,6 +1,8 @@
 const Space = require('../models/space');
 const Reservation = require('../models/reservation');
 const PeriodicReservation = require('../models/periodicReservation');
+const checkout = require('@paypal/checkout-server-sdk');
+const { client } = require('../utils/paypalClient');
 const mongoose = require('mongoose');
 const fs = require('fs'); // Módulo para interactuar con el sistema de archivos
 const path = require('path');
@@ -140,29 +142,42 @@ exports.deleteSpace = async (req, res) => {
 };
 
 exports.bulkDeleteSpace = async (req, res) => {
+  let arePaid = false;
   const session = await mongoose.startSession();
   session.startTransaction();
 
   try {
-    let space = await Space.findOne({ _id: req.params.id }).session(session);
+    const spaceId = req.params.id;
+    const space = await Space.findById(spaceId).session(session);
     if (!space) {
       await session.abortTransaction();
-      session.endSession();
-      return res.status(404).json({ message: 'Space not found' });
+      return res.status(404).json({ message: 'Espacio no encontrado' });
     }
 
-    await Reservation.deleteMany({
-      spaceId: req.params.id,
-    }).session(session);
+    const reservations = await Reservation.find({ spaceId }).session(session);
 
-    await PeriodicReservation.deleteMany({
-      spaceId: req.params.id,
-    }).session(session);
+    for (const r of reservations) {
+      if (r.isPaid && r.paypalCaptureId) {
+        const refundReq = new checkout.payments.CapturesRefundRequest(
+          r.paypalCaptureId
+        );
+        refundReq.requestBody({});
+        await client().execute(refundReq);
+        if (!arePaid) arePaid = true;
+      }
+    }
 
-    await Space.deleteOne({ _id: req.params.id }).session(session);
+    await Reservation.deleteMany({ spaceId }).session(session);
+
+    await PeriodicReservation.deleteMany({ spaceId }).session(session);
+
+    await Space.deleteOne({ _id: spaceId }).session(session);
 
     await session.commitTransaction();
-    res.json({ message: 'Space deleted successfully' });
+    res.status(200).json({
+      message:
+        'El espacio y sus reservas se han borrado correctamente. \nSe han reembolsado los pagos de las reservas.',
+    });
   } catch (error) {
     await session.abortTransaction();
     session.endSession();

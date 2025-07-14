@@ -90,8 +90,11 @@
                                                 <v-icon size="small"
                                                     :icon="admitsRepetition ? 'mdi-repeat' : 'mdi-repeat-off'" />
                                             </v-col>
-                                            <v-col class="d-flex align-start"
-                                                :class="reservation.spaceId ? 'ml-2' : 'ml-n2'">
+                                            <v-col
+                                                :cols="reservation.spaceId || !admitsRepetition ? '' :
+                                                    repetitionOptions.find(option => option.value === repetition).value == 'no_repeat' ? '8' : ''"
+                                                class="d-flex"
+                                                :class="reservation.spaceId ? 'align-start ml-2' : admitsRepetition ? 'align-center justify-center ml-n2' : 'align-center justify-center ml-n6'">
                                                 <span class="text-h6">
                                                     {{
                                                         admitsRepetition ?
@@ -288,12 +291,12 @@ onMounted(async () => {
     if (reservation.value.spaceId) {
         space.value = spaceStore.getSelectedSpace;
         admitsRepetition.value = space?.value.admitsRepetition;
+        reservationSeats.value = reservation.value.seatsReserved;
     } else {
         material.value = materialStore.getSelectedMaterial;
         admitsRepetition.value = material?.value.admitsRepetition;
     }
 
-    reservationSeats.value = reservation.value.seatsReserved;
     initialReservation.value = reservationStore.getReservation;
     let start = getHoursAndMinsFromDate(reservation.value.startTime);
     let end = getHoursAndMinsFromDate(reservation.value.endTime);
@@ -438,8 +441,9 @@ async function submit() {
             : reservation.value._id,
         startTime: startISO,
         endTime: endISO,
-        seatsReserved: reservationSeats.value,
     };
+
+    if (reservation.value.spaceId) newReservation.seatsReserved = reservationSeats.value;
 
     try {
         await loadPayPalSdk();
@@ -543,7 +547,7 @@ const isUpdateDisabled = computed(() => {
     const sameAsOriginal =
         reservationTimes.value.start === originalStart &&
         reservationTimes.value.end === originalEnd &&
-        reservationSeats.value === reservation.value.seatsReserved
+        reservationSeats.value === reservation.value?.seatsReserved
 
     // No hay fin seleccionado
     const noEndSelected = !reservationTimes.value.end
@@ -563,7 +567,7 @@ const isUpdateDisabled = computed(() => {
 function initialValues() {
     reservationTimes.value.start = getHoursAndMinsFromDate(reservation.value.startTime);
     reservationTimes.value.end = getHoursAndMinsFromDate(reservation.value.endTime);
-    reservationSeats.value = reservation.value.seatsReserved;
+    reservationSeats.value = reservation.value?.seatsReserved;
     applyToAll.value = false;
 }
 
@@ -599,7 +603,7 @@ watch(
 
         if (reservationTimes.value.start === initialStart &&
             reservationTimes.value.end === initialEnd) {
-            reservationSeats.value = reservation.value.seatsReserved
+            reservationSeats.value = reservation.value?.seatsReserved || 1
         } else if (maxAllowed.value === 0) {
             reservationSeats.value = 0
         }

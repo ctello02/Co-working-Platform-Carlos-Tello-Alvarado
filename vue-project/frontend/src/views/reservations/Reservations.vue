@@ -92,9 +92,10 @@
                     colorText="black" colorButton="blue" :closeModal="closeDialog" :action="openCreateReservation" />
 
                 <AskModal v-model="deleteModal" :title="'¿Borrar reserva?'"
-                    :message="'¿Estás seguro de que quieres borrar esta reserva?'" :actionText="'Borrar reserva'"
-                    :closeModal="closeDialog" :action="deleteReservation"
-                    :checkboxAction="reservationStore.getReservation?.periodicReservationId ? toggleCheckbox : null" />
+                    :message="reservationStore.getReservation?.isPaid ? '¿Estás seguro de que quieres borrar esta reserva? Se te devolverá el importe de esta reserva y de otras que hayas pagado.' : '¿Estás seguro de que quieres borrar esta reserva?'"
+                    :actionText="'Borrar reserva'" :closeModal="closeDialog" :action="deleteReservation"
+                    :checkboxAction="reservationStore.getReservation?.periodicReservationId ? toggleCheckbox : null"
+                    :warnPaymentRefund="!reservationStore.getReservation?.isPaid && reservationStore.getReservation?.periodicReservationId" />
             </v-row>
         </v-col>
     </v-container>

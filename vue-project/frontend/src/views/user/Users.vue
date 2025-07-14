@@ -22,7 +22,7 @@
       :closeModal="closeDeleteDialog" :action="deleteUser" />
 
     <AskModal v-model="bulkDeleteModal" :maxWidth="'600px'" :title="'Este usuario tiene reservas pendientes'"
-      :message="'Este usuario tiene reservas pendientes, ¿Estás seguro de que quieres borrarlo?'"
+      :message="'Este usuario tiene reservas pendientes, ¿Estás seguro de que quieres borrarlo? Se le devolverá el pago de las reservas que le hayan cobrado.'"
       :actionText="'Borrar usuario'" :closeModal="closeBulkDeleteDialog" :action="bulkDeleteUser" />
 
   </v-container>

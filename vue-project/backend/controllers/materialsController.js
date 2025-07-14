@@ -1,6 +1,8 @@
 const Material = require('../models/material');
 const Reservation = require('../models/reservation');
 const PeriodicReservation = require('../models/periodicReservation');
+const checkout = require('@paypal/checkout-server-sdk');
+const { client } = require('../utils/paypalClient');
 const mongoose = require('mongoose');
 const fs = require('fs'); // Módulo para interactuar con el sistema de archivos
 const path = require('path');
@@ -142,31 +144,44 @@ exports.deleteMaterial = async (req, res) => {
 };
 
 exports.bulkDeleteMaterial = async (req, res) => {
+  let arePaid = false;
   const session = await mongoose.startSession();
   session.startTransaction();
 
   try {
-    let material = await Material.findOne({ _id: req.params.id }).session(
-      session
-    );
+    const materialId = req.params.id;
+    const material = await Material.findById(materialId).session(session);
     if (!material) {
       await session.abortTransaction();
-      session.endSession();
-      return res.status(404).json({ message: 'Material not found' });
+      return res.status(404).json({ message: 'Material no encontrado' });
     }
 
-    await Reservation.deleteMany({
-      materialId: req.params.id,
-    }).session(session);
+    const reservations = await Reservation.find({ materialId }).session(
+      session
+    );
 
-    await PeriodicReservation.deleteMany({
-      materialId: req.params.id,
-    }).session(session);
+    for (const r of reservations) {
+      if (r.isPaid && r.paypalCaptureId) {
+        const refundReq = new checkout.payments.CapturesRefundRequest(
+          r.paypalCaptureId
+        );
+        refundReq.requestBody({});
+        await client().execute(refundReq);
+        if (!arePaid) arePaid = true;
+      }
+    }
 
-    await Material.deleteOne({ _id: req.params.id }).session(session);
+    await Reservation.deleteMany({ materialId }).session(session);
+
+    await PeriodicReservation.deleteMany({ materialId }).session(session);
+
+    await Material.deleteOne({ _id: materialId }).session(session);
 
     await session.commitTransaction();
-    res.json({ message: 'Material deleted successfully' });
+    res.status(200).json({
+      message:
+        'El material y sus reservas se han borrado correctamente. \nSe han reembolsado los pagos de las reservas.',
+    });
   } catch (error) {
     await session.abortTransaction();
     session.endSession();

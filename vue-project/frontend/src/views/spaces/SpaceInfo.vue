@@ -3,7 +3,7 @@
         @reserve="toCreateReservation" @edit-space="openEditSpaceInfo" @delete-space="deleteSpace" />
 
     <AskModal v-model="bulkDeleteModal" :maxWidth="'600px'" :title="'Este espacio tiene reservas pendientes'"
-        :message="'Este espacio tiene reservas pendientes, ¿Estás seguro de que quieres borrarlo?'"
+        :message="'Este espacio tiene reservas pendientes, ¿Estás seguro de que quieres borrarlo? Se devolverá el pago de las reservas que se hayan cobrado.'"
         :actionText="'Borrar espacio'" :closeModal="() => bulkDeleteModal = false" :action="bulkDeleteSpace" />
 </template>
 

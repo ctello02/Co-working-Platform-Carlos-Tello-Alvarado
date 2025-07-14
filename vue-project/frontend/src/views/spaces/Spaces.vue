@@ -45,7 +45,7 @@
                 :closeModal="closeDialog" :action="deleteSpace" />
 
             <AskModal v-model="bulkDeleteModal" :maxWidth="'600px'" :title="'Este espacio tiene reservas pendientes'"
-                :message="'Este espacio tiene reservas pendientes, ¿Estás seguro de que quieres borrarlo?'"
+                :message="'Este espacio tiene reservas pendientes, ¿Estás seguro de que quieres borrarlo? Se devolverá el pago de las reservas que se hayan cobrado.'"
                 :actionText="'Borrar espacio'" :closeModal="closeBulkDeleteDialog" :action="bulkDeleteSpace" />
 
         </v-col>
