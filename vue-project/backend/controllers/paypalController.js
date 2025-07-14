@@ -127,14 +127,14 @@ exports.refundPayment = async (req, res) => {
       {
         $set: {
           isPaid: true,
-          paymentStatus: 'REFUNDED',
+          paymentStatus: 'UPDATED',
         },
       }
     );
 
     res.status(200).json({
       refundId: refund.result.id,
-      status: 'REFUNDED',
+      status: 'UPDATED',
     });
   } catch (err) {
     console.error(err);

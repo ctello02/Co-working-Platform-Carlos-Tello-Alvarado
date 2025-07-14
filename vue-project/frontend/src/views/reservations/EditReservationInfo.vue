@@ -272,7 +272,6 @@ const showTooltip = ref(false)
 const paypalLoaded = ref(false);
 const isLoading = ref(false);
 const show = ref(false);
-const alreadyRefunded = ref(false);
 
 const repetitionOptions = [
     { label: 'Sin repetición', value: 'no_repeat', occurrences: 0 },
@@ -418,31 +417,6 @@ function loadPayPalSdk() {
     });
 }
 
-async function revertChanges() {
-    // Guardamos original para poder revertir si hay algún error
-    const original = {
-        _id: reservation.value._id,
-        startTime: reservation.value.startTime,
-        endTime: reservation.value.endTime,
-        seatsReserved: reservation.value.seatsReserved,
-        isPaid: alreadyRefunded.value ? false : true,
-    };
-
-    if (applyToAll.value) {
-        await reservationService.updatePeriodicReservation({
-            _id: reservation.value.periodicReservationId,
-            ...original
-        });
-    } else {
-        await reservationService.updateReservation(original);
-    }
-
-    reservationStore.setReservation({
-        ...reservation.value,
-        ...original
-    });
-}
-
 async function submit() {
     const toast = useToast();
     isLoading.value = true;
@@ -582,8 +556,7 @@ function closePayPal() {
     show.value = false
 }
 
-async function routerBack() {
-    await revertChanges();
+function routerBack() {
     router.go(-1);
 }
 

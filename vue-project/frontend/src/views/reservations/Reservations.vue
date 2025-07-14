@@ -65,7 +65,7 @@
                         <v-tabs-window v-model="subTab" style="width: 100%;">
                             <v-tabs-window-item value="next">
                                 <SubTab :reservations="nextReservations"
-                                    no-reservations-message="No se han encontrado reservas próximas" :filter="filter"
+                                    no-reservations-message="No se encontran reservas próximas" :filter="filter"
                                     :list="list" :filteredReservations="filteredNextReservations"
                                     :groupedByName="groupedByName" :groupedByDate="groupedByDate"
                                     :tableHeaders="tableHeaders" :tableItems="tableItems"
@@ -76,7 +76,7 @@
 
                             <v-tabs-window-item value="past">
                                 <SubTab :reservations="pastReservations"
-                                    no-reservations-message="No se encuentran datos anteriores" :filter="filter"
+                                    no-reservations-message="No se encuentran reservas anteriores" :filter="filter"
                                     :list="list" :filteredReservations="filteredPastReservations"
                                     :groupedByName="groupedByName" :groupedByDate="groupedByDate"
                                     :tableHeaders="tableHeaders" :tableItems="tableItems"

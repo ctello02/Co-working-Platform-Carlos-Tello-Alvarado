@@ -1,5 +1,8 @@
 const Reservation = require('../models/reservation');
 const PeriodicReservation = require('../models/periodicReservation');
+const checkout = require('@paypal/checkout-server-sdk');
+const { client } = require('../utils/paypalClient');
+
 const mongoose = require('mongoose');
 
 exports.createReservation = async (req, res) => {
@@ -169,7 +172,10 @@ exports.getUserReservations = async (req, res) => {
     const now = new Date();
 
     // Obtenemos todas las reservas
-    const reservations = await Reservation.find({ userId: req.params.id })
+    const reservations = await Reservation.find({
+      userId: req.params.id,
+      paymentStatus: { $ne: 'REFUNDED' },
+    })
       .populate('spaceId')
       .populate('materialId')
       .populate('periodicReservationId')
@@ -388,10 +394,29 @@ exports.deleteReservation = async (req, res) => {
     const reservation = await Reservation.findOne({ _id: req.params.id });
     if (!reservation) {
       return res.status(404).json({ message: 'Reserva no encontrada' });
-    } else {
-      await Reservation.deleteOne({ _id: req.params.id });
-      res.json({ message: 'Reserva eliminada con éxito' });
     }
+
+    if (reservation.isPaid) {
+      const captureId = reservation.paypalCaptureId;
+
+      const refundRequest = new checkout.payments.CapturesRefundRequest(
+        captureId
+      );
+      refundRequest.requestBody({});
+
+      await client().execute(refundRequest);
+    }
+
+    await Reservation.updateOne(
+      { _id: req.params.id },
+      {
+        $set: {
+          isPaid: false,
+          paymentStatus: 'REFUNDED',
+        },
+      }
+    );
+    res.json({ message: 'Reserva eliminada con éxito' });
   } catch (error) {
     console.error('Error al eliminar la reserva:', error);
     res.status(500).json({ message: error.message });
