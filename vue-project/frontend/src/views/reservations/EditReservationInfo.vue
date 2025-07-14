@@ -281,7 +281,6 @@ const repetitionOptions = [
     { label: 'Cada mes este día', value: 'monthly', occurrences: 12 },
 ];
 
-// onMounted: carga datos y prepara slots
 onMounted(async () => {
     reservation.value = reservationStore.getReservation;
 
@@ -419,45 +418,6 @@ function loadPayPalSdk() {
     });
 }
 
-// async function startPayPalPayment() {
-//     const toast = useToast();
-//     isLoading.value = true;
-
-//     try {
-//         await loadPayPalSdk();
-
-//         // Crear orden en backend
-//         const amount = calculatePrice.value;
-//         const res = await paypalService.createOrder(reservation.value._id, amount);
-//         const orderID = res.data.orderID;
-
-//         // Sólo renderizamos los botones si aún no existen
-//         const container = document.getElementById('paypal-button-container');
-//         if (container && !container.hasChildNodes()) {
-//             paypal.Buttons({
-//                 createOrder: () => orderID,
-//                 onApprove: async (data) => {
-//                     await paypalService.captureOrder(data.orderID, reservation.value._id);
-//                     toast.success('Pago completado con éxito');
-//                     reservation.value.isPaid = true;
-//                     reservationStore.setReservation(reservation.value);
-//                     show.value = false;
-//                 },
-//                 onError: (err) => {
-//                     console.error(err);
-//                     toast.error('Error en el pago');
-//                 }
-//             }).render(container);
-//         }
-//         show.value = true;
-//     } catch (err) {
-//         console.error(err);
-//         toast.error('No se pudo cargar PayPal o crear la orden');
-//     } finally {
-//         isLoading.value = false;
-//     }
-// }
-
 async function revertChanges() {
     // Guardamos original para poder revertir si hay algún error
     const original = {
@@ -513,7 +473,6 @@ async function submit() {
         if (originalPaid) {
             const newPrice = calculatePrice(start, end);
 
-            // 5.3) renderizamos botones PayPal
             const container = document.getElementById('paypal-button-container');
             if (container) {
                 container.innerHTML = ''
@@ -526,10 +485,10 @@ async function submit() {
                 },
                 onApprove: async (data) => {
                     try {
-                        // a) capturar nuevo pago
+                        // capturar nuevo pago
                         await paypalService.captureOrder(data.orderID, reservation.value._id);
 
-                        // b) reembolsar el pago antiguo
+                        // reembolsar el pago antiguo
                         await paypalService.refundPayment(originalCaptureId, reservation.value._id);
                         toast.success('Reserva actualizada con éxito.\nNuevo pago y reembolso del importe anterior completado.');
 
@@ -547,21 +506,18 @@ async function submit() {
                             );
                         }
 
-                        // c) actualizar el store local
+                        // actualizar el store
                         reservationStore.setReservation({
                             ...reservation.value,
                             ...newReservation,
-                            isPaid: true,                  // ya pagado
-                            paypalCaptureId: data.orderID  // opcionalmente guardar el nuevo captureId
+                            isPaid: true,
                         });
 
                         show.value = false;
-                        // d) navegamos y salimos
                         router.push('/reservations');
                     } catch (flowErr) {
                         console.error('Error en el flujo PayPal:', flowErr);
                         toast.error('Hubo un error capturando o reembolsando el pago.');
-                        // opcional: rollback de reserva en BD aquí
                     }
                 },
                 onError: err => {
@@ -571,7 +527,7 @@ async function submit() {
             }).render(container);
             show.value = true;
         } else {
-            // 6) Si no estaba pagada, sólo confirmamos la actualización
+            // Si no estaba pagada, sólo confirmamos la actualización
             toast.success('Reserva actualizada con éxito.');
             reservationStore.setReservation({
                 ...reservation.value,
@@ -622,29 +578,6 @@ function initialValues() {
     applyToAll.value = false;
 }
 
-// onUnmounted(async () => {
-//     const originalStart = getHoursAndMinsFromDate(reservation.value.startTime)
-//     const originalEnd = getHoursAndMinsFromDate(reservation.value.endTime)
-//     const sameAsOriginal =
-//         reservationTimes.value.start === originalStart &&
-//         reservationTimes.value.end === originalEnd &&
-//         reservationSeats.value === reservation.value.seatsReserved
-//     if (!sameAsOriginal) {
-//         await revertChanges();
-//     }
-// });
-// onBeforeUnmount(async () => {
-//     const originalStart = getHoursAndMinsFromDate(reservation.value.startTime)
-//     const originalEnd = getHoursAndMinsFromDate(reservation.value.endTime)
-//     const sameAsOriginal =
-//         reservationTimes.value.start === originalStart &&
-//         reservationTimes.value.end === originalEnd &&
-//         reservationSeats.value === reservation.value.seatsReserved
-//     if (!sameAsOriginal) {
-//         await revertChanges();
-//     }
-// });
-
 function closePayPal() {
     show.value = false
 }
@@ -673,7 +606,6 @@ watch(
 watch(
     () => reservationTimes.value.end,
     () => {
-
         const initialStart = getHoursAndMinsFromDate(reservation.value.startTime)
         const initialEnd = getHoursAndMinsFromDate(reservation.value.endTime)
 
