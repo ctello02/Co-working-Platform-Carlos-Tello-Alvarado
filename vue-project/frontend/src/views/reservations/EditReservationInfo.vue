@@ -50,7 +50,8 @@
                                                 <v-select label="Inicio" variant="outlined" density="compact"
                                                     class="mb-n5" :model-value="reservationTimes?.start"
                                                     @update:model-value="val => updateReservation('start', val)"
-                                                    :items="availableStartTimes" item-title="time" item-value="time" />
+                                                    :items="availableStartTimes" item-title="time" item-value="time"
+                                                    :disabled="show" />
                                             </v-col>
                                         </v-row>
                                     </v-col>
@@ -63,7 +64,7 @@
                                                     :model-value="reservationTimes?.end"
                                                     @update:model-value="val => updateReservation('end', val)"
                                                     :items="availableEndTimes" item-title="time" item-value="time"
-                                                    :disabled="!reservationTimes.start" />
+                                                    :disabled="!reservationTimes.start || show" />
                                             </v-col>
                                         </v-row>
                                     </v-col>
@@ -78,7 +79,8 @@
                                                 <v-text-field v-model.number="reservationSeats"
                                                     label="Número de asientos" type="number" variant="outlined"
                                                     density="compact" :max="maxAllowed"
-                                                    @input="reservationSeats = Math.max(1, reservationSeats)" />
+                                                    @input="reservationSeats = Math.max(1, reservationSeats)"
+                                                    :disabled="show" />
                                             </v-col>
                                         </v-row>
                                     </v-col>
@@ -134,8 +136,10 @@
                                                             Precio pagado: {{ initialPrice }}€
                                                         </span>
                                                     </v-col>
-                                                    <v-col v-if="reservationTimes.end && initialPrice != calculatePrice(reservationTimes.start,
-                                                        reservationTimes.end)" class="d-flex align-center ml-n8 ga-3">
+                                                    <v-col
+                                                        v-if="reservationTimes.end
+                                                            && initialPrice != calculatePrice(reservationTimes.start, reservationTimes.end)"
+                                                        class="d-flex align-center ml-n8 ga-3">
                                                         <v-tooltip v-model="showTooltip" location="top">
                                                             <template v-slot:activator="{ props }">
                                                                 <v-icon v-bind="props" size="small">
@@ -183,17 +187,26 @@
                                 </v-fade-transition>
                             </v-col>
                         </v-card-text>
-                        <v-card-actions>
-                            <v-row class="mb-6 mr-5" :class="reservation.periodicReservationId ? 'mt-n5' : 'mt-0'">
-                                <TonalButton class="ml-8" color="grey" text="Reiniciar" @click="initialValues" />
-                                <v-spacer></v-spacer>
-                                <div class="d-flex ga-3">
-                                    <TonalButton color="grey" text="Volver" @click="routerBack" />
-                                    <TonalButton color="blue" text="Actualizar" :loading="isLoading"
-                                        :disabled="isUpdateDisabled" @click="submit" />
-                                </div>
-                            </v-row>
+                        <v-card-actions class="d-flex justify-end ga-3 mb-6 mr-5"
+                            :class="reservation.periodicReservationId ? 'mt-n5' : 'mt-0'">
+                            <TonalButton :disabled="show" class="ml-5" color="grey" text="Reiniciar"
+                                @click="initialValues" />
+                            <v-spacer />
+
+                            <TonalButton color="grey" text="Volver" @click="routerBack" />
+
+                            <TonalButton v-if="reservation.isPaid" :color="show ? 'grey' : 'blue'" :loading="isLoading"
+                                :text="show ? 'Cancelar' : 'Actualizar y pagar'" :disabled="isUpdateDisabled"
+                                @click="show ? closePayPal() : submit()" />
+                            <TonalButton v-else color="blue" text="Actualizar" :loading="isLoading"
+                                :disabled="isUpdateDisabled" @click="submit" />
                         </v-card-actions>
+
+                        <v-expand-transition>
+                            <div v-show="show" class="mt-n2 ma-7">
+                                <div style="width: 100%;" id="paypal-button-container" />
+                            </div>
+                        </v-expand-transition>
                     </v-card>
                 </v-col>
 
@@ -213,7 +226,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch, computed } from 'vue';
+import { ref, onMounted, onUnmounted, onBeforeUnmount, watch, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useReservationStore } from '@/store/reservationStore';
 import { useSpaceStore } from '@/store/spaceStore';
@@ -256,7 +269,10 @@ const applyToAll = ref(false);
 const showSpaceModal = ref(false);
 const showMaterialModal = ref(false);
 const showTooltip = ref(false)
+const paypalLoaded = ref(false);
 const isLoading = ref(false);
+const show = ref(false);
+const alreadyRefunded = ref(false);
 
 const repetitionOptions = [
     { label: 'Sin repetición', value: 'no_repeat', occurrences: 0 },
@@ -279,11 +295,11 @@ onMounted(async () => {
         admitsRepetition.value = material?.value.admitsRepetition;
     }
 
+    reservationSeats.value = reservation.value.seatsReserved;
     initialReservation.value = reservationStore.getReservation;
     let start = getHoursAndMinsFromDate(reservation.value.startTime);
     let end = getHoursAndMinsFromDate(reservation.value.endTime);
     initialPrice.value = calculatePrice(start, end);
-    reservationSeats.value = reservation.value.seatsReserved;
     repetition.value = reservation.value.periodicReservationId?.periodicity || 'no_repeat';
     reservationDate.value = new Date(reservation.value.startTime);
     reservationDate.value.setHours(0, 0, 0, 0);
@@ -368,6 +384,7 @@ function updateReservation(key, val) {
 }
 
 function calculatePrice(start, end) {
+
     const startMin = makeMinutes(start)
     const endMin = makeMinutes(end)
     let dur = 0;
@@ -390,17 +407,89 @@ function calculatePrice(start, end) {
     return total.toFixed(2)
 }
 
-async function submit() {
-    const toast = useToast();
-    isLoading.value = true;
+// Carga dinámica del SDK de PayPal
+function loadPayPalSdk() {
+    if (paypalLoaded.value) return Promise.resolve();
+    return new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = `https://www.paypal.com/sdk/js?client-id=${import.meta.env.VITE_PAYPAL_CLIENT_ID}&currency=EUR`;
+        script.onload = () => { paypalLoaded.value = true; resolve(); };
+        script.onerror = reject;
+        document.head.appendChild(script);
+    });
+}
 
+// async function startPayPalPayment() {
+//     const toast = useToast();
+//     isLoading.value = true;
+
+//     try {
+//         await loadPayPalSdk();
+
+//         // Crear orden en backend
+//         const amount = calculatePrice.value;
+//         const res = await paypalService.createOrder(reservation.value._id, amount);
+//         const orderID = res.data.orderID;
+
+//         // Sólo renderizamos los botones si aún no existen
+//         const container = document.getElementById('paypal-button-container');
+//         if (container && !container.hasChildNodes()) {
+//             paypal.Buttons({
+//                 createOrder: () => orderID,
+//                 onApprove: async (data) => {
+//                     await paypalService.captureOrder(data.orderID, reservation.value._id);
+//                     toast.success('Pago completado con éxito');
+//                     reservation.value.isPaid = true;
+//                     reservationStore.setReservation(reservation.value);
+//                     show.value = false;
+//                 },
+//                 onError: (err) => {
+//                     console.error(err);
+//                     toast.error('Error en el pago');
+//                 }
+//             }).render(container);
+//         }
+//         show.value = true;
+//     } catch (err) {
+//         console.error(err);
+//         toast.error('No se pudo cargar PayPal o crear la orden');
+//     } finally {
+//         isLoading.value = false;
+//     }
+// }
+
+async function revertChanges() {
     // Guardamos original para poder revertir si hay algún error
     const original = {
         _id: reservation.value._id,
         startTime: reservation.value.startTime,
         endTime: reservation.value.endTime,
         seatsReserved: reservation.value.seatsReserved,
+        isPaid: alreadyRefunded.value ? false : true,
     };
+
+    if (applyToAll.value) {
+        await reservationService.updatePeriodicReservation({
+            _id: reservation.value.periodicReservationId,
+            ...original
+        });
+    } else {
+        await reservationService.updateReservation(original);
+    }
+
+    reservationStore.setReservation({
+        ...reservation.value,
+        ...original
+    });
+}
+
+async function submit() {
+    const toast = useToast();
+    isLoading.value = true;
+
+    const { data: { originalCaptureId } } = await paypalService.getCaptureId(reservation.value._id);
+
+    const originalPaid = reservation.value.isPaid;
 
     const day = reservation.value.startTime.split('T')[0];
     const start = reservationTimes.value.start;
@@ -418,77 +507,84 @@ async function submit() {
         seatsReserved: reservationSeats.value,
     };
 
-    const newPrice = calculatePrice(start, end);
-
     try {
-        let res;
-        if (applyToAll.value === true) {
-            res = await reservationService.updatePeriodicReservation(newReservation);
-        } else {
-            res = await reservationService.updateReservation(newReservation);
-        }
+        await loadPayPalSdk();
 
-        if (res.data.conflictCount?.length) {
-            toast.warning(
-                `Se han producido ${res.data.conflictCount.length} conflictos. ` +
-                `Debe reservar manualmente los días donde ha habido un error.`
-            );
-        }
+        if (originalPaid) {
+            const newPrice = calculatePrice(start, end);
 
-        if (reservation.value.isPaid) {
-            try {
-                // Reembolso completo
-                await paypalService.refundPayment(reservation.value._id);
-                toast.success('Pago original reembolsado con éxito.');
-
-                // Crear orden nueva por el nuevo importe
-                const orderRes = await paypalService.createOrder(
-                    reservation.value._id,
-                    newPrice
-                );
-
-                console.log(orderRes.data)
-                console.log(orderRes.data.orderID)
-
-                // Capturar nueva orden
-                await paypalService.captureOrder(
-                    orderRes.data.orderID,
-                    reservation.value._id
-                );
-                toast.success('Nuevo pago completado con éxito.');
-            } catch (err) {
-                console.error('Error de PayPal:', err);
-                if (applyToAll.value) {
-                    await reservationService.updatePeriodicReservation({
-                        _id: reservation.value.periodicReservationId,
-                        ...original
-                    });
-                } else {
-                    await reservationService.updateReservation(original);
-                }
-
-                reservationStore.setReservation({
-                    ...reservation.value,
-                    ...original
-                });
-
-                toast.error('Hubo un error con PayPal. La reserva ha sido revertida.');
-                router.go(-1);
-                return;
+            // 5.3) renderizamos botones PayPal
+            const container = document.getElementById('paypal-button-container');
+            if (container) {
+                container.innerHTML = ''
             }
+            paypal.Buttons({
+                createOrder: () => {
+                    return paypalService
+                        .createOrder(reservation.value._id, newPrice)
+                        .then(r => r.data.orderID);
+                },
+                onApprove: async (data) => {
+                    try {
+                        // a) capturar nuevo pago
+                        await paypalService.captureOrder(data.orderID, reservation.value._id);
+
+                        // b) reembolsar el pago antiguo
+                        await paypalService.refundPayment(originalCaptureId, reservation.value._id);
+                        toast.success('Reserva actualizada con éxito.\nNuevo pago y reembolso del importe anterior completado.');
+
+                        let res;
+                        if (applyToAll.value === true) {
+                            res = await reservationService.updatePeriodicReservation(newReservation);
+                        } else {
+                            res = await reservationService.updateReservation(newReservation);
+                        }
+
+                        if (res.data.conflictCount?.length) {
+                            toast.warning(
+                                `Se han producido ${res.data.conflictCount.length} conflictos. ` +
+                                `Debe reservar manualmente los días donde ha habido un error.`
+                            );
+                        }
+
+                        // c) actualizar el store local
+                        reservationStore.setReservation({
+                            ...reservation.value,
+                            ...newReservation,
+                            isPaid: true,                  // ya pagado
+                            paypalCaptureId: data.orderID  // opcionalmente guardar el nuevo captureId
+                        });
+
+                        show.value = false;
+                        // d) navegamos y salimos
+                        router.push('/reservations');
+                    } catch (flowErr) {
+                        console.error('Error en el flujo PayPal:', flowErr);
+                        toast.error('Hubo un error capturando o reembolsando el pago.');
+                        // opcional: rollback de reserva en BD aquí
+                    }
+                },
+                onError: err => {
+                    console.error(err);
+                    toast.error('Error en la pasarela PayPal.');
+                }
+            }).render(container);
+            show.value = true;
+        } else {
+            // 6) Si no estaba pagada, sólo confirmamos la actualización
+            toast.success('Reserva actualizada con éxito.');
+            reservationStore.setReservation({
+                ...reservation.value,
+                ...newReservation
+            });
+            router.push('/reservations');
         }
-
-        reservationStore.setReservation({
-            ...reservation.value,
-            ...newReservation
-        });
-
-        toast.success(res.data.message);
-        router.go(-1);
     } catch (err) {
         console.error('Error al actualizar la reserva:', err);
         toast.error("No se pudo actualizar la reserva: " + err.message);
-    } finally { isLoading.value = false; }
+    } finally {
+        isLoading.value = false;
+    }
 }
 
 const isUpdateDisabled = computed(() => {
@@ -526,7 +622,37 @@ function initialValues() {
     applyToAll.value = false;
 }
 
-function routerBack() { router.go(-1); }
+// onUnmounted(async () => {
+//     const originalStart = getHoursAndMinsFromDate(reservation.value.startTime)
+//     const originalEnd = getHoursAndMinsFromDate(reservation.value.endTime)
+//     const sameAsOriginal =
+//         reservationTimes.value.start === originalStart &&
+//         reservationTimes.value.end === originalEnd &&
+//         reservationSeats.value === reservation.value.seatsReserved
+//     if (!sameAsOriginal) {
+//         await revertChanges();
+//     }
+// });
+// onBeforeUnmount(async () => {
+//     const originalStart = getHoursAndMinsFromDate(reservation.value.startTime)
+//     const originalEnd = getHoursAndMinsFromDate(reservation.value.endTime)
+//     const sameAsOriginal =
+//         reservationTimes.value.start === originalStart &&
+//         reservationTimes.value.end === originalEnd &&
+//         reservationSeats.value === reservation.value.seatsReserved
+//     if (!sameAsOriginal) {
+//         await revertChanges();
+//     }
+// });
+
+function closePayPal() {
+    show.value = false
+}
+
+async function routerBack() {
+    await revertChanges();
+    router.go(-1);
+}
 
 // Watcher validar número de asientos. Se evita que el usuario teclee numeros incorrectos
 // ------------------------------------------------

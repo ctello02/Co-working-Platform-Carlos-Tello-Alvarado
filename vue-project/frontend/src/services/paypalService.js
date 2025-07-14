@@ -17,7 +17,14 @@ export const paypalService = {
     });
   },
 
-  refundPayment(reservationId) {
-    return axiosInstance.post(`${API_URL}/refundPayment/${reservationId}`);
+  getCaptureId(reservationId) {
+    return axiosInstance.get(`${API_URL}/getCaptureId/${reservationId}`);
+  },
+
+  refundPayment(captureId, reservationId) {
+    return axiosInstance.post(`${API_URL}/refundPayment/`, {
+      captureId,
+      reservationId,
+    });
   },
 };

@@ -49,8 +49,6 @@ exports.createOrder = async (req, res) => {
 exports.captureOrder = async (req, res) => {
   const { orderID, reservationId } = req.body;
 
-  console.log(orderID, reservationId);
-
   const request = new checkout.orders.OrdersCaptureRequest(orderID);
   request.requestBody({});
 
@@ -93,11 +91,27 @@ exports.captureOrder = async (req, res) => {
   }
 };
 
-exports.refundPayment = async (req, res) => {
+exports.getCaptureId = async (req, res) => {
   const { reservationId } = req.params;
 
   const reserva = await Reservation.findById(reservationId);
-  const captureId = reserva.paypalCaptureId;
+  if (!reserva) {
+    return res.status(404).json({ error: 'Reserva no encontrada' });
+  }
+
+  try {
+    res.status(200).json({
+      originalCaptureId: reserva.paypalCaptureId,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Error obteniendo el ID de captura' });
+  }
+};
+
+exports.refundPayment = async (req, res) => {
+  const { reservationId, captureId } = req.body;
+
   if (!captureId) {
     return res.status(400).json({ error: 'No hay captura para reembolsar' });
   }
@@ -112,7 +126,7 @@ exports.refundPayment = async (req, res) => {
       { _id: reservationId },
       {
         $set: {
-          isPaid: false,
+          isPaid: true,
           paymentStatus: 'REFUNDED',
         },
       }

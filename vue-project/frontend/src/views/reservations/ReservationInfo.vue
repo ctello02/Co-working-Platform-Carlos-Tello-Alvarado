@@ -115,11 +115,11 @@
             <v-card-actions class="d-flex justify-end ga-3 mt-n3 mb-5 mr-5">
                 <TonalButton color="grey" text="Volver" @click="routerBack" />
 
-                <TonalButton v-if="!buttonsRendered && !reservation.isPaid && reservationUser._id !== userStore.getId"
-                    color="blue" text="Marcar como pagada" @click="markPaidModal = true" />
+                <TonalButton v-if="!reservation.isPaid && reservationUser._id !== userStore.getId" color="blue"
+                    text="Marcar como pagada" @click="markPaidModal = true" />
 
                 <TonalButton :color="show ? 'grey' : 'blue'" :loading="isLoading"
-                    v-if="!buttonsRendered && !reservation.isPaid && reservationUser._id === userStore.getId"
+                    v-if="!reservation.isPaid && reservationUser._id === userStore.getId"
                     :text="show ? 'Cancelar pago' : 'Pagar'" @click="show ? closePayPal() : startPayPalPayment()" />
             </v-card-actions>
 
@@ -175,7 +175,6 @@ const markPaidModal = ref(false);
 const bulkDeleteReservations = ref(false);
 
 const paypalLoaded = ref(false);
-const buttonsRendered = ref(false);
 const isLoading = ref(false);
 
 const show = ref(false);
@@ -334,11 +333,13 @@ async function startPayPalPayment() {
             paypal.Buttons({
                 createOrder: () => orderID,
                 onApprove: async (data) => {
-                    await paypalService.captureOrder(data.orderID, reservation.value._id);
-                    toast.success('Pago completado con éxito');
-                    reservation.value.isPaid = true;
-                    reservationStore.setReservation(reservation.value);
-                    show.value = false;
+                    const res = await paypalService.captureOrder(data.orderID, reservation.value._id);
+                    if (res.data.paymentStatus === 'COMPLETED') {
+                        toast.success('Pago completado con éxito');
+                        reservation.value.isPaid = true;
+                        reservationStore.setReservation(reservation.value);
+                        show.value = false;
+                    }
                 },
                 onError: (err) => {
                     console.error(err);

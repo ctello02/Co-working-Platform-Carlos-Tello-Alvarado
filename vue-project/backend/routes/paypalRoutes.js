@@ -1,5 +1,6 @@
 const express = require('express');
 const {
+  getCaptureId,
   createOrder,
   captureOrder,
   refundPayment,
@@ -9,6 +10,7 @@ const router = express.Router();
 
 router.post('/createOrder', verifyToken, createOrder);
 router.post('/captureOrder', verifyToken, captureOrder);
-router.post('/refundPayment/:reservationId', verifyToken, refundPayment);
+router.get('/getCaptureId/:reservationId', verifyToken, getCaptureId);
+router.post('/refundPayment', verifyToken, refundPayment);
 
 module.exports = router;
