@@ -140,9 +140,11 @@
               <v-row class="mt-n5 mb-6 mr-5 d-flex ga-3">
                 <TonalButton class="ml-8" color="grey" text="Volver" @click="routerBack" />
                 <v-spacer />
-                <TonalButton v-if="!show" color="blue" text="Reservar" :loading="isLoading" @click="submit" />
+
+                <TonalButton v-if="!show" color="blue" text="Reservar" :loading="isLoading"
+                  @click="handleSubmit(false)" />
                 <TonalButton :color="show ? 'grey' : 'blue'" :text="show ? 'Cancelar' : 'Reservar y pagar'"
-                  :loading="isLoading" @click="show ? closePayPal() : submitAndPay()" />
+                  :loading="isLoading" @click="show ? closePayPal() : handleSubmit(true)" />
               </v-row>
             </v-card-actions>
 
@@ -296,14 +298,14 @@ async function getPeriodicReservations() {
 
 
 // ------------------------------------------------
-// Confirmar Reserva
+// Función para confirmar la reserva y para pagarla
 // ------------------------------------------------
-const submit = async () => {
+async function handleSubmit(doPay = false) {
   const toast = useToast();
   isLoading.value = true;
 
+  // Montamos el formData
   const formData = new FormData();
-
   if (reservation.value.item === 'space') {
     formData.append('spaceId', reservation.value.spaceId);
     formData.append('seatsReserved', reservationSeats.value);
@@ -312,164 +314,78 @@ const submit = async () => {
     formData.append('materialId', reservation.value.materialId);
     formData.append('spaceId', null);
   }
-
   formData.append('userId', reservation.value.userId);
   formData.append('startTime', reservation.value.startTime);
   formData.append('endTime', reservation.value.endTime);
 
-  formData.append('isPaid', false);
-
-  try {
-    let res;
-
-    // Comprobar si hay reservas periodicas
-    // Si hay:
-    //   - Comprobar cada una si es diaria, semanal o mensual
-    // Si no hay: 
-    //   - Sin restricciones
-
-    if (checkPeriodicReservations() == true) {
-      periodicReservedModal.value = true;
-      isLoading.value = false;
-      return;
-    }
-    //---- Si llega hasta aquí es porque se puede reservar ----
-
-    // Comprobar qué tipo de repetición
-    //  - Sin repetición: se crea directamente
-    //  - Diaria, Semanal o Mensual: hay que meter cosas en el formData
-    res = await sendReservation(formData);
-
+  // Comprobar si hay reservas periodicas
+  // Si hay:
+  //   - Comprobar cada una si es diaria, semanal o mensual
+  // Si no hay: 
+  //   - Sin restricciones
+  if (checkPeriodicReservations()) {
+    periodicReservedModal.value = true;
     isLoading.value = false;
-    toast.success(res.data.message);
-
-    const conflictObjects = res.data.conflictObjects || [];
-    if (conflictObjects.length > 0) {
-      toast.warning(`Se han producido ${conflictObjects.length} conflictos. Debe reservar manualmente los días donde ha habido un error.`);
-    }
-
-    router.push('/reservations');
-  } catch (error) {
-    isLoading.value = false;
-    console.error(error);
-
-    // Verificamos si es el error de "too many conflicts"
-    if (
-      error.response &&
-      error.response.status === 409 &&
-      error.response.data?.errorCode === 'TOO_MANY_CONFLICTS'
-    ) {
-      toast.error(error.response.data.message);
-    } else {
-      // Cualquier otro error
-      toast.error('Error al crear la reserva');
-    }
+    return;
   }
-};
-// ------------------------------------------------
+  //---- Si llega hasta aquí es porque se puede reservar ----
 
-// ------------------------------------------------
-// Confirmar y pagar Reserva
-// ------------------------------------------------
-const submitAndPay = async () => {
-  const toast = useToast();
-  isLoading.value = true;
-
-  const formData = new FormData();
-
-  if (reservation.value.item === 'space') {
-    formData.append('spaceId', reservation.value.spaceId);
-    formData.append('seatsReserved', reservationSeats.value);
-    formData.append('materialId', null);
-  } else {
-    formData.append('materialId', reservation.value.materialId);
-    formData.append('spaceId', null);
+  // Si no se va a pagar, añadimos isPaid = false y procesamos
+  if (!doPay) {
+    formData.append('isPaid', false);
+    const ok = await processReservation(formData);
+    isLoading.value = false;
+    if (ok) router.push('/reservations');
+    return;
   }
 
-  formData.append('userId', reservation.value.userId);
-  formData.append('startTime', reservation.value.startTime);
-  formData.append('endTime', reservation.value.endTime);
-
+  // Si se va a pagar, arrancamos PayPal
   try {
-    let res;
-
-    // Comprobar si hay reservas periodicas
-    // Si hay:
-    //   - Comprobar cada una si es diaria, semanal o mensual
-    // Si no hay: 
-    //   - Sin restricciones
-
-    if (checkPeriodicReservations() == true) {
-      periodicReservedModal.value = true;
-      isLoading.value = false;
-      return;
-    }
-    //---- Si llega hasta aquí es porque se puede reservar ----
-
-
     await loadPayPalSdk();
-
     const price = calculatePrice.value;
 
     const container = document.getElementById('paypal-button-container');
-    if (container) {
-      container.innerHTML = ''
-    }
+    if (container) container.innerHTML = '';
+
     paypal.Buttons({
-      createOrder: () => {
-        return paypalService
+      createOrder: () =>
+        paypalService
           .createOrder(reservation.value._id, price)
-          .then(r => r.data.orderID);
-      },
+          .then(r => r.data.orderID),
       onApprove: async (data) => {
-        const captureRes = await paypalService.captureOrder(data.orderID, reservation.value._id);
-        if (captureRes.data.paymentStatus === 'COMPLETED') {
-          toast.success('Reserva creada y pagada con éxito');
-          formData.append('isPaid', true);
-          show.value = false;
+        const captureRes = await paypalService.captureOrder(
+          data.orderID,
+          reservation.value._id
+        );
+        if (captureRes.data.paymentStatus !== 'COMPLETED') {
+          return toast.error('Pago invalidado');
+        }
 
-          // Comprobar qué tipo de repetición
-          //  - Sin repetición: se crea directamente
-          //  - Diaria, Semanal o Mensual: hay que meter cosas en el formData
-          const res = await sendReservation(formData);
+        formData.append('paypalOrderId', data.orderID);
+        formData.append('paypalCaptureId', captureRes.data.capture);
+        formData.append('paymentStatus', 'COMPLETED');
+        formData.append('isPaid', true);
 
-          isLoading.value = false;
-
-          const conflictObjects = res.data.conflictObjects || [];
-          if (conflictObjects.length > 0) {
-            toast.warning(`Se han producido ${conflictObjects.length} conflictos. Debe reservar manualmente los días donde ha habido un error.`);
-          }
-
+        const ok = await processReservation(formData);
+        show.value = false;
+        if (ok) {
           router.push('/reservations');
         }
       },
       onError: (err) => {
-        console.error(err);
-        toast.error('Error en el pago');
+        toast.error('Error en la pasarela PayPal');
+        isLoading.value = false;
       }
     }).render(container);
     show.value = true;
-  } catch (error) {
-    isLoading.value = false;
-    console.error(error);
-
-    // Verificamos si es el error de "too many conflicts"
-    if (
-      error.response &&
-      error.response.status === 409 &&
-      error.response.data?.errorCode === 'TOO_MANY_CONFLICTS'
-    ) {
-      toast.error(error.response.data.message);
-    } else {
-      // Cualquier otro error
-      toast.error('Error al crear la reserva');
-    }
+  } catch (err) {
+    console.error('Error arrancando PayPal:', err);
+    toast.error('No se pudo iniciar el pago');
   } finally {
     isLoading.value = false;
   }
-};
+}
 
-// Carga dinámica del SDK de PayPal
 function loadPayPalSdk() {
   if (paypalLoaded.value) return Promise.resolve();
   return new Promise((resolve, reject) => {
@@ -481,7 +397,6 @@ function loadPayPalSdk() {
   });
 }
 // ------------------------------------------------
-
 
 
 // ------------------------------------------------
@@ -554,6 +469,43 @@ function checkPeriodicReservations() {
   return false;
 };
 // ------------------------------------------------
+
+
+// ------------------------------------------------
+// Helper para enviar la reserva a la API
+// ------------------------------------------------
+async function processReservation(formData) {
+  const toast = useToast();
+  try {
+    // Comprobar qué tipo de repetición
+    //  - Sin repetición: se crea directamente
+    //  - Diaria, Semanal o Mensual: hay que meter cosas en el formData
+    const res = await sendReservation(formData);
+    toast.success(res.data.message);
+
+    const conflicts = res.data.conflictObjects || [];
+    if (conflicts.length > 0) {
+      toast.warning(
+        `Se han producido ${conflicts.length} conflictos. ` +
+        `Debe reservar manualmente los días donde ha habido un error.`
+      );
+    }
+    return true;
+  } catch (error) {
+    console.error(error);
+    if (
+      error.response?.status === 409 &&
+      error.response.data?.errorCode === 'TOO_MANY_CONFLICTS'
+    ) {
+      toast.error(error.response.data.message);
+    } else {
+      toast.error('Error al crear la reserva');
+    }
+    return false;
+  }
+}
+// ------------------------------------------------
+
 
 // ------------------------------------------------
 // Función para comprobar si hay reservas periodicas

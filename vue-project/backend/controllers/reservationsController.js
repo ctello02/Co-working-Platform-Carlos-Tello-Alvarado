@@ -7,12 +7,24 @@ const mongoose = require('mongoose');
 
 exports.createReservation = async (req, res) => {
   try {
-    const { spaceId, materialId, seatsReserved, userId, startTime, endTime } =
-      req.body;
+    const {
+      spaceId,
+      materialId,
+      seatsReserved,
+      userId,
+      startTime,
+      endTime,
+      paypalOrderId,
+      paypalCaptureId,
+      paymentStatus,
+    } = req.body;
 
     if (spaceId == 'null') req.body.spaceId = null;
     if (materialId == 'null') req.body.materialId = null;
     if (seatsReserved == 'null') req.body.seatsReserved = null;
+    if (paypalOrderId == 'null') req.body.paypalOrderId = null;
+    if (paypalCaptureId == 'null') req.body.paypalCaptureId = null;
+    if (paymentStatus == 'null') req.body.paymentStatus = null;
 
     if (!userId || !startTime || !endTime) {
       return res.status(400).json({ message: 'Campos requeridos' });
@@ -23,7 +35,9 @@ exports.createReservation = async (req, res) => {
     const savedReservation = await newReservation.save();
     res.status(201).json({
       savedReservation,
-      message: 'Reserva creada con éxito',
+      message: paypalCaptureId
+        ? 'Reserva creada y pagada con éxito'
+        : 'Reserva creada con éxito',
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -426,11 +440,21 @@ exports.deletePeriodicReservation = async (req, res) => {
   session.startTransaction();
   try {
     const periodicId = req.params.id;
+    const now = new Date();
+    const limit24h = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+
     const reservations = await Reservation.find({
       periodicReservationId: periodicId,
     }).session(session);
 
-    for (const r of reservations) {
+    // Marcamos para borrar las reservas que estan dentro de las siguientes 24 horas
+    const toDelete = reservations.filter((r) => {
+      const start = new Date(r.startTime);
+      return start >= limit24h;
+    });
+
+    // Refund de todas las reservas +24 horas
+    for (const r of toDelete) {
       if (r.isPaid && r.paypalCaptureId) {
         const refundReq = new checkout.payments.CapturesRefundRequest(
           r.paypalCaptureId
@@ -441,9 +465,11 @@ exports.deletePeriodicReservation = async (req, res) => {
       }
     }
 
-    await Reservation.deleteMany({ periodicReservationId: periodicId }).session(
-      session
-    );
+    // Borramos todas las reservas posteriores excepto +24 horas
+    await Reservation.deleteMany({
+      periodicReservationId: periodicId,
+      startTime: { $gte: limit24h },
+    }).session(session);
     await PeriodicReservation.deleteOne({ _id: periodicId }).session(session);
 
     await session.commitTransaction();
