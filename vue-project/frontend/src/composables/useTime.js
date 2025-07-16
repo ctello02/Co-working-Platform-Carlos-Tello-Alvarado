@@ -12,6 +12,21 @@ export function useTime() {
     { label: '3 horas', value: 180 },
   ];
 
+  /*
+   * Parsea una repetición de un evento a un string legible
+   */
+  const parseRepetition = (repetition) => {
+    if (repetition === 'no_repeat') {
+      return 'Sin repetición';
+    } else if (repetition === 'daily') {
+      return 'Se repite todos los días';
+    } else if (repetition === 'weekly') {
+      return 'Se repite todas las semanas este día';
+    } else if (repetition === 'monthly') {
+      return 'Se repite todas los meses este día';
+    }
+  };
+
   /**
    * Función para normalizar y verificar si ocurre un evento en una fecha
    */
@@ -218,6 +233,23 @@ export function useTime() {
   }
 
   /**
+   * Devuelve true si tanto startDate como endDate están en esta semana
+   * (entre ahora y dentro de 7 días naturales), false en caso contrario.
+   */
+  function isWithinNext7Days(startDate) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const lastDay = new Date(today);
+    lastDay.setDate(lastDay.getDate() + 7);
+    lastDay.setHours(23, 59, 59, 999);
+
+    const start = new Date(startDate);
+
+    return start >= today && start <= lastDay;
+  }
+
+  /**
    * Comprueba si la fecha pasada es igual o posterior al día actual
    * y devuelve true si es < al día actual o devuelve false en caso contrario.
    */
@@ -238,6 +270,7 @@ export function useTime() {
 
   return {
     timeFrames,
+    parseRepetition,
     occursOn,
     generateAllTimes,
     makeMinutes,
@@ -251,6 +284,7 @@ export function useTime() {
     calcPastEvents,
     isToday,
     isWithinNext24Hours,
+    isWithinNext7Days,
     calcPastDates,
   };
 }

@@ -12,7 +12,7 @@
             <v-card-text style="position: relative;">
                 <div v-if="isExpired && showMoreDetails"
                     class="expired-overlay d-flex align-center justify-center mt-3">
-                    <span class="text-h4">Expirada</span>
+                    <span class="text-h4 expired-text">Expirada</span>
                 </div>
 
                 <v-row>
@@ -212,5 +212,13 @@ function parseLocalISO(isoString) {
     background: rgba(255, 255, 255, 0.8);
     pointer-events: none;
     z-index: 10;
+}
+
+.expired-text {
+    font-size: 2rem;
+    /* aprox. h3 */
+    font-weight: bold;
+    color: #444;
+    text-transform: uppercase;
 }
 </style>
