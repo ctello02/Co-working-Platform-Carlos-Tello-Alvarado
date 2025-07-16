@@ -229,7 +229,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, onBeforeUnmount, watch, computed } from 'vue';
+import { ref, onMounted, watch, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useReservationStore } from '@/store/reservationStore';
 import { useSpaceStore } from '@/store/spaceStore';
@@ -271,7 +271,7 @@ const repetition = ref('no_repeat');
 const applyToAll = ref(false);
 const showSpaceModal = ref(false);
 const showMaterialModal = ref(false);
-const showTooltip = ref(false)
+const showTooltip = ref(false);
 const paypalLoaded = ref(false);
 const isLoading = ref(false);
 const show = ref(false);

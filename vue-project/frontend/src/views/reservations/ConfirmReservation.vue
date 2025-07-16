@@ -58,13 +58,14 @@
 
                 <v-row v-if="reservation.item === 'space'" class="mt-5 mb-n8">
                   <v-col cols="5">
-                    <v-text-field v-model.number="reservationSeats" label="Número de asientos"
+                    <v-text-field v-model.number="reservationSeats" :disabled="show" label="Número de asientos"
                       prepend-icon="mdi-table-chair" type="number" variant="outlined" density="compact" required
                       @input="reservationSeats = Math.max(1, reservationSeats)" />
                   </v-col>
                   <v-col v-if="admitsRepetition" cols="7">
-                    <v-select v-model="repetition" :items="repetitionOptions" item-title="label" item-value="value"
-                      label="Repetición" prepend-icon="mdi-repeat" variant="outlined" density="compact" />
+                    <v-select v-model="repetition" :items="repetitionOptions" :disabled="show" item-title="label"
+                      item-value="value" label="Repetición" prepend-icon="mdi-repeat" variant="outlined"
+                      density="compact" />
                   </v-col>
                   <v-col v-else>
                     <v-row>
@@ -96,41 +97,60 @@
                 </v-row>
 
                 <v-divider class="mt-6" />
-                <v-row class="mt-3 mb-n6 d-flex align-start ">
+                <v-row class="mt-3 mb-n3 d-flex align-start ">
                   <v-col cols="1" class="d-flex align-center ">
                     <v-icon icon="mdi-hand-coin-outline" />
                   </v-col>
-                  <v-col class="d-flex ml-n1 mt-n1">
+                  <v-col class="d-flex ga-2 ml-n1 mt-n1">
                     <span class="text-h6">
                       Precio: {{ calculatePrice }}€
                     </span>
+                    <v-tooltip v-if="repetition !== 'no_repeat'" v-model="showTooltip" location="top">
+                      <template v-slot:activator="{ props }">
+                        <v-icon class="mt-1" v-bind="props" size="small">
+                          mdi-information-outline
+                        </v-icon>
+                      </template>
+                      <span>
+                        Únicamente se pagará la reserva seleccionada.
+                        <br>El resto de reservas deberán pagarse manualmente.
+                      </span>
+                      <span v-if="applyToAll">
+                        <br> Solo se pagará esta reserva.
+                      </span>
+                    </v-tooltip>
                   </v-col>
                 </v-row>
-
-                <v-row class="mb-n3" v-if="reservationSeats >= maxAllowed">
-                  <v-col class="mt-1" style="display: flex; flex-direction: column; gap: 15px;">
-                    <v-fade-transition>
+                <v-fade-transition>
+                  <v-row class="mb-n3" v-if="reservationSeats >= maxAllowed">
+                    <v-col class="mt-n2" style="display: flex; flex-direction: column; gap: 15px;">
                       <v-alert v-if="reservationSeats >= maxAllowed && reservation.item === 'space'" type="warning"
                         density="compact" variant="tonal">
                         No se pueden reservar más de {{ maxAllowed }} asientos.
                       </v-alert>
-                    </v-fade-transition>
-                    <v-fade-transition>
                       <v-alert v-if="periodicReservedModal" type="warning" density="compact" variant="tonal">
                         No se puede reservar periódicamente, ya hay una reserva con el mismo horario.
                       </v-alert>
-                    </v-fade-transition>
-                  </v-col>
-                </v-row>
+                    </v-col>
+                  </v-row>
+                </v-fade-transition>
               </v-col>
             </v-card-text>
             <v-card-actions>
-              <v-row class="mt-n5 mb-5 mr-5 d-flex justify-end ga-3">
-                <TonalButton color="grey" text="Volver" @click="routerBack" />
-                <TonalButton color="blue" text="Reservar" :loading="isLoading" @click="submit">
-                </TonalButton>
+              <v-row class="mt-n5 mb-6 mr-5 d-flex ga-3">
+                <TonalButton class="ml-8" color="grey" text="Volver" @click="routerBack" />
+                <v-spacer />
+                <TonalButton v-if="!show" color="blue" text="Reservar" :loading="isLoading" @click="submit" />
+                <TonalButton :color="show ? 'grey' : 'blue'" :text="show ? 'Cancelar' : 'Reservar y pagar'"
+                  :loading="isLoading" @click="show ? closePayPal() : submitAndPay()" />
               </v-row>
             </v-card-actions>
+
+            <v-expand-transition>
+              <div v-show="show" class="mt-n2 ma-7">
+                <div style="width: 100%;" id="paypal-button-container" />
+              </div>
+            </v-expand-transition>
           </v-card>
         </v-col>
 
@@ -156,6 +176,7 @@ import { useReservationStore } from '@/store/reservationStore';
 import { useSpaceStore } from '@/store/spaceStore';
 import { useMaterialStore } from '@/store/materialStore';
 import { reservationService } from '@/services/reservationService';
+import { paypalService } from '@/services/paypalService';
 import { useToast } from 'vue-toastification';
 
 import TonalButton from '@/components/TonalButton.vue';
@@ -165,10 +186,9 @@ import MaterialCard from '@/components/MaterialCard.vue';
 import { useTime } from '@/composables/useTime';
 
 // ------------------------------------------------
-// Instancias de Router, Toast y Stores
+// Instancias de Router y Stores
 // ------------------------------------------------
 const router = useRouter();
-const toast = useToast();
 const reservationStore = useReservationStore();
 const spaceStore = useSpaceStore();
 const materialStore = useMaterialStore();
@@ -203,7 +223,10 @@ const showSpaceModal = ref(false);
 const showMaterialModal = ref(false);
 const periodicReservedModal = ref(false);
 
+const paypalLoaded = ref(false);
 const isLoading = ref(false);
+const show = ref(false);
+const showTooltip = ref(false)
 
 const reservationSeats = ref(1);
 const maxAllowed = ref(null);
@@ -276,7 +299,7 @@ async function getPeriodicReservations() {
 // Confirmar Reserva
 // ------------------------------------------------
 const submit = async () => {
-
+  const toast = useToast();
   isLoading.value = true;
 
   const formData = new FormData();
@@ -344,6 +367,121 @@ const submit = async () => {
   }
 };
 // ------------------------------------------------
+
+// ------------------------------------------------
+// Confirmar y pagar Reserva
+// ------------------------------------------------
+const submitAndPay = async () => {
+  const toast = useToast();
+  isLoading.value = true;
+
+  const formData = new FormData();
+
+  if (reservation.value.item === 'space') {
+    formData.append('spaceId', reservation.value.spaceId);
+    formData.append('seatsReserved', reservationSeats.value);
+    formData.append('materialId', null);
+  } else {
+    formData.append('materialId', reservation.value.materialId);
+    formData.append('spaceId', null);
+  }
+
+  formData.append('userId', reservation.value.userId);
+  formData.append('startTime', reservation.value.startTime);
+  formData.append('endTime', reservation.value.endTime);
+
+  try {
+    let res;
+
+    // Comprobar si hay reservas periodicas
+    // Si hay:
+    //   - Comprobar cada una si es diaria, semanal o mensual
+    // Si no hay: 
+    //   - Sin restricciones
+
+    if (checkPeriodicReservations() == true) {
+      periodicReservedModal.value = true;
+      isLoading.value = false;
+      return;
+    }
+    //---- Si llega hasta aquí es porque se puede reservar ----
+
+
+    await loadPayPalSdk();
+
+    const price = calculatePrice.value;
+
+    const container = document.getElementById('paypal-button-container');
+    if (container) {
+      container.innerHTML = ''
+    }
+    paypal.Buttons({
+      createOrder: () => {
+        return paypalService
+          .createOrder(reservation.value._id, price)
+          .then(r => r.data.orderID);
+      },
+      onApprove: async (data) => {
+        const captureRes = await paypalService.captureOrder(data.orderID, reservation.value._id);
+        if (captureRes.data.paymentStatus === 'COMPLETED') {
+          toast.success('Reserva creada y pagada con éxito');
+          formData.append('isPaid', true);
+          show.value = false;
+
+          // Comprobar qué tipo de repetición
+          //  - Sin repetición: se crea directamente
+          //  - Diaria, Semanal o Mensual: hay que meter cosas en el formData
+          const res = await sendReservation(formData);
+
+          isLoading.value = false;
+
+          const conflictObjects = res.data.conflictObjects || [];
+          if (conflictObjects.length > 0) {
+            toast.warning(`Se han producido ${conflictObjects.length} conflictos. Debe reservar manualmente los días donde ha habido un error.`);
+          }
+
+          router.push('/reservations');
+        }
+      },
+      onError: (err) => {
+        console.error(err);
+        toast.error('Error en el pago');
+      }
+    }).render(container);
+    show.value = true;
+  } catch (error) {
+    isLoading.value = false;
+    console.error(error);
+
+    // Verificamos si es el error de "too many conflicts"
+    if (
+      error.response &&
+      error.response.status === 409 &&
+      error.response.data?.errorCode === 'TOO_MANY_CONFLICTS'
+    ) {
+      toast.error(error.response.data.message);
+    } else {
+      // Cualquier otro error
+      toast.error('Error al crear la reserva');
+    }
+  } finally {
+    isLoading.value = false;
+  }
+};
+
+// Carga dinámica del SDK de PayPal
+function loadPayPalSdk() {
+  if (paypalLoaded.value) return Promise.resolve();
+  return new Promise((resolve, reject) => {
+    const script = document.createElement('script');
+    script.src = `https://www.paypal.com/sdk/js?client-id=${import.meta.env.VITE_PAYPAL_CLIENT_ID}&currency=EUR`;
+    script.onload = () => { paypalLoaded.value = true; resolve(); };
+    script.onerror = reject;
+    document.head.appendChild(script);
+  });
+}
+// ------------------------------------------------
+
 
 
 // ------------------------------------------------
@@ -494,6 +632,9 @@ const calculatePrice = computed(() => {
   return total.toFixed(2)
 })
 
+function closePayPal() {
+  show.value = false
+}
 
 const routerBack = () => {
   router.go(-1);

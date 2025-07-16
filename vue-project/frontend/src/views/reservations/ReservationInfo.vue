@@ -324,31 +324,33 @@ async function startPayPalPayment() {
     try {
         await loadPayPalSdk();
 
-        // Crear orden en backend
-        const amount = calculatePrice.value;
-        const res = await paypalService.createOrder(reservation.value._id, amount);
-        const orderID = res.data.orderID;
+        const price = calculatePrice.value;
 
         // Sólo renderizamos los botones si aún no existen
         const container = document.getElementById('paypal-button-container');
-        if (container && !container.hasChildNodes()) {
-            paypal.Buttons({
-                createOrder: () => orderID,
-                onApprove: async (data) => {
-                    const res = await paypalService.captureOrder(data.orderID, reservation.value._id);
-                    if (res.data.paymentStatus === 'COMPLETED') {
-                        toast.success('Pago completado con éxito');
-                        reservation.value.isPaid = true;
-                        reservationStore.setReservation(reservation.value);
-                        show.value = false;
-                    }
-                },
-                onError: (err) => {
-                    console.error(err);
-                    toast.error('Error en el pago');
-                }
-            }).render(container);
+        if (container) {
+            container.innerHTML = ''
         }
+        paypal.Buttons({
+            createOrder: () => {
+                return paypalService
+                    .createOrder(reservation.value._id, price)
+                    .then(r => r.data.orderID);
+            },
+            onApprove: async (data) => {
+                const res = await paypalService.captureOrder(data.orderID, reservation.value._id);
+                if (res.data.paymentStatus === 'COMPLETED') {
+                    toast.success('Pago completado con éxito');
+                    reservation.value.isPaid = true;
+                    reservationStore.setReservation(reservation.value);
+                    show.value = false;
+                }
+            },
+            onError: (err) => {
+                console.error(err);
+                toast.error('Error en el pago');
+            }
+        }).render(container);
         show.value = true;
     } catch (err) {
         console.error(err);
