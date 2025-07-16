@@ -181,7 +181,6 @@ const submit = async () => {
 
   try {
     const res = await materialService.updateMaterial(formData);
-    console.log(res.data);
     toast.success('¡Material actualizado con éxito!');
     router.go(-1);
     materialStore.setSelectedMaterial(newMaterial);

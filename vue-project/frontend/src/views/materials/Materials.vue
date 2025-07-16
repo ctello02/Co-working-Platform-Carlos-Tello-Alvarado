@@ -46,7 +46,7 @@
                 :closeModal="closeDialog" :action="deleteMaterial" />
 
             <AskModal v-model="bulkDeleteModal" :maxWidth="'600px'" :title="'Este material tiene reservas pendientes'"
-                :message="'Este material tiene reservas pendientes, ¿Estás seguro de que quieres borrarlo?'"
+                :message="'Este material tiene reservas pendientes, ¿Estás seguro de que quieres borrarlo? Se devolverá el pago de las reservas que se hayan cobrado.'"
                 :actionText="'Borrar material'" :closeModal="closeBulkDeleteDialog" :action="bulkDeleteMaterial" />
 
         </v-col>

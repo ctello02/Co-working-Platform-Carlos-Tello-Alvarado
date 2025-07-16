@@ -76,7 +76,8 @@
                             </v-col>
                         </v-row>
                     </v-col>
-                    <v-col cols="12" v-if="showMoreDetails">
+                    <v-divider class="mt-n2 mx-3" v-if="!isExpired" />
+                    <v-col cols="12" class="mb-n1 mt-n3">
                         <v-row>
                             <v-col class="">
                                 <span v-if="reservation.isPaid" class="text-h6">
@@ -207,7 +208,7 @@ function parseLocalISO(isoString) {
     top: 0;
     left: 0;
     right: 0;
-    bottom: 20px;
+    bottom: 10px;
     background: rgba(255, 255, 255, 0.8);
     pointer-events: none;
     z-index: 10;

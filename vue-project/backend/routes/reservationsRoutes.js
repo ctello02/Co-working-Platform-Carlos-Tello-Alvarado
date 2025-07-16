@@ -11,6 +11,7 @@ const {
   updatePeriodicReservation,
   deleteReservation,
   deletePeriodicReservation,
+  markAsPaid,
 } = require('../controllers/reservationsController');
 const verifyToken = require('../middleware/verify_tokens');
 const upload = require('../utils/multerConfig');
@@ -45,5 +46,6 @@ router.delete(
   verifyToken,
   deletePeriodicReservation
 );
+router.put('/markAsPaid/:id', verifyToken, markAsPaid);
 
 module.exports = router;

@@ -112,22 +112,33 @@
                 </v-col>
             </v-card-text>
 
-            <v-card-actions :class="buttonsRendered ? 'd-flex flex-column-reverse mt-n5 ma-5 justify-end' :
-                'd-flex justify-end ga-3 mt-n3 mb-3 mr-5'">
+            <v-card-actions class="d-flex justify-end ga-3 mt-n3 mb-5 mr-5">
+                <TonalButton color="grey" text="Volver" @click="routerBack" />
 
-                <TonalButton color="grey" :block="buttonsRendered ? true : false" text="Volver" @click="routerBack" />
-                <TonalButton v-if="!buttonsRendered && !reservation.isPaid" color="blue" :loading="isLoading"
-                    text="Pagar" @click="startPayPalPayment" />
-                <div style="width: 100%;" v-show="buttonsRendered && !reservation.isPaid"
-                    id="paypal-button-container" />
+                <TonalButton v-if="!reservation.isPaid && reservationUser._id !== userStore.getId" color="blue"
+                    text="Marcar como pagada" @click="markPaidModal = true" />
 
+                <TonalButton :color="show ? 'grey' : 'blue'" :loading="isLoading"
+                    v-if="!reservation.isPaid && reservationUser._id === userStore.getId"
+                    :text="show ? 'Cancelar pago' : 'Pagar'" @click="show ? closePayPal() : startPayPalPayment()" />
             </v-card-actions>
+
+            <v-expand-transition>
+                <div v-show="show" class="mt-n2 ma-7">
+                    <div style="width: 100%;" id="paypal-button-container" />
+                </div>
+            </v-expand-transition>
         </v-card>
 
         <AskModal v-model="deleteModal" :title="'¿Borrar reserva?'"
-            :message="'¿Estás seguro de que quieres borrar esta reserva?'" :actionText="'Borrar reserva'"
-            :closeModal="closeDialog" :action="deleteReservation"
-            :checkboxAction="reservationStore.getReservation?.periodicReservationId ? toggleCheckbox : null" />
+            :message="reservation?.isPaid ? '¿Estás seguro de que quieres borrar esta reserva? Se te devolverá el importe de esta reserva y de otras que hayas pagado.' : '¿Estás seguro de que quieres borrar esta reserva?'"
+            :actionText="'Borrar reserva'" :closeModal="closeDialog" :action="deleteReservation"
+            :checkboxAction="reservationStore.getReservation?.periodicReservationId ? toggleCheckbox : null"
+            :warnPaymentRefund="!reservationStore.getReservation?.isPaid && reservationStore.getReservation?.periodicReservationId" />
+
+        <AskModal v-model="markPaidModal" :title="'¿Se ha pagado la reserva?'"
+            :message="'¿Ha pagado el cliente el importe de la reserva?'" :actionText="'Marcar como pagada'"
+            :closeModal="() => markPaidModal = false" :action="markAsPaid" />
 
     </v-container>
 </template>
@@ -142,6 +153,7 @@ import { useRouter } from 'vue-router';
 import TonalButton from '@/components/TonalButton.vue'
 import AskModal from '@/components/AskModal.vue';
 import { reservationService } from '@/services/reservationService';
+import { paypalService } from '@/services/paypalService';
 import { useTime } from '@/composables/useTime';
 import { useToast } from 'vue-toastification';
 
@@ -160,12 +172,13 @@ const reservation = ref(null);
 const reservationSeats = ref(1);
 const canEdit = ref(false);
 const deleteModal = ref(false);
+const markPaidModal = ref(false);
 const bulkDeleteReservations = ref(false);
 
-const paymentStarted = ref(false);
 const paypalLoaded = ref(false);
-const buttonsRendered = ref(false);
 const isLoading = ref(false);
+
+const show = ref(false);
 
 // Extraemos funciones del composable useTime
 const {
@@ -190,6 +203,10 @@ onMounted(async () => {
             reservationSeats.value = reservation.value.seatsReserved;
         } else {
             material.value = materialStore.getSelectedMaterial;
+        }
+
+        if (reservation.value.toPayment) {
+            startPayPalPayment();
         }
 
         getUserByReservationId(reservation.value._id);
@@ -237,9 +254,9 @@ function deleteReservation() {
     const toast = useToast();
     if (reservation.value.periodicReservationId && bulkDeleteReservations.value) {
         reservationService.deletePeriodicReservation(reservation.value.periodicReservationId._id)
-            .then(() => {
+            .then((res) => {
                 closeDialog();
-                toast.success('Reserva periódica eliminada con éxito');
+                toast.success(res.data.message);
                 routerBack();
             })
             .catch(error => {
@@ -248,9 +265,10 @@ function deleteReservation() {
 
     } else {
         reservationService.deleteReservation(reservation.value._id)
-            .then(() => {
+            .then((res) => {
                 closeDialog();
-                toast.success('Reserva eliminada con éxito');
+                toast.success(res.data.message);
+
                 routerBack();
             })
             .catch(error => {
@@ -301,37 +319,59 @@ function loadPayPalSdk() {
 
 async function startPayPalPayment() {
     const toast = useToast();
-    paymentStarted.value = true;
     isLoading.value = true;
 
     try {
         await loadPayPalSdk();
-        // Crear orden en backend
-        const amount = calculatePrice.value;
-        const res = await reservationService.createOrder(reservation.value._id, amount);
-        const orderID = res.data.orderID;
+
+        const price = calculatePrice.value;
+
+        // Sólo renderizamos los botones si aún no existen
+        const container = document.getElementById('paypal-button-container');
+        if (container) {
+            container.innerHTML = ''
+        }
         paypal.Buttons({
-            createOrder: () => orderID,
+            createOrder: () => {
+                return paypalService
+                    .createOrder(reservation.value._id, price)
+                    .then(r => r.data.orderID);
+            },
             onApprove: async (data) => {
-                await reservationService.captureOrder(data.orderID, reservation.value._id);
-                toast.success('Pago completado con éxito');
-                reservation.value.isPaid = true;
-                paymentStarted.value = false;
-                reservationStore.setReservation(reservation.value);
+                const res = await paypalService.captureOrder(data.orderID, reservation.value._id);
+                if (res.data.paymentStatus === 'COMPLETED') {
+                    toast.success('Pago completado con éxito');
+                    reservation.value.isPaid = true;
+                    reservationStore.setReservation(reservation.value);
+                    show.value = false;
+                }
             },
             onError: (err) => {
                 console.error(err);
                 toast.error('Error en el pago');
             }
-        }).render('#paypal-button-container');
-        buttonsRendered.value = true;
+        }).render(container);
+        show.value = true;
     } catch (err) {
         console.error(err);
-        paymentStarted.value = false;
         toast.error('No se pudo cargar PayPal o crear la orden');
     } finally {
         isLoading.value = false;
     }
+}
+
+function markAsPaid() {
+    const toast = useToast();
+
+    reservationService.markAsPaid(reservation.value._id)
+        .then(() => {
+            reservation.value.isPaid = true;
+            reservationStore.setReservation(reservation.value);
+            toast.success('Reserva marcada como pagada');
+        })
+        .catch(error => {
+            console.error('Error al marcar reserva como pagada:', error);
+        });
 }
 
 // Traduce el valor de repetición a un string legible
@@ -346,6 +386,10 @@ const parseRepetition = (repetition) => {
         return 'Se repite todas los meses este día';
     }
 };
+
+function closePayPal() {
+    show.value = false
+}
 
 const routerBack = () => {
     router.go(-1);

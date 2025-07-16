@@ -1,7 +1,6 @@
 import axiosInstance from '@/plugins/axiosConfig'; // Importamos la configuración de Axios con interceptores
 
 const API_URL = '/reservations';
-const PAYPAL_URL = '/paypal';
 
 export const reservationService = {
   createReservation(formData) {
@@ -63,17 +62,7 @@ export const reservationService = {
     return axiosInstance.delete(`${API_URL}/deletePeriodicReservation/${id}`);
   },
 
-  createOrder(reservationId, total) {
-    return axiosInstance.post(`${PAYPAL_URL}/createOrder/`, {
-      total,
-      reservationId,
-    });
-  },
-
-  captureOrder(orderID, reservationId) {
-    return axiosInstance.post(`${PAYPAL_URL}/captureOrder/`, {
-      orderID,
-      reservationId,
-    });
+  markAsPaid(reservationId) {
+    return axiosInstance.put(`${API_URL}/markAsPaid/${reservationId}`);
   },
 };

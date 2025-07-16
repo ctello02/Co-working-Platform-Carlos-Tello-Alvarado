@@ -150,7 +150,6 @@ const submit = async () => {
 
   try {
     const res = await materialService.createMaterial(formData);
-    console.log(res.data);
     toast.success('¡Material creado con éxito!');
     clearFields();
   } catch (error) {

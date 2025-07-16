@@ -1,15 +1,30 @@
 const Reservation = require('../models/reservation');
 const PeriodicReservation = require('../models/periodicReservation');
+const checkout = require('@paypal/checkout-server-sdk');
+const { client } = require('../utils/paypalClient');
+
 const mongoose = require('mongoose');
 
 exports.createReservation = async (req, res) => {
   try {
-    const { spaceId, materialId, seatsReserved, userId, startTime, endTime } =
-      req.body;
+    const {
+      spaceId,
+      materialId,
+      seatsReserved,
+      userId,
+      startTime,
+      endTime,
+      paypalOrderId,
+      paypalCaptureId,
+      paymentStatus,
+    } = req.body;
 
     if (spaceId == 'null') req.body.spaceId = null;
     if (materialId == 'null') req.body.materialId = null;
     if (seatsReserved == 'null') req.body.seatsReserved = null;
+    if (paypalOrderId == 'null') req.body.paypalOrderId = null;
+    if (paypalCaptureId == 'null') req.body.paypalCaptureId = null;
+    if (paymentStatus == 'null') req.body.paymentStatus = null;
 
     if (!userId || !startTime || !endTime) {
       return res.status(400).json({ message: 'Campos requeridos' });
@@ -20,7 +35,9 @@ exports.createReservation = async (req, res) => {
     const savedReservation = await newReservation.save();
     res.status(201).json({
       savedReservation,
-      message: 'Reserva creada con éxito',
+      message: paypalCaptureId
+        ? 'Reserva creada y pagada con éxito'
+        : 'Reserva creada con éxito',
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -169,7 +186,9 @@ exports.getUserReservations = async (req, res) => {
     const now = new Date();
 
     // Obtenemos todas las reservas
-    const reservations = await Reservation.find({ userId: req.params.id })
+    const reservations = await Reservation.find({
+      userId: req.params.id,
+    })
       .populate('spaceId')
       .populate('materialId')
       .populate('periodicReservationId')
@@ -384,14 +403,31 @@ exports.updatePeriodicReservation = async (req, res) => {
 };
 
 exports.deleteReservation = async (req, res) => {
+  let arePaid = false;
   try {
     const reservation = await Reservation.findOne({ _id: req.params.id });
     if (!reservation) {
       return res.status(404).json({ message: 'Reserva no encontrada' });
-    } else {
-      await Reservation.deleteOne({ _id: req.params.id });
-      res.json({ message: 'Reserva eliminada con éxito' });
     }
+
+    if (reservation.isPaid) {
+      const captureId = reservation.paypalCaptureId;
+
+      const refundRequest = new checkout.payments.CapturesRefundRequest(
+        captureId
+      );
+      refundRequest.requestBody({});
+
+      await client().execute(refundRequest);
+      arePaid = true;
+    }
+
+    await Reservation.deleteOne({ _id: req.params.id });
+    res.json({
+      message: arePaid
+        ? 'Reserva eliminada y pago reembolsado'
+        : 'Reserva eliminada',
+    });
   } catch (error) {
     console.error('Error al eliminar la reserva:', error);
     res.status(500).json({ message: error.message });
@@ -399,17 +435,49 @@ exports.deleteReservation = async (req, res) => {
 };
 
 exports.deletePeriodicReservation = async (req, res) => {
+  let arePaid = false;
   const session = await mongoose.startSession();
   session.startTransaction();
   try {
-    await Reservation.deleteMany({
-      periodicReservationId: req.params.id,
+    const periodicId = req.params.id;
+    const now = new Date();
+    const limit24h = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+
+    const reservations = await Reservation.find({
+      periodicReservationId: periodicId,
     }).session(session);
-    await PeriodicReservation.deleteOne({ _id: req.params.id }).session(
-      session
-    );
+
+    // Marcamos para borrar las reservas que estan dentro de las siguientes 24 horas
+    const toDelete = reservations.filter((r) => {
+      const start = new Date(r.startTime);
+      return start >= limit24h;
+    });
+
+    // Refund de todas las reservas +24 horas
+    for (const r of toDelete) {
+      if (r.isPaid && r.paypalCaptureId) {
+        const refundReq = new checkout.payments.CapturesRefundRequest(
+          r.paypalCaptureId
+        );
+        refundReq.requestBody({});
+        await client().execute(refundReq);
+        if (!arePaid) arePaid = true;
+      }
+    }
+
+    // Borramos todas las reservas posteriores excepto +24 horas
+    await Reservation.deleteMany({
+      periodicReservationId: periodicId,
+      startTime: { $gte: limit24h },
+    }).session(session);
+    await PeriodicReservation.deleteOne({ _id: periodicId }).session(session);
+
     await session.commitTransaction();
-    res.status(200).json({ message: 'Reserva periódica eliminada con éxito' });
+    res.status(200).json({
+      message: arePaid
+        ? 'Reservas periódicas eliminadas y pagos reembolsados con éxito'
+        : 'Reservas periódicas eliminadas con éxito',
+    });
   } catch (error) {
     await session.abortTransaction();
     console.error('Error al eliminar la reserva periódica:', error);
@@ -419,6 +487,18 @@ exports.deletePeriodicReservation = async (req, res) => {
   }
 };
 
-// payReservation
-
-// markPaidReservation
+exports.markAsPaid = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const reservation = await Reservation.findById(id);
+    if (!reservation) {
+      throw new Error('Reserva no encontrada');
+    }
+    reservation.isPaid = true;
+    await reservation.save();
+    res.status(200).json({ message: 'Reserva marcada como pagada con éxito' });
+  } catch (error) {
+    console.error('Error al marcar la reserva como pagada:', error);
+    res.status(500).json({ message: error.message });
+  }
+};

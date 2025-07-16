@@ -37,8 +37,9 @@
 
                             <template #eventModal="{ calendarEvent }">
                                 <CustomEventCalendar :reservation="reservationStore.getReservation"
-                                    @see-event="openReservation" @edit-event="editReservation"
-                                    @delete-event="openDeleteReservation" @close="closeModal" />
+                                    @see-event="openReservation" @pay-event="openReservationToPay"
+                                    @edit-event="editReservation" @delete-event="openDeleteReservation"
+                                    @close="closeModal" />
                             </template>
 
                         </ScheduleXCalendar>
@@ -64,7 +65,7 @@
                         <v-tabs-window v-model="subTab" style="width: 100%;">
                             <v-tabs-window-item value="next">
                                 <SubTab :reservations="nextReservations"
-                                    no-reservations-message="No se han encontrado reservas próximas" :filter="filter"
+                                    no-reservations-message="No se encontran reservas próximas" :filter="filter"
                                     :list="list" :filteredReservations="filteredNextReservations"
                                     :groupedByName="groupedByName" :groupedByDate="groupedByDate"
                                     :tableHeaders="tableHeaders" :tableItems="tableItems"
@@ -75,7 +76,7 @@
 
                             <v-tabs-window-item value="past">
                                 <SubTab :reservations="pastReservations"
-                                    no-reservations-message="No se encuentran datos anteriores" :filter="filter"
+                                    no-reservations-message="No se encuentran reservas anteriores" :filter="filter"
                                     :list="list" :filteredReservations="filteredPastReservations"
                                     :groupedByName="groupedByName" :groupedByDate="groupedByDate"
                                     :tableHeaders="tableHeaders" :tableItems="tableItems"
@@ -91,9 +92,10 @@
                     colorText="black" colorButton="blue" :closeModal="closeDialog" :action="openCreateReservation" />
 
                 <AskModal v-model="deleteModal" :title="'¿Borrar reserva?'"
-                    :message="'¿Estás seguro de que quieres borrar esta reserva?'" :actionText="'Borrar reserva'"
-                    :closeModal="closeDialog" :action="deleteReservation"
-                    :checkboxAction="reservationStore.getReservation?.periodicReservationId ? toggleCheckbox : null" />
+                    :message="reservationStore.getReservation?.isPaid ? '¿Estás seguro de que quieres borrar esta reserva? Se te devolverá el importe de esta reserva y de otras que hayas pagado.' : '¿Estás seguro de que quieres borrar esta reserva?'"
+                    :actionText="'Borrar reserva'" :closeModal="closeDialog" :action="deleteReservation"
+                    :checkboxAction="reservationStore.getReservation?.periodicReservationId ? toggleCheckbox : null"
+                    :warnPaymentRefund="!reservationStore.getReservation?.isPaid && reservationStore.getReservation?.periodicReservationId" />
             </v-row>
         </v-col>
     </v-container>
@@ -472,6 +474,17 @@ function openReservation() {
     router.push('/reservationInfo');
 };
 
+function openReservationToPay() {
+    const reservation = reservationStore.getReservation;
+    if (reservation.spaceId) spaceStore.setSelectedSpace(reservation.spaceId);
+    else materialStore.setSelectedMaterial(reservation.materialId);
+
+    reservation.toPayment = true;
+    reservationStore.setReservation(reservation);
+
+    router.push('/reservationInfo');
+};
+
 function editReservation() {
     const reservation = reservationStore.getReservation;
     if (reservation.spaceId) spaceStore.setSelectedSpace(reservation.spaceId);
@@ -491,7 +504,7 @@ function deleteReservation() {
             .then(res => {
                 closeModal();
                 getAllEvents();
-                toast.success('Reserva periódica eliminada con éxito');
+                toast.success(res.data.message);
             })
             .catch(error => {
                 console.error('Error al borrar reserva:', error);
@@ -502,7 +515,7 @@ function deleteReservation() {
             .then(res => {
                 closeModal();
                 getAllEvents();
-                toast.success('Reserva eliminada con éxito');
+                toast.success(res.data.message);
             })
             .catch(error => {
                 console.error('Error al borrar reserva:', error);

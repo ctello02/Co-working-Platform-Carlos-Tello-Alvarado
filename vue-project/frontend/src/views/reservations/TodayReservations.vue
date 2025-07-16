@@ -321,7 +321,6 @@ async function getTodayReservations() {
         .then(res => {
             originalReservations.value = res.data.reservations;
             reservations.value = res.data.reservations;
-            console.log(reservations.value);
         })
         .catch(error => {
             console.log(error);
