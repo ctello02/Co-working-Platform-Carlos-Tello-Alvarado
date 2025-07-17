@@ -1,248 +1,250 @@
 <template>
     <v-container fluid v-if="user">
-        <v-row class="mt-1 d-flex ga-3">
-            <v-col>
-                <v-row>
-                    <span class="text-h4">Bienvenido {{ user.name }},</span>
-                </v-row>
-                <v-row v-if="reservations.length == 0" class="mt-6 ml-n5">
-                    <v-col cols="auto" class="d-flex flex-column ga-4">
-                        <span class="text-h5">Aún no tiene reservas</span>
-                        <TonalButton color="blue" text="Reservar" size="x-large"
-                            @click="this.$router.push('/createReservation')" />
-                    </v-col>
-                </v-row>
-                <!-- Poner la proxima reserva en grande -->
-                <v-row v-if="todayReservation" class="mt-6">
-                    <v-col>
-                        <v-row>
-                            <span class="text-h5">
-                                Tiene una reserva:
-                            </span>
-                        </v-row>
-                        <v-row>
-                            <v-col class="ma-0 mt-2 pa-0">
-                                <v-card>
-                                    <v-img :src="todayReservation.spaceId?.image || todayReservation.materialId?.image"
-                                        color="surface-variant" height="300px" cover />
-                                    <v-card-text>
-                                        <v-col>
-                                            <v-row class="mt-n5 mb-n3" cols="12">
-                                                <v-col>
-                                                    <span class="text-h4">{{ todayReservation.spaceId?.name ||
-                                                        todayReservation.materialId?.name }}</span>
-                                                </v-col>
-                                                <v-col cols="auto" v-if="isExpired(todayReservation.endTime)">
-                                                    <span style="color: red;" class="text-h5">
-                                                        Expirada
-                                                    </span>
-                                                </v-col>
-                                            </v-row>
-                                            <v-row class="my-n3" cols="12">
-                                                <v-col cols="1" class="d-flex align-center">
-                                                    <v-icon icon="mdi-text" />
-                                                </v-col>
-                                                <v-col>
-                                                    <span class="text-h6">{{ todayReservation.spaceId?.description ||
-                                                        todayReservation.materialId?.description }}</span>
-                                                </v-col>
-                                            </v-row>
-                                            <v-row class="my-n3">
-                                                <v-col cols="1" class="d-flex align-center">
-                                                    <v-icon icon="mdi-calendar-outline" size="small" />
-                                                </v-col>
-                                                <v-col><span class="text-h6"> {{ parseToStringDate(new
-                                                    Date(todayReservation.startTime)) }}</span></v-col>
-                                            </v-row>
-                                            <v-row class="my-n3 d-flex justify-center align-center" cols="12">
-                                                <v-col>
-                                                    <v-row>
-                                                        <v-col :cols="todayReservation.spaceId ? '2' : '1'"
-                                                            class="d-flex align-center">
-                                                            <v-icon icon="mdi-clock-outline" size="small" />
-                                                        </v-col>
-                                                        <v-col>
-                                                            <span class="pt-2 text-h6">
-                                                                {{ getHoursAndMinsFromDate(todayReservation.startTime)
-                                                                }}h
-                                                                -
-                                                                {{ getHoursAndMinsFromDate(todayReservation.endTime) }}h
-                                                            </span>
-                                                        </v-col>
-                                                    </v-row>
-                                                </v-col>
-                                                <v-col v-if="todayReservation.seatsReserved">
-                                                    <v-row>
-                                                        <v-col cols="2" class="d-flex align-center">
-                                                            <v-icon icon="mdi-table-chair" size="small" />
-                                                        </v-col>
-                                                        <v-col>
-                                                            <span class="text-h6"
-                                                                v-if="todayReservation.seatsReserved == 1">{{
-                                                                    todayReservation.seatsReserved }} asiento
-                                                                reservado</span>
-                                                            <span class="text-h6" v-else>{{
-                                                                todayReservation.seatsReserved
-                                                            }}
-                                                                asientos
-                                                                reservados</span>
-                                                        </v-col>
-                                                    </v-row>
-                                                </v-col>
-                                            </v-row>
-                                            <v-row class="my-n3 d-flex justify-center align-center" cols="12">
-                                                <v-col>
-                                                    <v-row>
-                                                        <v-col cols="2" class="d-flex align-center">
-                                                            <v-icon icon="mdi-repeat" size="small" />
-                                                        </v-col>
-                                                        <v-col>
-                                                            <span class="pt-2 text-h6">
-                                                                <span v-if="todayReservation.periodicReservationId">
-                                                                    {{
-                                                                        parseRepetition(todayReservation.periodicReservationId.periodicity)
-                                                                    }}
-                                                                </span>
-                                                                <span v-else>
-                                                                    Sin repetición
-                                                                </span>
-                                                            </span>
-                                                        </v-col>
-                                                    </v-row>
-                                                </v-col>
-                                                <v-col v-if="todayReservation">
-                                                    <v-row>
-                                                        <v-col cols="2" class="d-flex align-center">
-                                                            <v-icon icon="mdi-hand-coin-outline" size="small" />
-                                                        </v-col>
-                                                        <v-col>
-                                                            <span class="text-h6">
-                                                                {{ calculatePrice(todayReservation,
-                                                                    todayReservation.startTime,
-                                                                    todayReservation.endTime) }}€
-                                                                <span v-if="todayReservation.isPaid">
-                                                                    (Pagada)
-                                                                </span>
-                                                                <span v-else>
-                                                                    (Sin pagar)
-                                                                </span>
-                                                            </span>
-                                                        </v-col>
-                                                    </v-row>
-                                                </v-col>
-                                            </v-row>
-                                        </v-col>
-                                    </v-card-text>
-                                    <v-card-actions v-if="!todayReservation.isPaid"
-                                        class="d-flex justify-end ga-3 mt-n3 mb-5 mr-5">
-                                        <TonalButton :color="show ? 'grey' : 'blue'" :loading="isLoading"
-                                            v-if="!todayReservation.isPaid" :text="show ? 'Cancelar pago' : 'Pagar'"
-                                            @click="show ? closePayPal() : startPayPalPayment()" />
-                                    </v-card-actions>
-                                    <v-expand-transition>
-                                        <div v-show="show" class="mt-n2 ma-7">
-                                            <div style="width: 100%;" id="paypal-button-container" />
-                                        </div>
-                                    </v-expand-transition>
-                                </v-card>
-                            </v-col>
-                        </v-row>
-                    </v-col>
-                </v-row>
-
-                <v-row v-else-if="!todayReservation && reservations.length > 1" class="mt-6 ml-n5">
-                    <v-col cols="auto" class="d-flex flex-column ga-4">
-                        <span class="text-h5">No tiene reservas para hoy</span>
-                        <TonalButton color="blue" text="Reservar" size="x-large"
-                            @click="this.$router.push('/createReservation')" />
-                    </v-col>
-                </v-row>
-
-
-            </v-col>
-            <v-col v-if="reservations.length > 0" class="mt-2">
-                <v-row>
-                    <span class="text-h5 ml-3">
-                        Tiene {{ reservations.length }}
-                        <span v-if="reservations.length == 1">reserva</span>
-                        <span v-else>reservas</span>
-                        esta semana:
-                    </span>
-                </v-row>
-                <v-row>
-                    <v-col class="d-flex flex-column ga-2">
-                        <v-card @click="openReservation(reservation)" style="width: 100%;"
-                            class="mx-auto pa-2 main-container mainBorder"
-                            :class="isExpired(reservation.endTime) ? 'expired' : ''" :ripple="false" elevation="0"
-                            v-for="reservation in otherReservations.slice(0, 5)" :key="reservation._id">
+        <v-col>
+            <v-row class="d-flex ga-3">
+                <v-col>
+                    <v-row>
+                        <span class="text-h4">Bienvenido {{ user.name }},</span>
+                    </v-row>
+                    <v-row v-if="reservations.length == 0" class="mt-6 ml-n5">
+                        <v-col cols="auto" class="d-flex flex-column ga-4">
+                            <span class="text-h5">Aún no tiene reservas</span>
+                            <TonalButton color="blue" text="Reservar" size="x-large"
+                                @click="this.$router.push('/createReservation')" />
+                        </v-col>
+                    </v-row>
+                    <v-row v-if="todayReservation" class="mt-6">
+                        <v-col>
                             <v-row>
-                                <v-col>
-                                    <v-row>
-                                        <v-col>
-                                            <span class="text-h6">
-                                                {{ reservation.spaceId?.name ||
-                                                    reservation.materialId?.name }}
-                                            </span>
-                                        </v-col>
-                                        <v-col cols="auto">
-                                            <span class="text-h6">
-                                                <span class="grey" v-if="isToday(reservation.startTime)">(Hoy)
-                                                </span>
-                                                <span class="grey"
-                                                    v-else-if="isWithinNext24Hours(reservation.startTime)">(Mañana)
-                                                </span>
-                                                {{ parseToStringDate(new Date(reservation.startTime)) }}
-                                            </span>
-                                        </v-col>
-                                    </v-row>
-                                    <div v-if="isExpired(reservation.endTime)" class="expired-overlay">
-                                        <span class="expired-text text-h4">Expirada</span>
-                                    </div>
-                                    <v-row class="mt-n3">
-                                        <v-col>
-                                            <v-row class="d-flex align-center justify-space-between">
-                                                <v-col cols="auto">
-                                                    <span class="grey">
-                                                        Precio:
-                                                    </span>
-                                                    <span>
-                                                        {{ calculatePrice(reservation, reservation.startTime,
-                                                            reservation.endTime) }}€
-                                                    </span>
-                                                    <span v-if="reservation.isPaid">
-                                                        (Pagada)
-                                                    </span>
-                                                    <span v-else>
-                                                        (Sin pagar)
-                                                    </span>
-                                                </v-col>
-                                                <v-col cols="auto">
-                                                    <span class="grey">Horas: </span>
-                                                    <span>
-                                                        {{
-                                                            getHoursAndMinsFromDate(reservation?.startTime)
-                                                        }}h
-                                                        -
-                                                        {{
-                                                            getHoursAndMinsFromDate(reservation?.endTime)
-                                                        }}h
-                                                    </span>
-                                                </v-col>
-                                            </v-row>
-                                        </v-col>
-                                    </v-row>
+                                <span class="text-h5">
+                                    Tiene una reserva:
+                                </span>
+                            </v-row>
+                            <v-row>
+                                <v-col class="ma-0 mt-2 pa-0">
+                                    <v-card>
+                                        <v-img
+                                            :src="todayReservation.spaceId?.image || todayReservation.materialId?.image"
+                                            color="surface-variant" height="300px" cover />
+                                        <v-card-text>
+                                            <v-col>
+                                                <v-row class="mt-n5 mb-n3" cols="12">
+                                                    <v-col>
+                                                        <span class="text-h4">{{ todayReservation.spaceId?.name ||
+                                                            todayReservation.materialId?.name }}</span>
+                                                    </v-col>
+                                                    <v-col cols="auto" v-if="isExpired(todayReservation.endTime)">
+                                                        <span style="color: red;" class="text-h5">
+                                                            Expirada
+                                                        </span>
+                                                    </v-col>
+                                                </v-row>
+                                                <v-row class="my-n3" cols="12">
+                                                    <v-col cols="1" class="d-flex align-center">
+                                                        <v-icon icon="mdi-text" />
+                                                    </v-col>
+                                                    <v-col>
+                                                        <span class="text-h6">{{ todayReservation.spaceId?.description
+                                                            ||
+                                                            todayReservation.materialId?.description }}</span>
+                                                    </v-col>
+                                                </v-row>
+                                                <v-row class="my-n3">
+                                                    <v-col cols="1" class="d-flex align-center">
+                                                        <v-icon icon="mdi-calendar-outline" size="small" />
+                                                    </v-col>
+                                                    <v-col><span class="text-h6"> {{ parseToStringDate(new
+                                                        Date(todayReservation.startTime)) }}</span></v-col>
+                                                </v-row>
+                                                <v-row class="my-n3 d-flex justify-center align-center" cols="12">
+                                                    <v-col>
+                                                        <v-row>
+                                                            <v-col :cols="todayReservation.spaceId ? '2' : '1'"
+                                                                class="d-flex align-center">
+                                                                <v-icon icon="mdi-clock-outline" size="small" />
+                                                            </v-col>
+                                                            <v-col>
+                                                                <span class="pt-2 text-h6">
+                                                                    {{
+                                                                        getHoursAndMinsFromDate(todayReservation.startTime)
+                                                                    }}h
+                                                                    -
+                                                                    {{ getHoursAndMinsFromDate(todayReservation.endTime)
+                                                                    }}h
+                                                                </span>
+                                                            </v-col>
+                                                        </v-row>
+                                                    </v-col>
+                                                    <v-col v-if="todayReservation.seatsReserved">
+                                                        <v-row>
+                                                            <v-col cols="2" class="d-flex align-center">
+                                                                <v-icon icon="mdi-table-chair" size="small" />
+                                                            </v-col>
+                                                            <v-col>
+                                                                <span class="text-h6"
+                                                                    v-if="todayReservation.seatsReserved == 1">{{
+                                                                        todayReservation.seatsReserved }} asiento
+                                                                    reservado</span>
+                                                                <span class="text-h6" v-else>{{
+                                                                    todayReservation.seatsReserved
+                                                                }}
+                                                                    asientos
+                                                                    reservados</span>
+                                                            </v-col>
+                                                        </v-row>
+                                                    </v-col>
+                                                </v-row>
+                                                <v-row class="my-n3 d-flex justify-center align-center" cols="12">
+                                                    <v-col>
+                                                        <v-row>
+                                                            <v-col cols="2" class="d-flex align-center">
+                                                                <v-icon icon="mdi-repeat" size="small" />
+                                                            </v-col>
+                                                            <v-col>
+                                                                <span class="pt-2 text-h6">
+                                                                    <span v-if="todayReservation.periodicReservationId">
+                                                                        {{
+                                                                            parseRepetition(todayReservation.periodicReservationId.periodicity)
+                                                                        }}
+                                                                    </span>
+                                                                    <span v-else>
+                                                                        Sin repetición
+                                                                    </span>
+                                                                </span>
+                                                            </v-col>
+                                                        </v-row>
+                                                    </v-col>
+                                                    <v-col v-if="todayReservation">
+                                                        <v-row>
+                                                            <v-col cols="2" class="d-flex align-center">
+                                                                <v-icon icon="mdi-hand-coin-outline" size="small" />
+                                                            </v-col>
+                                                            <v-col>
+                                                                <span class="text-h6">
+                                                                    {{ calculatePrice(todayReservation,
+                                                                        todayReservation.startTime,
+                                                                        todayReservation.endTime) }}€
+                                                                    <span v-if="todayReservation.isPaid">
+                                                                        (Pagada)
+                                                                    </span>
+                                                                    <span v-else>
+                                                                        (Sin pagar)
+                                                                    </span>
+                                                                </span>
+                                                            </v-col>
+                                                        </v-row>
+                                                    </v-col>
+                                                </v-row>
+                                            </v-col>
+                                        </v-card-text>
+                                        <v-card-actions v-if="!todayReservation.isPaid"
+                                            class="d-flex justify-end ga-3 mt-n3 mb-5 mr-5">
+                                            <TonalButton :color="show ? 'grey' : 'blue'" :loading="isLoading"
+                                                v-if="!todayReservation.isPaid" :text="show ? 'Cancelar pago' : 'Pagar'"
+                                                @click="show ? closePayPal() : startPayPalPayment()" />
+                                        </v-card-actions>
+                                        <v-expand-transition>
+                                            <div v-show="show" class="mt-n2 ma-7">
+                                                <div style="width: 100%;" id="paypal-button-container" />
+                                            </div>
+                                        </v-expand-transition>
+                                    </v-card>
                                 </v-col>
                             </v-row>
-                        </v-card>
-                    </v-col>
-                </v-row>
-                <v-row v-if="reservations.length > 5" class="mt-1">
-                    <v-col class="d-flex justify-center">
-                        <TonalButton text="Ver más…" @click="$router.push('/reservations')" />
-                    </v-col>
-                </v-row>
-            </v-col>
-        </v-row>
+                        </v-col>
+                    </v-row>
+                    <v-row v-else-if="!todayReservation && reservations.length > 1" class="mt-6 ml-n5">
+                        <v-col cols="auto" class="d-flex flex-column ga-4">
+                            <span class="text-h5">No tiene reservas para hoy</span>
+                            <TonalButton color="blue" text="Reservar" size="x-large"
+                                @click="this.$router.push('/createReservation')" />
+                        </v-col>
+                    </v-row>
+                </v-col>
+                <v-col v-if="reservations.length > 0" class="mt-2">
+                    <v-row>
+                        <span class="text-h5 ml-3">
+                            Tiene {{ reservations.length }}
+                            <span v-if="reservations.length == 1">reserva</span>
+                            <span v-else>reservas</span>
+                            esta semana:
+                        </span>
+                    </v-row>
+                    <v-row>
+                        <v-col class="d-flex flex-column ga-2">
+                            <v-card @click="openReservation(reservation)" style="width: 100%;"
+                                class="mx-auto pa-2 main-container mainBorder"
+                                :class="isExpired(reservation.endTime) ? 'expired' : ''" :ripple="false" elevation="0"
+                                v-for="reservation in otherReservations.slice(0, 5)" :key="reservation._id">
+                                <v-row>
+                                    <v-col>
+                                        <v-row>
+                                            <v-col>
+                                                <span class="text-h6">
+                                                    {{ reservation.spaceId?.name ||
+                                                        reservation.materialId?.name }}
+                                                </span>
+                                            </v-col>
+                                            <v-col cols="auto">
+                                                <span class="text-h6">
+                                                    <span class="grey" v-if="isToday(reservation.startTime)">(Hoy)
+                                                    </span>
+                                                    <span class="grey"
+                                                        v-else-if="isWithinNext24Hours(reservation.startTime)">(Mañana)
+                                                    </span>
+                                                    {{ parseToStringDate(new Date(reservation.startTime)) }}
+                                                </span>
+                                            </v-col>
+                                        </v-row>
+                                        <div v-if="isExpired(reservation.endTime)" class="expired-overlay">
+                                            <span class="expired-text text-h4">Expirada</span>
+                                        </div>
+                                        <v-row class="mt-n3">
+                                            <v-col>
+                                                <v-row class="d-flex align-center justify-space-between">
+                                                    <v-col cols="auto">
+                                                        <span class="grey">
+                                                            Precio:
+                                                        </span>
+                                                        <span>
+                                                            {{ calculatePrice(reservation, reservation.startTime,
+                                                                reservation.endTime) }}€
+                                                        </span>
+                                                        <span v-if="reservation.isPaid">
+                                                            (Pagada)
+                                                        </span>
+                                                        <span v-else>
+                                                            (Sin pagar)
+                                                        </span>
+                                                    </v-col>
+                                                    <v-col cols="auto">
+                                                        <span class="grey">Horas: </span>
+                                                        <span>
+                                                            {{
+                                                                getHoursAndMinsFromDate(reservation?.startTime)
+                                                            }}h
+                                                            -
+                                                            {{
+                                                                getHoursAndMinsFromDate(reservation?.endTime)
+                                                            }}h
+                                                        </span>
+                                                    </v-col>
+                                                </v-row>
+                                            </v-col>
+                                        </v-row>
+                                    </v-col>
+                                </v-row>
+                            </v-card>
+                        </v-col>
+                    </v-row>
+                    <v-row v-if="reservations.length > 5" class="mt-1">
+                        <v-col class="d-flex justify-center">
+                            <TonalButton text="Ver más…" @click="$router.push('/reservations')" />
+                        </v-col>
+                    </v-row>
+                </v-col>
+            </v-row>
+        </v-col>
     </v-container>
 </template>
 

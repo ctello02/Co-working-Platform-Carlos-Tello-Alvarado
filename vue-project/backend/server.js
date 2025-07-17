@@ -16,6 +16,7 @@ const spacesRoutes = require('./routes/spacesRoutes');
 const materialsRoutes = require('./routes/materialsRoutes');
 const reservationsRoutes = require('./routes/reservationsRoutes');
 const paypalRoutes = require('./routes/paypalRoutes');
+const statsRoutes = require('./routes/statsRoutes');
 
 const app = express();
 
@@ -34,6 +35,7 @@ app.use('/api/spaces', spacesRoutes);
 app.use('/api/materials', materialsRoutes);
 app.use('/api/reservations', reservationsRoutes);
 app.use('/api/paypal', paypalRoutes);
+app.use('/api/stats', statsRoutes);
 
 // Ruta principal
 app.get('/', (req, res) => {
