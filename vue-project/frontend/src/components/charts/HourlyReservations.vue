@@ -1,21 +1,35 @@
 <template>
-    <div>
+    <v-row>
         <!-- date‑picker estándar HTML -->
-        <div class="mb-4">
+        <!-- <div class="mb-4">
             <label for="chart-date">Selecciona día:</label>
             <input id="chart-date" type="date" v-model="selectedDate" @change="updateChart" />
-        </div>
+        </div> -->
+        <v-col cols="auto">
+            <v-menu :close-on-content-click="false" location="bottom" transition="slide-y-transition">
+                <template v-slot:activator="{ props }">
+                    <v-text-field density="compact" prepend-icon="mdi-calendar-month-outline" v-bind="props"
+                        variant="outlined" :readonly="true">
+                        {{ formattedDate }}
+                    </v-text-field>
+                </template>
+                <v-date-picker is-required v-model="selectedDate" />
+            </v-menu>
+        </v-col>
 
         <!-- Aquí se monta amCharts -->
         <div ref="chartRef" style="width:100%;height:400px;"></div>
-    </div>
+    </v-row>
 </template>
 
 <script setup>
 import { ref, onMounted, watch, toRef } from 'vue'
+import axios from 'axios'
 import * as am5 from "@amcharts/amcharts5"
 import * as am5xy from "@amcharts/amcharts5/xy"
 import Animated from "@amcharts/amcharts5/themes/Animated"
+
+import { useTime } from '@/composables/useTime'
 
 // recibimos por props todo el overview, que incluye hourlyReservations
 const props = defineProps({
@@ -28,8 +42,23 @@ const props = defineProps({
 const chartRef = ref(null)
 let root, chart, xAxis, yAxis, series
 
+const { parseToStringDate } = useTime()
+
 // modelo de la fecha a pintar
 const selectedDate = ref(new Date().toISOString().slice(0, 10))
+const formattedDate = ref(parseToStringDate(selectedDate.value))
+
+async function fetchOneShotCharts() {
+    try {
+        const res = await axios.get('/api/stats/oneShotCharts', {
+            params: { from: selectedDate.value, to: selectedDate.value }
+        })
+        return res.data;
+
+    } catch (err) {
+        console.error('Error cargando estadísticas:', err)
+    }
+}
 
 
 // toma props.overview.hourlyReservations, filtra por selectedDate

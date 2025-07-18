@@ -42,56 +42,51 @@
                 </div>
             </v-row>
 
-
-            <!-- Gráficas -->
             <v-row v-else-if="overviewData">
-                <v-col>
-                    <v-row class="mb-8">
-                        <v-col>
-                            <ReservationsByDayChart :overview="overviewData[0]" :from="from" :to="to"
-                                :resource-id="resourceId" />
-                        </v-col>
-                    </v-row>
-                    <v-row class="mb-8">
-                        <v-col>
-                            <TopResourcesChart :overview="overviewData[0]" />
-                        </v-col>
-                    </v-row>
-                    <v-row class="mb-8">
-                        <v-col>
-                            <PaymentRateChart :overview="overviewData[0]" :from="from" :to="to" />
-                        </v-col>
-                    </v-row>
-                    <v-row class="mb-8">
-                        <v-col>
-                            <PeriodicStatsChart :overview="overviewData[0]" :from="from" :to="to" />
-                        </v-col>
-                    </v-row>
-                    <v-row class="mb-8">
-                        <v-col>
-                            <HourlyReservations :overview="overviewData[1]" :from="from" :to="to" />
-                        </v-col>
-                    </v-row>
+                <v-col class="mt-5 pa-0">
+                    <!-- 1) Reservas/día -->
+                    <ChartCard title="Número de reservas">
+                        <ReservationsByDayChart :overview="overviewData[0]" :from="from" :to="to"
+                            :resource-id="resourceId" />
+                    </ChartCard>
+
+                    <!-- 2) Top recursos -->
+                    <ChartCard title="Top recursos más reservados">
+                        <TopResourcesChart :overview="overviewData[0]" :from="from" :to="to" />
+                    </ChartCard>
+
+                    <!-- 3) Tasa de pago -->
+                    <ChartCard title="Porcentaje de reservas pagadas">
+                        <PaymentRateChart :overview="overviewData[0]" :from="from" :to="to" />
+                    </ChartCard>
+
+                    <!-- 4) Estadísticas de periódicas -->
+                    <ChartCard title="Reservas periódicas por tipo">
+                        <PeriodicStatsChart :overview="overviewData[0]" :from="from" :to="to" />
+                    </ChartCard>
+
+                    <!-- 5) Reservas por hora -->
+                    <ChartCard title="Distribución horaria de reservas">
+                        <HourlyReservations :overview="overviewData[1]" />
+                    </ChartCard>
                 </v-col>
             </v-row>
-
-
         </v-col>
     </v-container>
 </template>
 
 <script setup>
-import { ref, onMounted, watchEffect, watch } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import axios from 'axios'
 
 import { useTime } from '@/composables/useTime'
 
+import ChartCard from '@/components/charts/ChartCardComponent.vue'
 import ReservationsByDayChart from '@/components/charts/ReservationsByDayChart.vue'
 import TopResourcesChart from '@/components/charts/TopResourcesChart.vue'
 import PaymentRateChart from '@/components/charts/PaymentRateChart.vue'
 import PeriodicStatsChart from '@/components/charts/PeriodicStatsChart.vue'
 import HourlyReservations from '@/components/charts/HourlyReservations.vue'
-import { start } from '@popperjs/core'
 
 const { parseToStringDate } = useTime()
 

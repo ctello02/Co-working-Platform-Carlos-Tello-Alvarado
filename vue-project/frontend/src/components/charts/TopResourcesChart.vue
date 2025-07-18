@@ -44,6 +44,31 @@ onMounted(() => {
 });
 
 function draw() {
+
+    if (filteredData.value.length === 0) {
+        if (root) {
+            root.dispose()
+            root = null
+        }
+        let resourceLabel = resourceId.value.value === "space" ? "espacios" : "materiales"
+        chartRef.value.innerHTML = `
+            <div style="
+                width: 100%;
+                height: 100%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: #666;
+                font-size: 1.2rem;
+            ">
+                No hay ${resourceLabel} disponibles para este periodo
+            </div>
+            `
+        return
+    }
+
+    chartRef.value.innerHTML = ``
+
     if (root) root.dispose()
     root = am5.Root.new(chartRef.value)
     root.setThemes([Animated.new(root)])
