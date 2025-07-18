@@ -2,6 +2,6 @@ const express = require('express');
 const router = express.Router();
 const stats = require('../controllers/statsController');
 
-router.get('/overview', stats.getOverview);
-
+router.get('/rangeCharts', stats.getRangeCharts);
+router.get('/oneShotCharts', stats.getOneShotCharts);
 module.exports = router;

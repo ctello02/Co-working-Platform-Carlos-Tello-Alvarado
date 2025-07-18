@@ -18,7 +18,7 @@ const chartRef = ref(null)
 let root, chart, series
 
 async function loadData() {
-    const { data } = await axios.get("/api/stats/overview", {
+    const { data } = await axios.get("/api/stats/rangeCharts", {
         params: { from: props.from, to: props.to }
     })
     // { total, completed, rate }

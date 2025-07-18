@@ -3,13 +3,10 @@ const Reservation = require('../models/reservation');
 const PeriodicReservation = require('../models/periodicReservation');
 const mongoose = require('mongoose');
 
-exports.getOverview = async (req, res) => {
+exports.getRangeCharts = async (req, res) => {
   try {
-    // Opcional: parámetros from/to en query (ISO strings)
-    const from = req.query.from
-      ? new Date(req.query.from)
-      : new Date(Date.now() - 7 * 24 * 60 * 60 * 1000); // 7 días atrás por defecto
-    const to = req.query.to ? new Date(req.query.to) : new Date(); // ahora
+    const from = new Date(req.query.from);
+    const to = new Date(req.query.to);
 
     //
     // 1) Reservas por día
@@ -35,11 +32,15 @@ exports.getOverview = async (req, res) => {
     //
     const topRecursos = await Reservation.aggregate([
       { $match: { startTime: { $gte: from, $lte: to } } },
+
+      // 1) Unifico el id del recurso
       {
         $project: {
           resourceId: { $ifNull: ['$spaceId', '$materialId'] },
         },
       },
+
+      // 2) Agrupo y cuento
       {
         $group: {
           _id: '$resourceId',
@@ -48,7 +49,8 @@ exports.getOverview = async (req, res) => {
       },
       { $sort: { count: -1 } },
       { $limit: 10 },
-      // lookup para obtener nombre
+
+      // 3) Traigo los datos de espacios y de materiales
       {
         $lookup: {
           from: 'spaces',
@@ -65,6 +67,8 @@ exports.getOverview = async (req, res) => {
           as: 'material',
         },
       },
+
+      // 4) Proyectamos count, name y el nuevo resourceType
       {
         $project: {
           count: 1,
@@ -74,6 +78,9 @@ exports.getOverview = async (req, res) => {
               { $arrayElemAt: ['$space.name', 0] },
               { $arrayElemAt: ['$material.name', 0] },
             ],
+          },
+          resourceType: {
+            $cond: [{ $gt: [{ $size: '$space' }, 0] }, 'space', 'material'],
           },
         },
       },
@@ -117,26 +124,6 @@ exports.getOverview = async (req, res) => {
     );
 
     //
-    // 5) Concurrencia hora vs día de la semana
-    //
-    const hourlyReservations = await Reservation.aggregate([
-      { $match: { startTime: { $gte: from, $lte: to } } },
-      {
-        $project: {
-          hour: { $hour: '$startTime' },
-          dow: { $dayOfWeek: '$startTime' }, // 1=Dom,2=Lun,…7=Sab
-        },
-      },
-      {
-        $group: {
-          _id: { hour: '$hour', dow: '$dow' },
-          count: { $sum: 1 },
-        },
-      },
-      { $sort: { '_id.hour': 1, '_id.dow': 1 } },
-    ]);
-
-    //
     // Devolver todo junto
     //
     res.json({
@@ -144,8 +131,52 @@ exports.getOverview = async (req, res) => {
       topRecursos,
       pagoStats,
       periodicStats,
-      hourlyReservations,
     });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Error obteniendo estadísticas' });
+  }
+};
+
+exports.getOneShotCharts = async (req, res) => {
+  try {
+    const from = new Date(req.query.from);
+    const to = new Date(req.query.to);
+
+    const hourlyReservations = await Reservation.aggregate([
+      { $match: { startTime: { $gte: from, $lte: to } } },
+
+      // 1) Saco date ("2025-07-16") y hour (0–23)
+      {
+        $project: {
+          date: {
+            $dateToString: {
+              format: '%Y-%m-%d',
+              date: '$startTime',
+            },
+          },
+          hour: { $hour: '$startTime' },
+        },
+      },
+
+      // 2) Agrupo por date + hour
+      {
+        $group: {
+          _id: { date: '$date', hour: '$hour' },
+          count: { $sum: 1 },
+        },
+      },
+
+      // 3) Ordeno
+      {
+        $sort: {
+          '_id.date': 1,
+          '_id.hour': 1,
+        },
+      },
+    ]);
+
+    return res.status(200).json(hourlyReservations);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Error obteniendo estadísticas' });

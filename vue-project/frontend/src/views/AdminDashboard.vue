@@ -4,47 +4,72 @@
             <v-row>
                 <span class="text-h4">Bienvenido Administrador,</span>
             </v-row>
-            <v-row class="mb-6" align="center">
-                <v-col cols="12" sm="4">
-                    <v-text-field v-model="from" label="Desde" type="date" :max="to" />
+            <!-- Filtros -->
+            <v-row align="center">
+                <v-col cols="auto" class="mt-2">
+                    <v-text-field v-model="from" label="Desde" type="date" :max="to" variant="outlined"
+                        density="compact" />
                 </v-col>
-                <v-col cols="12" sm="4">
-                    <v-text-field v-model="to" label="Hasta" type="date" :min="from" />
-                </v-col>
-                <!-- opcional: selector de recurso -->
-                <v-col cols="12" sm="4">
-                    <v-select v-model="resourceId" :items="resources" label="Recurso (opcional)" item-text="label"
-                        item-value="value" clearable />
+                <v-col cols="auto" class="mt-2">
+                    <v-text-field v-model="to" label="Hasta" type="date" :min="from" variant="outlined"
+                        density="compact" />
                 </v-col>
             </v-row>
-            <!-- Gráfica 1: Reservas por día -->
-            <v-row class="mb-8">
+
+            <v-row>
                 <v-col>
-                    <reservations-by-day-chart :from="from" :to="to" :resource-id="resourceId" />
+                    <v-menu :close-on-content-click="false" location="bottom" transition="slide-y-transition">
+                        <template v-slot:activator="{ props }">
+                            <v-text-field density="compact" prepend-icon="mdi-calendar-month-outline" v-bind="props"
+                                variant="outlined" class="ml-n3" :readonly="true">
+                                {{ formattedStartDate }}
+                            </v-text-field>
+                        </template>
+                        <v-date-picker class="ml-10" :min-date="new Date()" is-required v-model="startDate" />
+                    </v-menu>
+                </v-col>
+                <v-col>
+                    <v-menu :close-on-content-click="false" location="bottom" transition="slide-y-transition">
+                        <template v-slot:activator="{ props }">
+                            <v-text-field density="compact" prepend-icon="mdi-calendar-month-outline" v-bind="props"
+                                variant="outlined" class="ml-n3" :readonly="true">
+                                {{ formattedEndDate }}
+                            </v-text-field>
+                        </template>
+                        <v-date-picker class="ml-10" is-required v-model="endDate" />
+                    </v-menu>
                 </v-col>
             </v-row>
-            <!-- Gráfica 2: Top recursos -->
-            <v-row class="mb-8">
+
+            <!-- Gráficas -->
+            <v-row v-if="overviewData">
                 <v-col>
-                    <top-resources-chart :from="from" :to="to" />
-                </v-col>
-            </v-row>
-            <!-- Gráfica 3: Tasa de pago -->
-            <v-row class="mb-8">
-                <v-col>
-                    <payment-rate-chart :from="from" :to="to" />
-                </v-col>
-            </v-row>
-            <!-- Gráfica 4: Reservas periódicas -->
-            <v-row class="mb-8">
-                <v-col>
-                    <periodic-stats-chart :from="from" :to="to" />
-                </v-col>
-            </v-row>
-            <!-- Gráfica 5: Concurrencia (heatmap) -->
-            <v-row class="mb-8">
-                <v-col>
-                    <concurrency-heatmap-chart :from="from" :to="to" />
+                    <v-row class="mb-8">
+                        <v-col>
+                            <ReservationsByDayChart :overview="overviewData[0]" :from="from" :to="to"
+                                :resource-id="resourceId" />
+                        </v-col>
+                    </v-row>
+                    <v-row class="mb-8">
+                        <v-col>
+                            <TopResourcesChart :overview="overviewData[0]" :from="from" :to="to" />
+                        </v-col>
+                    </v-row>
+                    <v-row class="mb-8">
+                        <v-col>
+                            <PaymentRateChart :overview="overviewData[0]" :from="from" :to="to" />
+                        </v-col>
+                    </v-row>
+                    <v-row class="mb-8">
+                        <v-col>
+                            <PeriodicStatsChart :overview="overviewData[0]" :from="from" :to="to" />
+                        </v-col>
+                    </v-row>
+                    <v-row class="mb-8">
+                        <v-col>
+                            <HourlyReservations :overview="overviewData[1]" :from="from" :to="to" />
+                        </v-col>
+                    </v-row>
                 </v-col>
             </v-row>
         </v-col>
@@ -52,26 +77,33 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
+import axios from 'axios'
+
 import { useRouter } from 'vue-router'
 import { spaceService } from '@/services/spaceService'
 import { materialService } from '@/services/materialService'
 
-// Importa tus componentes de gráfico
+import { useTime } from '@/composables/useTime'
+
 import ReservationsByDayChart from '@/components/charts/ReservationsByDayChart.vue'
 import TopResourcesChart from '@/components/charts/TopResourcesChart.vue'
 import PaymentRateChart from '@/components/charts/PaymentRateChart.vue'
 import PeriodicStatsChart from '@/components/charts/PeriodicStatsChart.vue'
-import ConcurrencyHeatmapChart from '@/components/charts/ConcurrencyHeatmapChart.vue'
+import HourlyReservations from '@/components/charts/HourlyReservations.vue'
+import { start } from '@popperjs/core'
 
-import { reservationService } from '@/services/reservationService'
-
-const router = useRouter()
+const { parseToStringDate } = useTime()
 
 // Filtros
+const startDate = ref(new Date());
+const formattedStartDate = ref(parseToStringDate(startDate.value));
+const endtDate = ref(new Date(startDate.value.getTime() + 30 * 24 * 60 * 60 * 1000));
+const formattedEndDate = ref(parseToStringDate(endtDate.value));
 const from = ref('')
 const to = ref('')
 const resourceId = ref(null)
+const overviewData = ref(null)
 
 // Opcional: lista de espacios/materiales para filtrar
 const spaces = ref([])
@@ -86,57 +118,43 @@ onMounted(async () => {
     to.value = month.toISOString().substr(0, 10)
 
     // Si quieres cargar un dropdown de recursos:
-    await Promise.all([
-        getSpaces(),    // implementa este endpoint
-        getMaterials()  // idem
+    const res = await Promise.all([
+        fetchRangeCharts(),
+        fetchOneShotCharts(),
     ])
 
-    resources.value = spaces.value.map(space => {
-        console.log(space);
+    console.log(res)
 
-        return {
-            label: space.name,
-            value: space._id
-        }
-    })
-    resources.value.push(...materials.value.map(material => {
-        console.log(material);
-
-        return {
-            label: material.name,
-            value: material._id
-        }
-    }))
-
-    console.log(resources.value);
-
+    overviewData.value = res
 })
 
-async function getSpaces() {
+async function fetchRangeCharts() {
     try {
-        const res = await spaceService.getSpaces()
-        spaces.value = res.data.spaces
+        const res = await axios.get('/api/stats/rangeCharts', {
+            params: { from: from.value, to: to.value, resourceId: resourceId.value }
+        })
+        return res.data
+
     } catch (err) {
-        console.error(err)
+        console.error('Error cargando estadísticas:', err)
     }
 }
 
-async function getMaterials() {
+async function fetchOneShotCharts() {
     try {
-        const res = await materialService.getMaterials()
-        materials.value = res.data.materials
+        const res = await axios.get('/api/stats/oneShotCharts', {
+            params: { from: from.value, to: to.value }
+        })
+        return res.data;
+
     } catch (err) {
-        console.error(err)
+        console.error('Error cargando estadísticas:', err)
     }
 }
+
+watch([from, to, resourceId], () => {
+    fetchRangeCharts()
+    fetchOneShotCharts()
+})
+
 </script>
-
-<style scoped>
-.mb-6 {
-    margin-bottom: 24px;
-}
-
-.mb-8 {
-    margin-bottom: 32px;
-}
-</style>

@@ -1,4 +1,8 @@
 <template>
+    <v-col cols="12" sm="4">
+        <v-select v-model="resourceId" :items="options" label="Recurso" item-title="label" item-value="value"
+            variant="outlined" density="compact" clearable />
+    </v-col>
     <div ref="chartRef" style="width:100%;height:400px;"></div>
 </template>
 
@@ -14,18 +18,36 @@ const props = defineProps({
     to: String
 })
 
+const options = [
+    {
+        label: "Espacios",
+        value: "space"
+    },
+    {
+        label: "Materiales",
+        value: "material"
+    }
+]
+const resourceId = ref(null)
+const data = ref([]);
+
 const chartRef = ref(null)
 let root, chart, xAxis, yAxis, series
 
 async function loadData() {
-    const { data } = await axios.get("/api/stats/overview", {
+    const res = await axios.get("/api/stats/rangeCharts", {
         params: { from: props.from, to: props.to }
     })
-    // data = [{ _id, name, count }, …]
-    return data.topRecursos
+
+    data.value = res.data.topRecursos
 }
 
-function draw(data) {
+function draw() {
+    if (resourceId.value) data.value = data.value.filter(x => x.resourceType === resourceId.value)
+
+    console.log(resourceId.value)
+    console.log(data.value)
+
     if (root) root.dispose()
     root = am5.Root.new(chartRef.value)
     root.setThemes([Animated.new(root)])
@@ -55,16 +77,17 @@ function draw(data) {
         })
     )
 
-    yAxis.data.setAll(data)
-    series.data.setAll(data)
+    yAxis.data.setAll(data.value)
+    series.data.setAll(data.value)
 }
 
 
 async function updateChart() {
-    const d = await loadData()
-    draw(d)
+    await loadData()
+    draw()
 }
 
 onMounted(updateChart)
 watch([() => props.from, () => props.to], updateChart)
+watch(resourceId, updateChart)
 </script>

@@ -1,6 +1,6 @@
 <template>
     <div>
-        <!-- date‑picker estándar HTML, podrías sustituirlo por un <v-date-picker> si usas Vuetify -->
+        <!-- date‑picker estándar HTML -->
         <div class="mb-4">
             <label for="chart-date">Selecciona día:</label>
             <input id="chart-date" type="date" v-model="selectedDate" @change="updateChart" />
@@ -12,52 +12,59 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue'
-import axios from 'axios'
+import { ref, onMounted, watch, toRef } from 'vue'
 import * as am5 from "@amcharts/amcharts5"
 import * as am5xy from "@amcharts/amcharts5/xy"
 import Animated from "@amcharts/amcharts5/themes/Animated"
 
+// recibimos por props todo el overview, que incluye hourlyReservations
+const props = defineProps({
+    overview: {
+        type: Object,
+        required: true
+    }
+})
+
 const chartRef = ref(null)
 let root, chart, xAxis, yAxis, series
 
-// fecha seleccionada en formato YYYY-MM-DD
+// modelo de la fecha a pintar
 const selectedDate = ref(new Date().toISOString().slice(0, 10))
 
-// construye ISO inicio/fin de la jornada
-function isoRangeForDay(day) {
-    const from = new Date(`${day}T00:00:00.000Z`)
-    const to = new Date(`${day}T23:59:59.999Z`)
-    return { from: from.toISOString(), to: to.toISOString() }
-}
 
-async function loadData() {
-    const { from, to } = isoRangeForDay(selectedDate.value)
-    const { data } = await axios.get("/api/stats/overview", {
-        params: { from, to }
-    })
-    // data = [ { _id:{hour,dow}, count }, … ]
+// toma props.overview.hourlyReservations, filtra por selectedDate
+// y pivot 0–23h
+function loadDataFromOverview() {
+    // overview es array de
+    // { _id: { date:'YYYY-MM-DD', hour:0–23 }, count }
+    const raw = props.overview || []
 
-    // pivot 0–23 horas
+    // inicializamos pivot
     const pivot = []
     for (let h = 0; h < 24; h++) {
         pivot.push({
-            hour: String(h).padStart(2, "0") + ":00",
+            hour: String(h).padStart(2, '0') + ":00",
             count: 0
         })
     }
 
-    data.hourlyReservations.forEach(({ _id: { hour }, count }) => {
-        if (pivot[hour]) pivot[hour].count = count
+    // rellenamos sólo las de la fecha seleccionada
+    raw.forEach(item => {
+        const { date, hour } = item._id
+        if (date === selectedDate.value && pivot[hour]) {
+            pivot[hour].count = item.count
+        }
     })
 
     return pivot
 }
 
 function draw(data) {
-    // limpiar cualquier root anterior
-    if (root) root.dispose()
+    if (!chartRef.value) return
 
+    if (root) {
+        root.dispose()
+    }
     root = am5.Root.new(chartRef.value)
     root.setThemes([Animated.new(root)])
 
@@ -70,7 +77,7 @@ function draw(data) {
         })
     )
 
-    // eje X: horas como categorías
+    // eje X: horas
     xAxis = chart.xAxes.push(
         am5xy.CategoryAxis.new(root, {
             categoryField: "hour",
@@ -87,7 +94,6 @@ function draw(data) {
 
     xAxis.data.setAll(data)
 
-    // serie de línea única
     series = chart.series.push(
         am5xy.LineSeries.new(root, {
             name: selectedDate.value,
@@ -100,10 +106,9 @@ function draw(data) {
             })
         })
     )
-
     series.data.setAll(data)
 
-    // leyenda opcional
+    // leyenda centrada
     const legend = chart.children.push(
         am5.Legend.new(root, {
             centerX: am5.percent(50),
@@ -113,14 +118,21 @@ function draw(data) {
     legend.data.setAll([series])
 }
 
-async function updateChart() {
-    const d = await loadData()
-    draw(d)
+function updateChart() {
+    const data = loadDataFromOverview()
+    draw(data)
 }
 
-onMounted(updateChart)
-// si algun día cambias selectedDate por código
-watch(selectedDate, updateChart)
+// inicializo al montar
+onMounted(() => {
+    updateChart()
+})
+
+// si cambian props.overview o selectedDate, redibujo
+watch(
+    [() => props.overview, selectedDate],
+    updateChart
+)
 </script>
 
 <style scoped>

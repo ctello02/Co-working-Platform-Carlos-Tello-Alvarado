@@ -21,7 +21,7 @@ let root, chart, xAxis, yAxis, series
 async function loadData() {
     const params = { from: props.from, to: props.to }
     if (props.resourceId) params.resourceId = props.resourceId
-    const { data } = await axios.get("/api/stats/overview", { params })
+    const { data } = await axios.get("/api/stats/rangeCharts", { params })
     return data.reservationsPorDia // { labels: [...], data: [...] }
 }
 
