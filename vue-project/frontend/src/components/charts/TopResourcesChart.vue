@@ -3,20 +3,28 @@
         <v-select v-model="resourceId" :items="options" label="Recurso" item-title="label" item-value="value"
             variant="outlined" density="compact" clearable />
     </v-col>
-    <div ref="chartRef" style="width:100%;height:400px;"></div>
+    <div ref="chartRef" style="width:100%;height:400px;" />
 </template>
 
 <script setup>
 import { ref, onMounted, watch } from 'vue'
-import axios from 'axios'
 import * as am5 from "@amcharts/amcharts5"
 import * as am5xy from "@amcharts/amcharts5/xy"
 import Animated from "@amcharts/amcharts5/themes/Animated"
 
 const props = defineProps({
-    from: String,
-    to: String
+    overview: {
+        type: Object,
+        required: true
+    }
 })
+
+const resourceId = ref(null)
+const data = ref([]);
+const filteredData = ref([]);
+
+const chartRef = ref(null)
+let root, chart, xAxis, yAxis, series
 
 const options = [
     {
@@ -28,26 +36,14 @@ const options = [
         value: "material"
     }
 ]
-const resourceId = ref(null)
-const data = ref([]);
 
-const chartRef = ref(null)
-let root, chart, xAxis, yAxis, series
-
-async function loadData() {
-    const res = await axios.get("/api/stats/rangeCharts", {
-        params: { from: props.from, to: props.to }
-    })
-
-    data.value = res.data.topRecursos
-}
+onMounted(() => {
+    data.value = props.overview.topRecursos
+    filteredData.value = data.value
+    draw()
+});
 
 function draw() {
-    if (resourceId.value) data.value = data.value.filter(x => x.resourceType === resourceId.value)
-
-    console.log(resourceId.value)
-    console.log(data.value)
-
     if (root) root.dispose()
     root = am5.Root.new(chartRef.value)
     root.setThemes([Animated.new(root)])
@@ -77,17 +73,14 @@ function draw() {
         })
     )
 
-    yAxis.data.setAll(data.value)
-    series.data.setAll(data.value)
+    yAxis.data.setAll(filteredData.value)
+    series.data.setAll(filteredData.value)
 }
 
 
-async function updateChart() {
-    await loadData()
+watch(resourceId, (newVal) => {
+    if (newVal != null) filteredData.value = data.value.filter(x => x.resourceType === resourceId.value)
+    else filteredData.value = data.value
     draw()
-}
-
-onMounted(updateChart)
-watch([() => props.from, () => props.to], updateChart)
-watch(resourceId, updateChart)
+})
 </script>

@@ -5,44 +5,46 @@
                 <span class="text-h4">Bienvenido Administrador,</span>
             </v-row>
             <!-- Filtros -->
-            <v-row align="center">
-                <v-col cols="auto" class="mt-2">
-                    <v-text-field v-model="from" label="Desde" type="date" :max="to" variant="outlined"
-                        density="compact" />
-                </v-col>
-                <v-col cols="auto" class="mt-2">
-                    <v-text-field v-model="to" label="Hasta" type="date" :min="from" variant="outlined"
-                        density="compact" />
-                </v-col>
+            <v-row>
+                <v-card class="pa-2 mt-4">
+                    <v-card-text class="d-flex justify-space-between mb-n5 flex-wrap">
+                        <v-col cols="auto">
+                            <v-menu :close-on-content-click="false" location="bottom" transition="slide-y-transition">
+                                <template v-slot:activator="{ props }">
+                                    <v-text-field density="compact" prepend-icon="mdi-calendar-month-outline"
+                                        v-bind="props" variant="outlined" :readonly="true">
+                                        {{ formattedStartDate }}
+                                    </v-text-field>
+                                </template>
+                                <v-date-picker is-required v-model="startDate" />
+                            </v-menu>
+                        </v-col>
+                        <v-col cols="auto">
+                            <span class="text-h6">→</span>
+                        </v-col>
+                        <v-col cols="auto">
+                            <v-menu :close-on-content-click="false" location="bottom" transition="slide-y-transition">
+                                <template v-slot:activator="{ props }">
+                                    <v-text-field density="compact" v-bind="props" variant="outlined" :readonly="true">
+                                        {{ formattedEndDate }}
+                                    </v-text-field>
+                                </template>
+                                <v-date-picker is-required v-model="endDate" />
+                            </v-menu>
+                        </v-col>
+                    </v-card-text>
+                </v-card>
             </v-row>
 
-            <v-row>
-                <v-col>
-                    <v-menu :close-on-content-click="false" location="bottom" transition="slide-y-transition">
-                        <template v-slot:activator="{ props }">
-                            <v-text-field density="compact" prepend-icon="mdi-calendar-month-outline" v-bind="props"
-                                variant="outlined" class="ml-n3" :readonly="true">
-                                {{ formattedStartDate }}
-                            </v-text-field>
-                        </template>
-                        <v-date-picker class="ml-10" :min-date="new Date()" is-required v-model="startDate" />
-                    </v-menu>
-                </v-col>
-                <v-col>
-                    <v-menu :close-on-content-click="false" location="bottom" transition="slide-y-transition">
-                        <template v-slot:activator="{ props }">
-                            <v-text-field density="compact" prepend-icon="mdi-calendar-month-outline" v-bind="props"
-                                variant="outlined" class="ml-n3" :readonly="true">
-                                {{ formattedEndDate }}
-                            </v-text-field>
-                        </template>
-                        <v-date-picker class="ml-10" is-required v-model="endDate" />
-                    </v-menu>
-                </v-col>
+            <v-row v-if="isLoading">
+                <div class="loader-overlay">
+                    <v-progress-circular indeterminate color="primary" size="50"></v-progress-circular>
+                </div>
             </v-row>
+
 
             <!-- Gráficas -->
-            <v-row v-if="overviewData">
+            <v-row v-else-if="overviewData">
                 <v-col>
                     <v-row class="mb-8">
                         <v-col>
@@ -52,7 +54,7 @@
                     </v-row>
                     <v-row class="mb-8">
                         <v-col>
-                            <TopResourcesChart :overview="overviewData[0]" :from="from" :to="to" />
+                            <TopResourcesChart :overview="overviewData[0]" />
                         </v-col>
                     </v-row>
                     <v-row class="mb-8">
@@ -72,17 +74,15 @@
                     </v-row>
                 </v-col>
             </v-row>
+
+
         </v-col>
     </v-container>
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, watchEffect, watch } from 'vue'
 import axios from 'axios'
-
-import { useRouter } from 'vue-router'
-import { spaceService } from '@/services/spaceService'
-import { materialService } from '@/services/materialService'
 
 import { useTime } from '@/composables/useTime'
 
@@ -98,40 +98,42 @@ const { parseToStringDate } = useTime()
 // Filtros
 const startDate = ref(new Date());
 const formattedStartDate = ref(parseToStringDate(startDate.value));
-const endtDate = ref(new Date(startDate.value.getTime() + 30 * 24 * 60 * 60 * 1000));
-const formattedEndDate = ref(parseToStringDate(endtDate.value));
+const endDate = ref(new Date(startDate.value.getTime() + 30 * 24 * 60 * 60 * 1000));
+const formattedEndDate = ref(parseToStringDate(endDate.value));
+
 const from = ref('')
 const to = ref('')
+
+const isLoading = ref(false)
 const resourceId = ref(null)
 const overviewData = ref(null)
 
-// Opcional: lista de espacios/materiales para filtrar
-const spaces = ref([])
-const materials = ref([])
-const resources = ref([])
-
 onMounted(async () => {
-    // Inicializa 'from' a 7 días atrás, 'to' a hoy
-    const today = new Date()
-    const month = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000)
-    from.value = today.toISOString().substr(0, 10)
-    to.value = month.toISOString().substr(0, 10)
+    from.value = startDate.value.toISOString().substr(0, 10)
+    to.value = endDate.value.toISOString().substr(0, 10)
 
-    // Si quieres cargar un dropdown de recursos:
-    const res = await Promise.all([
-        fetchRangeCharts(),
-        fetchOneShotCharts(),
-    ])
-
-    console.log(res)
-
-    overviewData.value = res
+    await fetchCharts();
 })
+
+async function fetchCharts() {
+    isLoading.value = true
+    try {
+        const res = await Promise.all([
+            fetchRangeCharts(),
+            fetchOneShotCharts(),
+        ])
+        overviewData.value = res
+    } catch (error) {
+        console.error('Error cargando estadísticas:', error)
+    } finally {
+        isLoading.value = false
+    }
+}
 
 async function fetchRangeCharts() {
     try {
         const res = await axios.get('/api/stats/rangeCharts', {
-            params: { from: from.value, to: to.value, resourceId: resourceId.value }
+            params: { from: from.value, to: to.value }
         })
         return res.data
 
@@ -152,9 +154,32 @@ async function fetchOneShotCharts() {
     }
 }
 
-watch([from, to, resourceId], () => {
-    fetchRangeCharts()
-    fetchOneShotCharts()
+watch(startDate, async (newVal) => {
+    console.log(newVal)
+    startDate.value = newVal
+    formattedStartDate.value = parseToStringDate(startDate.value)
+    from.value = startDate.value.toISOString().substr(0, 10)
+    await fetchCharts()
 })
 
+watch(endDate, async (newVal) => {
+    console.log(newVal)
+    endDate.value = newVal
+    formattedEndDate.value = parseToStringDate(endDate.value)
+    to.value = endDate.value.toISOString().substr(0, 10)
+    await fetchCharts()
+})
 </script>
+<style scoped>
+.loader-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+}
+</style>

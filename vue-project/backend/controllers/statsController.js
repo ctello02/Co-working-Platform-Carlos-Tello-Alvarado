@@ -5,8 +5,8 @@ const mongoose = require('mongoose');
 
 exports.getRangeCharts = async (req, res) => {
   try {
-    const from = new Date(req.query.from);
-    const to = new Date(req.query.to);
+    const from = req.query.from ? new Date(req.query.from) : new Date();
+    const to = req.query.to ? new Date(req.query.to) : new Date();
 
     //
     // 1) Reservas por día
