@@ -50,12 +50,12 @@ watch(resourceId, (newVal) => {
 })
 
 function draw() {
+    if (root) root.dispose()
     if (filteredData.value.length === 0) {
         if (root) {
-            root.dispose()
             root = null
         }
-        let resourceLabel = resourceId.value.value === "space" ? "espacios" : "materiales"
+        let resourceLabel = resourceId?.value?.value === "space" ? "espacios" : resourceId?.value?.value === "material" ? "materiales" : "recursos"
         chartRef.value.innerHTML = `
             <div style="
                 width: 100%;
@@ -66,7 +66,7 @@ function draw() {
                 color: #666;
                 font-size: 1.2rem;
             ">
-                No hay ${resourceLabel} disponibles para este periodo
+                No hay datos de ${resourceLabel} durante este periodo
             </div>
             `
         return
@@ -74,7 +74,6 @@ function draw() {
 
     chartRef.value.innerHTML = ``
 
-    if (root) root.dispose()
     root = am5.Root.new(chartRef.value)
     root.setThemes([Animated.new(root)])
     chart = root.container.children.push(

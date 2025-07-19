@@ -95,6 +95,29 @@ function localDateFromUTCString(utcString) {
 function draw() {
     const reservations = data.value
     if (root) root.dispose()
+    if (reservations.length === 0) {
+        if (root) {
+            root = null
+        }
+        chartRef.value.innerHTML = `
+            <div style="
+                width: 100%;
+                height: 100%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: #666;
+                font-size: 1.2rem;
+                margin-top: -1rem;
+            ">
+                No hay datos de reservas para este día
+            </div>
+            `
+        return
+    }
+
+    chartRef.value.innerHTML = ``
+
     root = am5.Root.new(chartRef.value)
     root.setThemes([Animated.new(root)])
 

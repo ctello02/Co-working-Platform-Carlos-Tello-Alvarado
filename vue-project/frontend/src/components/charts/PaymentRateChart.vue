@@ -40,6 +40,28 @@ async function parseData() {
 
 function draw() {
     if (root) root.dispose()
+    if (data.value[0].value === 0 && data.value[1].value === 0) {
+        if (root) {
+            root = null
+        }
+        chartRef.value.innerHTML = `
+            <div style="
+                width: 100%;
+                height: 100%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: #666;
+                font-size: 1.2rem;
+                margin-top: -1rem;
+            ">
+                No hay datos de reservas durante este periodo
+            </div>
+            `
+        return
+    }
+
+    chartRef.value.innerHTML = ``
     root = am5.Root.new(chartRef.value)
     root.setThemes([Animated.new(root)])
 
