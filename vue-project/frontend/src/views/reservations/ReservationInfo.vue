@@ -99,11 +99,14 @@
                                     <v-icon icon="mdi-hand-coin-outline" size="small" />
                                 </v-col>
                                 <v-col>
-                                    <span v-if="reservation.isPaid" class="text-h6">
-                                        Pagada ({{ calculatePrice }}€)
-                                    </span>
-                                    <span v-else class="text-h6">
-                                        Sin pagar ({{ calculatePrice }}€)
+                                    <span class="text-h6">
+                                        {{ calculatePrice }}€
+                                        <span v-if="reservation.isPaid">
+                                            (Pagada)
+                                        </span>
+                                        <span v-else>
+                                            (Sin pagar)
+                                        </span>
                                     </span>
                                 </v-col>
                             </v-row>
@@ -182,6 +185,7 @@ const show = ref(false);
 
 // Extraemos funciones del composable useTime
 const {
+    parseRepetition,
     getHoursAndMinsFromDate,
     parseToStringDate,
     calcPastEvents,
@@ -373,19 +377,6 @@ function markAsPaid() {
             console.error('Error al marcar reserva como pagada:', error);
         });
 }
-
-// Traduce el valor de repetición a un string legible
-const parseRepetition = (repetition) => {
-    if (repetition === 'no_repeat') {
-        return 'Sin repetición';
-    } else if (repetition === 'daily') {
-        return 'Se repite todos los días';
-    } else if (repetition === 'weekly') {
-        return 'Se repite todas las semanas este día';
-    } else if (repetition === 'monthly') {
-        return 'Se repite todas los meses este día';
-    }
-};
 
 function closePayPal() {
     show.value = false

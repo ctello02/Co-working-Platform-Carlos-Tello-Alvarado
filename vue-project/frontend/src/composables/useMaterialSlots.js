@@ -15,7 +15,7 @@ export function useMaterialSlots(params) {
         capacity: Infinity,
       };
     }),
-    // Los materiales no tienen sillas:
+    // Los materiales no tienen asientos:
     calcUsedUnits: () => 0,
     foreignKey: 'materialId',
   });

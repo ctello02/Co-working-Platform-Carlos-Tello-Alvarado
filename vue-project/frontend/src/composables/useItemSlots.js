@@ -4,12 +4,12 @@ import { useTime } from '@/composables/useTime';
 import { useUserStore } from '@/store/userStore';
 
 /**
- * @param {Ref<Object>}   itemConfig           // { opening, closing, duration, capacity, id }
- * @param {Ref<Date>}     reservationDate
- * @param {Ref<Array>}    reservationsByDate   // array de reservas puntuales
- * @param {Ref<Array>}    periodicReservations // array de reservas periódicas
- * @param {Object|null}   initialReservation   // para edición
- * @param {Function}      calcUsedUnits        // (r, t) ⇒ nº unidades usadas por "r" en minuto t
+ * @param itemConfig           // { opening, closing, duration, capacity, id }
+ * @param reservationDate      // fecha de la reserva
+ * @param reservationsByDate   // array de reservas puntuales
+ * @param periodicReservations // array de reservas periódicas
+ * @param initialReservation   // para edición
+ * @param calcUsedUnits        // (r, t) ⇒ nº unidades usadas por "r" en minuto t
  */
 export function useItemSlots({
   itemConfig,
@@ -17,8 +17,8 @@ export function useItemSlots({
   reservationsByDate,
   periodicReservations,
   initialReservation = null,
-  calcUsedUnits, // ej. (r,t)=> r.seatsReserved  o  ()=>0 para materiales
-  foreignKey, // parámetro: 'spaceId' o 'materialId'
+  calcUsedUnits, // ej: (r,t)=> r.seatsReserved  o  () => 0 para materiales
+  foreignKey, //  'spaceId' o 'materialId'
 }) {
   const {
     makeMinutesFromIsoLocal,
@@ -34,7 +34,7 @@ export function useItemSlots({
     : ref(initialReservation);
   let ignoreId = initRef.value?._id;
 
-  // reactive para los selects de inicio/fin
+  // reactive para los selects de inicio y fin
   const reservationTimes = reactive({ start: null, end: null });
 
   watch(
@@ -53,18 +53,16 @@ export function useItemSlots({
     { immediate: true }
   );
 
-  // 1) Todas las reservas (reales + periódicas) normalizadas
+  // Todas las reservas (reales y periódicas) normalizadas
   const allReservations = computed(() => {
     if (!itemConfig.value || !itemConfig.value.id) {
-      return []; // no generamos nada
+      return [];
     }
 
     const arr = [];
     const itemId = itemConfig.value.id;
     const today0 = new Date(reservationDate.value);
     today0.setHours(0, 0, 0, 0);
-
-    //console.log(reservationsByDate.value);
 
     // puntuales
     reservationsByDate.value.forEach((r) => {
@@ -80,7 +78,6 @@ export function useItemSlots({
       if (!occursOn(pr, today0)) return;
       const s = makeMinutesFromIsoLocal(pr.startTime);
       const e = makeMinutesFromIsoLocal(pr.endTime);
-      // evita duplicados user+slot
       if (
         arr.some((x) => x.userId === pr.userId && x.start === s && x.end === e)
       )
@@ -88,15 +85,13 @@ export function useItemSlots({
       arr.push({ ...pr, start: s, end: e });
     });
 
-    //console.log('Reservas:', arr);
-
     return arr;
   });
 
-  // 2) Genera todos los instantes de 15’ con unitsLeft y flag de propio user
+  // Genera todos los instantes de 15 minutos con unitsLeft y flag del propio user
   const allSlots = computed(() => {
     if (!itemConfig.value || !itemConfig.value.id) {
-      return []; // no generamos nada
+      return [];
     }
 
     const { opening, closing } = itemConfig.value;
@@ -136,7 +131,7 @@ export function useItemSlots({
     return list;
   });
 
-  // 3) Slots de inicio disponibles
+  // Slots de inicio disponibles
   const availableStartTimes = computed(() => {
     if (!allSlots.value.length) return [];
 
@@ -150,7 +145,7 @@ export function useItemSlots({
       .filter((s, idx) => {
         if (s.minutes + duration > closing) return false;
         if (isToday(reservationDate.value) && s.minutes < nowM) return false;
-        // chequear cada sub-slot del bloque
+        // comprobar cada sub-slot del bloque
         for (let k = 0; k < duration / interval; k++) {
           const sub = slots[idx + k];
           if (
@@ -165,7 +160,7 @@ export function useItemSlots({
       .map((s) => s.time);
   });
 
-  // 4) Slots de fin en múltiplos de duration
+  // Slots de los tiempos de fin en múltiplos de duration
   const availableEndTimes = computed(() => {
     if (!reservationTimes.start) return [];
     const startMin = makeMinutes(reservationTimes.start);
@@ -188,10 +183,10 @@ export function useItemSlots({
     return ends;
   });
 
-  // 5) Máximo unidades (mínimo unitsLeft en [start,end))
+  // Máximo de asientos (mínimo unitsLeft en [start,end))
   const maxAllowed = computed(() => {
     if (!itemConfig.value || !itemConfig.value.id) {
-      return []; // no generamos nada
+      return [];
     }
 
     if (!reservationTimes.start || !reservationTimes.end) {
@@ -203,17 +198,17 @@ export function useItemSlots({
       (s) => s.minutes >= start && s.minutes < end
     );
     if (!slice.length) return itemConfig.value.capacity;
-    if (slice.some((s) => s.reservedByMe)) return 0;
+    if (slice.some((s) => s.reservedByMe)) return 0; // Flag para indicar que hay reservas del usuario
     return slice.reduce(
       (mn, s) => Math.min(mn, s.unitsLeft),
       itemConfig.value.capacity
     );
   });
 
-  // actualizar start/end
+  // actualizar start/end en los selectores de inicio y fin
   function updateReservation(key, val) {
     if (!itemConfig.value || !itemConfig.value.id) {
-      return []; // no generamos nada
+      return [];
     }
 
     if (key === 'start') {

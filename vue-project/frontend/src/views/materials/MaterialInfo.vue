@@ -58,7 +58,7 @@ function bulkDeleteMaterial() {
 
 
 function routerBack() {
-    router.push('/materials');
+    router.go(-1);
 }
 
 function openEditMaterialInfo() {

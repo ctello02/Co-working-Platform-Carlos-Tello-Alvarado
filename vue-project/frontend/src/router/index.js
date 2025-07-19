@@ -8,6 +8,12 @@ const routes = [
     component: () => import('../views/Home.vue'),
   },
   {
+    path: '/admin',
+    name: 'adminDashboard',
+    component: () => import('../views/AdminDashboard.vue'),
+    meta: { adminOnly: true },
+  },
+  {
     path: '/login',
     name: 'login',
     component: () => import('../views/auth/Login.vue'),
@@ -163,6 +169,14 @@ router.beforeEach(async (to, from, next) => {
 
   const token = userStore.getToken;
   const isAdmin = userStore.getIsAdmin;
+
+  if (to.name === 'home' && isAdmin) {
+    return next({ name: 'adminDashboard' });
+  }
+
+  if (to.name === 'adminDashboard' && !isAdmin) {
+    return next({ name: 'home' });
+  }
 
   if (to.matched.some((record) => record.meta.notLoggedUsers) && token) {
     return next({ name: 'home' });
