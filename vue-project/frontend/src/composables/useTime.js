@@ -1,8 +1,7 @@
-// src/composables/useTime.js
-
 export function useTime() {
-  /** Genera una variable con todas las duraciones
-   * posibles que se permite buscar en un espacio
+  /**
+   * Genera una variable con todas las duraciones
+   * posibles que se permiten buscar en un espacio
    */
   const timeFrames = [
     { label: '15 mins', value: 15 },
@@ -15,17 +14,15 @@ export function useTime() {
   /*
    * Parsea una repetición de un evento a un string legible
    */
-  const parseRepetition = (repetition) => {
-    if (repetition === 'no_repeat') {
-      return 'Sin repetición';
-    } else if (repetition === 'daily') {
-      return 'Se repite todos los días';
-    } else if (repetition === 'weekly') {
-      return 'Se repite todas las semanas este día';
-    } else if (repetition === 'monthly') {
-      return 'Se repite todas los meses este día';
-    }
+  const repetitionMap = {
+    no_repeat: 'Sin repetición',
+    daily: 'Se repite todos los días',
+    weekly: 'Se repite todas las semanas este día',
+    monthly: 'Se repite todos los meses este día',
   };
+  function parseRepetition(repetition) {
+    return repetitionMap[repetition] || 'Repetición desconocida';
+  }
 
   /**
    * Función para normalizar y verificar si ocurre un evento en una fecha
@@ -33,14 +30,14 @@ export function useTime() {
   function occursOn(pr, date) {
     const s = new Date(pr.startTime);
 
-    if (date < s) return false;
+    if (date < s) return false; // Si la fecha es anterior al evento, no ha ocurrido todavía
 
     switch (pr.periodicity) {
-      case 'daily':
+      case 'daily': // Como es diaria, va a ocurrir siempre
         return true;
-      case 'weekly':
+      case 'weekly': // Como es semanal, va a ocurrir si coincide el día de la semana
         return date.getDay() === s.getDay();
-      case 'monthly':
+      case 'monthly': // Como es mensual, va a ocurrir si coincide el día del mes
         return date.getDate() === s.getDate();
       default:
         return false;

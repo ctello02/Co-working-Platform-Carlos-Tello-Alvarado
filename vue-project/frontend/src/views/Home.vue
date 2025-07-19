@@ -272,6 +272,7 @@ const {
     parseToStringDate,
     getHoursAndMinsFromDate,
     makeMinutesFromIsoLocal,
+    parseDateTo_YYYYMMDD_HHMM,
     isToday,
     isWithinNext24Hours,
     isWithinNext7Days
@@ -291,29 +292,23 @@ onMounted(async () => {
         await getUserReservations()
     ]);
 
-    // Actualiza el now cada minuto para forzar recálculo de todayReservation
     setInterval(() => {
         now.value = new Date();
     }, 60_000);
 })
 
 const todayReservation = computed(() => {
-    // forzamos recálculo cada vez que cambie now.value
     now.value
 
-    // sólo reservas de hoy, ordenadas
     const todayList = reservations.value
         .filter(r => isToday(r.startTime))
         .sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
 
-    // buscamos la primera que termine en el futuro
     return todayList.find(r => !isExpired(r.endTime)) || null;
 });
 
 const otherReservations = computed(() => {
-    // si no hay todayReservation, devolvemos todo
     if (!todayReservation.value) return reservations.value;
-    // filtramos por _id (o el campo único que uses)
     return reservations.value.filter(r => r._id !== todayReservation.value._id);
 });
 
@@ -324,19 +319,17 @@ function calculatePrice(reservation, start, end) {
     let pricePer = 0;
 
     if (reservation.spaceId) {
-        dur = reservation.spaceId.duration      // duración de un bloque, en minutos
-        pricePer = reservation.spaceId.pricing       // precio por bloque
+        dur = reservation.spaceId.duration
+        pricePer = reservation.spaceId.pricing
     } else {
-        dur = reservation.materialId.duration      // duración de un bloque, en minutos
-        pricePer = reservation.materialId.pricing       // precio por bloque
+        dur = reservation.materialId.duration
+        pricePer = reservation.materialId.pricing
     }
 
     const seats = reservation?.seatsReserved || 1
 
-    // calculo cuántos bloques completos caben
     const blocks = (endMin - startMin) / dur
 
-    // en caso de que no sea un múltiplo exacto, redondeamos hacia abajo
     const fullBlocks = Math.floor(blocks)
     const total = fullBlocks * pricePer * seats
 
@@ -356,7 +349,6 @@ async function getUser() {
 async function getUserReservations() {
     try {
         const res = await reservationService.getUserReservations(user.value._id);
-        // ordenar y filtrar para la semana
         reservations.value = res.data.reservations
             .sort((a, b) => new Date(a.startTime) - new Date(b.startTime))
             .filter(r => isWithinNext7Days(r.startTime));
@@ -365,7 +357,6 @@ async function getUserReservations() {
     }
 }
 
-// Carga dinámica del SDK de PayPal
 function loadPayPalSdk() {
     if (paypalLoaded.value) return Promise.resolve();
     return new Promise((resolve, reject) => {
@@ -388,7 +379,6 @@ async function startPayPalPayment() {
             todayReservation.value.startTime,
             todayReservation.value.endTime);
 
-        // Sólo renderizamos los botones si aún no existen
         const container = document.getElementById('paypal-button-container');
         if (container) {
             container.innerHTML = ''
@@ -435,7 +425,6 @@ function closePayPal() {
 }
 
 function parseLocalDate(isoString) {
-    // elimina Z o +02:00, -05:00, etc.
     const localIso = isoString.replace(/Z|[+\-]\d\d:\d\d$/, '')
     return new Date(localIso)
 }

@@ -37,13 +37,11 @@ const props = defineProps({
 const chartRef = ref(null)
 let root, chart, xAxis, yAxis, series
 
-// modelo de la fecha a pintar
 const selectedDate = ref(new Date().toISOString().slice(0, 10))
 const formattedDate = ref(parseToStringDate(selectedDate.value))
 
 const data = ref([]);
 
-// inicializo al montar
 onMounted(() => {
     updateChart()
 })
@@ -68,9 +66,6 @@ function loadDataFromOverview() {
             return day === selectedDate.value
         })
         .map(item => {
-            const start = localDateFromUTCString(item.startTime)
-            const end = localDateFromUTCString(item.endTime)
-
             const isSpace = !!item.spaceId
             const resource = isSpace ? item.spaceId : item.materialId
             const resourceKey = (isSpace ? 'space:' : 'material:') + resource._id
@@ -80,16 +75,10 @@ function loadDataFromOverview() {
                 id: item._id,
                 resourceKey,
                 displayName,
-                startDate: start.getTime(),
-                endDate: end.getTime()
+                startDate: new Date(item.startTime).getTime(),
+                endDate: new Date(item.endTime).getTime()
             }
         })
-}
-
-function localDateFromUTCString(utcString) {
-    const d = new Date(utcString)
-    d.setMinutes(d.getMinutes() + d.getTimezoneOffset())
-    return d
 }
 
 function draw() {
@@ -133,12 +122,11 @@ function draw() {
     // Eje X
     xAxis = chart.xAxes.push(
         am5xy.DateAxis.new(root, {
-            baseInterval: { timeUnit: "minute", count: 30 },
-            renderer: am5xy.AxisRendererX.new(root, { minGridDistance: 50 })
+            baseInterval: { timeUnit: "minute", count: 1 },
+            renderer: am5xy.AxisRendererX.new(root, { minGridDistance: 60 })
         })
     )
 
-    // ---- CATEGORÍAS ÚNICAS ----
     const categoryMap = new Map()
     for (const r of reservations) {
         if (!categoryMap.has(r.resourceKey)) {
@@ -185,12 +173,17 @@ function draw() {
     )
 
     series.columns.template.setAll({
-        cornerRadiusBL: 5,
-        cornerRadiusTL: 5,
         tooltipText: `[bold]{displayName}[/]\n{openValueX.formatDate("HH:mm")} – {valueX.formatDate("HH:mm")}`,
         interactive: true,
-        cursorOverStyle: "pointer"
+        cursorOverStyle: "pointer",
     })
+
+    console.table(reservations.map(r => ({
+        displayName: r.displayName,
+        start: new Date(r.startDate).toLocaleTimeString(),
+        rawStart: r.startDate,
+        end: new Date(r.endDate).toLocaleTimeString()
+    })))
 
     series.data.setAll(reservations)
 

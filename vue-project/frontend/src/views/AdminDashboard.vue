@@ -68,7 +68,7 @@
                     <!-- Reservas en un día separadas por horas -->
                     <ChartCard title="Distribución horaria de reservas">
                         <HourlyReservations :overview="overviewData[1]" @update:date="fetchOneShotCharts"
-                            @interval-click="handleReservaClick" />
+                            @interval-click="handleClick" />
                     </ChartCard>
                 </v-col>
             </v-row>
@@ -163,8 +163,7 @@ async function fetchOneShotCharts(newDate) {
     }
 }
 
-function handleReservaClick(reservation) {
-    console.log("Reserva clicada:", reservation)
+function handleClick(reservation) {
     if (reservation.spaceId) {
         spaceStore.setSelectedSpace(reservation.spaceId)
     } else {

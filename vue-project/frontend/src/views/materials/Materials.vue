@@ -156,7 +156,6 @@ const openEditMaterialInfo = (material) => {
     router.push('/editMaterialInfo');
 };
 const openDeleteModal = (material) => {
-    //selectedMaterial.value = { ...material }; // Hacer una copia del material seleccionado
     materialStore.setSelectedMaterial(material);
     deleteModal.value = true;
 };
@@ -266,7 +265,6 @@ th,
 td {
     text-align: left;
     padding: 10px;
-    white-material: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
