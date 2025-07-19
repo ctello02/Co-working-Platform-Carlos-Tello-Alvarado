@@ -23,8 +23,9 @@ import * as am5xy from "@amcharts/amcharts5/xy"
 import Animated from "@amcharts/amcharts5/themes/Animated"
 
 import { useTime } from '@/composables/useTime'
+const { parseToStringDate } = useTime()
 
-const emit = defineEmits(['update:date', 'intervalClick'])
+const emit = defineEmits(['update:date', 'interval-click'])
 
 const props = defineProps({
     overview: {
@@ -35,8 +36,6 @@ const props = defineProps({
 
 const chartRef = ref(null)
 let root, chart, xAxis, yAxis, series
-
-const { parseToStringDate } = useTime()
 
 // modelo de la fecha a pintar
 const selectedDate = ref(new Date().toISOString().slice(0, 10))
@@ -173,7 +172,7 @@ function draw(reservations) {
     series.columns.template.events.on("click", ev => {
         const ctx = ev.target.dataItem.dataContext
         const reservation = props.overview.find(x => x._id === ctx.id)
-        emit('intervalClick', reservation)
+        emit('interval-click', reservation)
     })
 
     chart.appear(800, 80)
