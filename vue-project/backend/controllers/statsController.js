@@ -123,9 +123,6 @@ exports.getRangeCharts = async (req, res) => {
       { daily: 0, weekly: 0, monthly: 0 }
     );
 
-    //
-    // Devolver todo junto
-    //
     res.json({
       reservationsPorDia: reservasPorDia,
       topRecursos,
@@ -140,43 +137,21 @@ exports.getRangeCharts = async (req, res) => {
 
 exports.getOneShotCharts = async (req, res) => {
   try {
-    const from = new Date(req.query.from);
-    const to = new Date(req.query.to);
+    const dayStr = req.query.date || new Date().toISOString().substr(0, 10);
+    const startOfDay = new Date(`${dayStr}T00:00:00.000Z`);
+    const endOfDay = new Date(`${dayStr}T23:59:59.999Z`);
 
-    const hourlyReservations = await Reservation.aggregate([
-      { $match: { startTime: { $gte: from, $lte: to } } },
+    // Obtén todos los documentos, devolviendo solo startTime y endTime
+    const reservations = await Reservation.find({
+      startTime: { $gte: startOfDay, $lte: endOfDay },
+    })
+      .populate('userId')
+      .populate('spaceId')
+      .populate('materialId')
+      .lean();
 
-      // 1) Saco date ("2025-07-16") y hour (0–23)
-      {
-        $project: {
-          date: {
-            $dateToString: {
-              format: '%Y-%m-%d',
-              date: '$startTime',
-            },
-          },
-          hour: { $hour: '$startTime' },
-        },
-      },
-
-      // 2) Agrupo por date + hour
-      {
-        $group: {
-          _id: { date: '$date', hour: '$hour' },
-          count: { $sum: 1 },
-        },
-      },
-
-      // 3) Ordeno
-      {
-        $sort: {
-          '_id.date': 1,
-          '_id.hour': 1,
-        },
-      },
-    ]);
-
-    return res.status(200).json(hourlyReservations);
+    // Devuelves [{ _id, startTime, endTime }, …]
+    return res.status(200).json(reservations);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Error obteniendo estadísticas' });

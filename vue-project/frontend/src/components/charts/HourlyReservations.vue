@@ -1,10 +1,5 @@
 <template>
     <v-row>
-        <!-- date‑picker estándar HTML -->
-        <!-- <div class="mb-4">
-            <label for="chart-date">Selecciona día:</label>
-            <input id="chart-date" type="date" v-model="selectedDate" @change="updateChart" />
-        </div> -->
         <v-col cols="auto">
             <v-menu :close-on-content-click="false" location="bottom" transition="slide-y-transition">
                 <template v-slot:activator="{ props }">
@@ -17,24 +12,23 @@
             </v-menu>
         </v-col>
 
-        <!-- Aquí se monta amCharts -->
-        <div ref="chartRef" style="width:100%;height:400px;"></div>
+        <div ref="chartRef" style="width:100%;height:400px;" />
     </v-row>
 </template>
 
 <script setup>
-import { ref, onMounted, watch, toRef } from 'vue'
-import axios from 'axios'
+import { ref, onMounted, watch } from 'vue'
 import * as am5 from "@amcharts/amcharts5"
 import * as am5xy from "@amcharts/amcharts5/xy"
 import Animated from "@amcharts/amcharts5/themes/Animated"
 
 import { useTime } from '@/composables/useTime'
 
-// recibimos por props todo el overview, que incluye hourlyReservations
+const emit = defineEmits(['update:date', 'intervalClick'])
+
 const props = defineProps({
     overview: {
-        type: Object,
+        type: Array,
         required: true
     }
 })
@@ -48,52 +42,53 @@ const { parseToStringDate } = useTime()
 const selectedDate = ref(new Date().toISOString().slice(0, 10))
 const formattedDate = ref(parseToStringDate(selectedDate.value))
 
-async function fetchOneShotCharts() {
-    try {
-        const res = await axios.get('/api/stats/oneShotCharts', {
-            params: { from: selectedDate.value, to: selectedDate.value }
-        })
-        return res.data;
+// inicializo al montar
+onMounted(() => {
+    updateChart()
+})
 
-    } catch (err) {
-        console.error('Error cargando estadísticas:', err)
-    }
+
+watch(selectedDate, (newDate) => {
+    formattedDate.value = parseToStringDate(newDate)
+    selectedDate.value = new Date(newDate).toISOString().slice(0, 10)
+    emit('update:date', newDate)
+})
+
+watch(() => props.overview, updateChart)
+
+function localDateFromUTCString(utcString) {
+    const d = new Date(utcString)
+    d.setMinutes(d.getMinutes() + d.getTimezoneOffset())
+    return d
 }
 
-
-// toma props.overview.hourlyReservations, filtra por selectedDate
-// y pivot 0–23h
 function loadDataFromOverview() {
-    // overview es array de
-    // { _id: { date:'YYYY-MM-DD', hour:0–23 }, count }
-    const raw = props.overview || []
-
-    // inicializamos pivot
-    const pivot = []
-    for (let h = 0; h < 24; h++) {
-        pivot.push({
-            hour: String(h).padStart(2, '0') + ":00",
-            count: 0
+    return props.overview
+        .filter(item => {
+            const day = new Date(item.startTime).toISOString().slice(0, 10)
+            return day === selectedDate.value
         })
-    }
+        .map(item => {
+            const start = localDateFromUTCString(item.startTime)
+            const end = localDateFromUTCString(item.endTime)
 
-    // rellenamos sólo las de la fecha seleccionada
-    raw.forEach(item => {
-        const { date, hour } = item._id
-        if (date === selectedDate.value && pivot[hour]) {
-            pivot[hour].count = item.count
-        }
-    })
+            const isSpace = !!item.spaceId
+            const resource = isSpace ? item.spaceId : item.materialId
+            const resourceKey = (isSpace ? 'space:' : 'material:') + resource._id
+            const displayName = resource.name
 
-    return pivot
+            return {
+                id: item._id,
+                resourceKey,
+                displayName,
+                startDate: start.getTime(),
+                endDate: end.getTime()
+            }
+        })
 }
 
-function draw(data) {
-    if (!chartRef.value) return
-
-    if (root) {
-        root.dispose()
-    }
+function draw(reservations) {
+    if (root) root.dispose()
     root = am5.Root.new(chartRef.value)
     root.setThemes([Animated.new(root)])
 
@@ -106,69 +101,89 @@ function draw(data) {
         })
     )
 
-    // eje X: horas
+    // Eje X
     xAxis = chart.xAxes.push(
-        am5xy.CategoryAxis.new(root, {
-            categoryField: "hour",
-            renderer: am5xy.AxisRendererX.new(root, { minGridDistance: 30 })
+        am5xy.DateAxis.new(root, {
+            baseInterval: { timeUnit: "minute", count: 30 },
+            renderer: am5xy.AxisRendererX.new(root, { minGridDistance: 50 })
         })
     )
 
-    // eje Y: número de reservas
+    // ---- CATEGORÍAS ÚNICAS ----
+    const categoryMap = new Map()
+    for (const r of reservations) {
+        if (!categoryMap.has(r.resourceKey)) {
+            categoryMap.set(r.resourceKey, {
+                resourceKey: r.resourceKey,
+                displayName: r.displayName
+            })
+        }
+    }
+    const categories = Array.from(categoryMap.values())
+
+    // Eje Y
     yAxis = chart.yAxes.push(
-        am5xy.ValueAxis.new(root, {
-            renderer: am5xy.AxisRendererY.new(root, {})
-        })
-    )
-
-    xAxis.data.setAll(data)
-
-    series = chart.series.push(
-        am5xy.LineSeries.new(root, {
-            name: selectedDate.value,
-            xAxis,
-            yAxis,
-            valueYField: "count",
-            categoryXField: "hour",
-            tooltip: am5.Tooltip.new(root, {
-                labelText: "{categoryX}: {valueY}"
+        am5xy.CategoryAxis.new(root, {
+            categoryField: "resourceKey",
+            renderer: am5xy.AxisRendererY.new(root, {
+                inversed: true,
+                cellStartLocation: 0.2,
+                cellEndLocation: 0.8
             })
         })
     )
-    series.data.setAll(data)
 
-    // leyenda centrada
-    const legend = chart.children.push(
-        am5.Legend.new(root, {
-            centerX: am5.percent(50),
-            x: am5.percent(50)
+    yAxis.get("renderer").labels.template.adapters.add("text", (text, target) => {
+        const dataItem = target.dataItem
+        if (dataItem?.dataContext?.displayName) {
+            return dataItem.dataContext.displayName
+        }
+        return text
+    })
+
+    yAxis.data.setAll(categories)
+
+    // Serie
+    series = chart.series.push(
+        am5xy.ColumnSeries.new(root, {
+            xAxis,
+            yAxis,
+            openValueXField: "startDate",
+            valueXField: "endDate",
+            categoryYField: "resourceKey",
+            clustered: false
         })
     )
-    legend.data.setAll([series])
+
+    series.columns.template.setAll({
+        cornerRadiusBL: 5,
+        cornerRadiusTL: 5,
+        tooltipText: `[bold]{displayName}[/]\n{openValueX.formatDate("HH:mm")} – {valueX.formatDate("HH:mm")}`,
+        interactive: true,
+        cursorOverStyle: "pointer"
+    })
+
+    series.data.setAll(reservations)
+
+    series.columns.template.events.on("click", ev => {
+        const ctx = ev.target.dataItem.dataContext
+        const reservation = props.overview.find(x => x._id === ctx.id)
+        emit('intervalClick', reservation)
+    })
+
+    chart.appear(800, 80)
 }
 
 function updateChart() {
+    console.log(props.overview)
+
     const data = loadDataFromOverview()
     draw(data)
 }
 
-// inicializo al montar
-onMounted(() => {
-    updateChart()
-})
-
-// si cambian props.overview o selectedDate, redibujo
-watch(
-    [() => props.overview, selectedDate],
-    updateChart
-)
 </script>
 
 <style scoped>
-.mb-4 {
-    margin-bottom: 1rem;
-}
-
 #chart-date {
     padding: 0.25rem;
     font-size: 1rem;
