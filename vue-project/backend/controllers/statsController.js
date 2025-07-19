@@ -30,7 +30,7 @@ exports.getRangeCharts = async (req, res) => {
     //
     // 2) Top 10 recursos (espacios o materiales) más reservados
     //
-    const topRecursos = await Reservation.aggregate([
+    const topResources = await Reservation.aggregate([
       { $match: { startTime: { $gte: from, $lte: to } } },
 
       // 1) Unifico el id del recurso
@@ -96,7 +96,7 @@ exports.getRangeCharts = async (req, res) => {
       startTime: { $gte: from, $lte: to },
       isPaid: true,
     });
-    const pagoStats = {
+    const paymentStats = {
       total: totalCount,
       completed: completedCount,
       rate: totalCount > 0 ? completedCount / totalCount : 0,
@@ -124,9 +124,9 @@ exports.getRangeCharts = async (req, res) => {
     );
 
     res.json({
-      reservationsPorDia: reservasPorDia,
-      topRecursos,
-      pagoStats,
+      reservationsByDate: reservasPorDia,
+      topResources,
+      paymentStats,
       periodicStats,
     });
   } catch (err) {
