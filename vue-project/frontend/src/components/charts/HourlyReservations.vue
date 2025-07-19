@@ -47,7 +47,6 @@ onMounted(() => {
     updateChart()
 })
 
-
 watch(selectedDate, (newDate) => {
     formattedDate.value = parseToStringDate(newDate)
     selectedDate.value = new Date(newDate).toISOString().slice(0, 10)
@@ -55,6 +54,12 @@ watch(selectedDate, (newDate) => {
 })
 
 watch(() => props.overview, updateChart)
+
+
+function updateChart() {
+    const data = loadDataFromOverview()
+    draw(data)
+}
 
 function localDateFromUTCString(utcString) {
     const d = new Date(utcString)
@@ -173,14 +178,6 @@ function draw(reservations) {
 
     chart.appear(800, 80)
 }
-
-function updateChart() {
-    console.log(props.overview)
-
-    const data = loadDataFromOverview()
-    draw(data)
-}
-
 </script>
 
 <style scoped>

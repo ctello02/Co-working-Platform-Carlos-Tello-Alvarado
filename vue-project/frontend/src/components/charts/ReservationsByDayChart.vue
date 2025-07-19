@@ -1,32 +1,36 @@
 <template>
-    <div ref="chartRef" style="width:100%;height:400px;"></div>
+    <div ref="chartRef" style="width:100%;height:400px;" />
 </template>
 
 <script setup>
 import { ref, onMounted, watch } from 'vue'
-import axios from 'axios'
 import * as am5 from "@amcharts/amcharts5"
 import * as am5xy from "@amcharts/amcharts5/xy"
 import Animated from "@amcharts/amcharts5/themes/Animated"
 
 const props = defineProps({
-    from: String,
-    to: String,
-    resourceId: { type: String, default: null }
+    overview: {
+        type: Object,
+        required: true
+    }
 })
 
 const chartRef = ref(null)
 let root, chart, xAxis, yAxis, series
 
-async function loadData() {
-    const params = { from: props.from, to: props.to }
-    if (props.resourceId) params.resourceId = props.resourceId
-    const { data } = await axios.get("/api/stats/rangeCharts", { params })
-    return data.reservationsPorDia // { labels: [...], data: [...] }
-}
+const data = ref([]);
 
-function draw(data) {
-    // si ya existía un root, lo limpiamos
+onMounted(() => {
+    data.value = props.overview
+    draw()
+})
+
+watch(props.overview, (newVal) => {
+    data.value = newVal
+    draw()
+})
+
+function draw() {
     if (root) root.dispose()
     root = am5.Root.new(chartRef.value)
     root.setThemes([Animated.new(root)])
@@ -55,20 +59,12 @@ function draw(data) {
         })
     )
 
-    const chartData = data.labels.map((lab, i) => ({
+    const chartData = data.value.labels.map((lab, i) => ({
         date: lab,
-        count: data.data[i]
+        count: data.value.data[i]
     }))
 
     xAxis.data.setAll(chartData)
     series.data.setAll(chartData)
 }
-
-async function updateChart() {
-    const d = await loadData()
-    draw(d)
-}
-
-onMounted(updateChart)
-watch([() => props.from, () => props.to, () => props.resourceId], updateChart)
 </script>

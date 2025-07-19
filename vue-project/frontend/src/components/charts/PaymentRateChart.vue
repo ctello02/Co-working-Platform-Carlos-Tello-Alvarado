@@ -1,34 +1,44 @@
 <template>
-    <div ref="chartRef" style="width:100%;height:400px;"></div>
+    <div ref="chartRef" style="width:100%;height:400px;" />
 </template>
 
 <script setup>
 import { ref, onMounted, watch } from 'vue'
-import axios from 'axios'
 import * as am5 from "@amcharts/amcharts5"
 import * as am5percent from "@amcharts/amcharts5/percent"
 import Animated from "@amcharts/amcharts5/themes/Animated"
 
 const props = defineProps({
-    from: String,
-    to: String
+    overview: {
+        type: Object,
+        required: true
+    }
 })
 
 const chartRef = ref(null)
 let root, chart, series
 
-async function loadData() {
-    const { data } = await axios.get("/api/stats/rangeCharts", {
-        params: { from: props.from, to: props.to }
-    })
-    // { total, completed, rate }
+const data = ref([]);
+
+onMounted(async () => {
+    data.value = await parseData()
+    draw()
+})
+
+watch(props.overview, async () => {
+    data.value = await parseData()
+    draw()
+})
+
+async function parseData() {
+    const overview = props.overview
     return [
-        { category: "Pagadas", value: data.pagoStats.completed },
-        { category: "No pagadas", value: data.pagoStats.total - data.pagoStats.completed }
+        { category: "Pagadas", value: overview.completed },
+        { category: "No pagadas", value: overview.total - overview.completed }
     ]
 }
 
-function draw(data) {
+function draw() {
     if (root) root.dispose()
     root = am5.Root.new(chartRef.value)
     root.setThemes([Animated.new(root)])
@@ -45,14 +55,6 @@ function draw(data) {
         })
     )
 
-    series.data.setAll(data)
+    series.data.setAll(data.value)
 }
-
-async function updateChart() {
-    const d = await loadData()
-    draw(d)
-}
-
-onMounted(updateChart)
-watch([() => props.from, () => props.to], updateChart)
 </script>

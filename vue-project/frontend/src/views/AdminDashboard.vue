@@ -46,23 +46,23 @@
                 <v-col class="mt-5 pa-0">
                     <!-- 1) Reservas/día -->
                     <ChartCard title="Número de reservas">
-                        <ReservationsByDayChart :overview="overviewData[0]" :from="from" :to="to"
+                        <ReservationsByDayChart :overview="overviewData[0].reservationsPorDia" :from="from" :to="to"
                             :resource-id="resourceId" />
                     </ChartCard>
 
                     <!-- 2) Top recursos -->
                     <ChartCard title="Top recursos más reservados">
-                        <TopResourcesChart :overview="overviewData[0]" />
+                        <TopResourcesChart :overview="overviewData[0].topRecursos" />
                     </ChartCard>
 
                     <!-- 3) Tasa de pago -->
                     <ChartCard title="Porcentaje de reservas pagadas">
-                        <PaymentRateChart :overview="overviewData[0]" :from="from" :to="to" />
+                        <PaymentRateChart :overview="overviewData[0].pagoStats" :from="from" :to="to" />
                     </ChartCard>
 
                     <!-- 4) Estadísticas de periódicas -->
                     <ChartCard title="Reservas periódicas por tipo">
-                        <PeriodicStatsChart :overview="overviewData[0]" :from="from" :to="to" />
+                        <PeriodicStatsChart :overview="overviewData[0].periodicStats" :from="from" :to="to" />
                     </ChartCard>
 
                     <!-- 5) Reservas por hora -->

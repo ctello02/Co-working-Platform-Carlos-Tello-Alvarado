@@ -38,13 +38,12 @@ const options = [
 ]
 
 onMounted(() => {
-    data.value = props.overview.topRecursos
+    data.value = props.overview
     filteredData.value = data.value
     draw()
 });
 
 function draw() {
-
     if (filteredData.value.length === 0) {
         if (root) {
             root.dispose()
