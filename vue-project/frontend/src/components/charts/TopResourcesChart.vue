@@ -43,6 +43,12 @@ onMounted(() => {
     draw()
 });
 
+watch(resourceId, (newVal) => {
+    if (newVal != null) filteredData.value = data.value.filter(x => x.resourceType === resourceId.value)
+    else filteredData.value = data.value
+    draw()
+})
+
 function draw() {
     if (filteredData.value.length === 0) {
         if (root) {
@@ -100,11 +106,4 @@ function draw() {
     yAxis.data.setAll(filteredData.value)
     series.data.setAll(filteredData.value)
 }
-
-
-watch(resourceId, (newVal) => {
-    if (newVal != null) filteredData.value = data.value.filter(x => x.resourceType === resourceId.value)
-    else filteredData.value = data.value
-    draw()
-})
 </script>

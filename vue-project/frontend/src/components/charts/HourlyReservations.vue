@@ -41,6 +41,8 @@ let root, chart, xAxis, yAxis, series
 const selectedDate = ref(new Date().toISOString().slice(0, 10))
 const formattedDate = ref(parseToStringDate(selectedDate.value))
 
+const data = ref([]);
+
 // inicializo al montar
 onMounted(() => {
     updateChart()
@@ -54,20 +56,13 @@ watch(selectedDate, (newDate) => {
 
 watch(() => props.overview, updateChart)
 
-
 function updateChart() {
-    const data = loadDataFromOverview()
-    draw(data)
-}
-
-function localDateFromUTCString(utcString) {
-    const d = new Date(utcString)
-    d.setMinutes(d.getMinutes() + d.getTimezoneOffset())
-    return d
+    loadDataFromOverview()
+    draw()
 }
 
 function loadDataFromOverview() {
-    return props.overview
+    data.value = props.overview
         .filter(item => {
             const day = new Date(item.startTime).toISOString().slice(0, 10)
             return day === selectedDate.value
@@ -91,7 +86,14 @@ function loadDataFromOverview() {
         })
 }
 
-function draw(reservations) {
+function localDateFromUTCString(utcString) {
+    const d = new Date(utcString)
+    d.setMinutes(d.getMinutes() + d.getTimezoneOffset())
+    return d
+}
+
+function draw() {
+    const reservations = data.value
     if (root) root.dispose()
     root = am5.Root.new(chartRef.value)
     root.setThemes([Animated.new(root)])

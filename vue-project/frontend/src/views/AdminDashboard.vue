@@ -44,31 +44,31 @@
 
             <v-row v-else-if="overviewData">
                 <v-col class="mt-5 pa-0">
-                    <!-- 1) Reservas/día -->
+                    <!-- Reservas durante los días seleccionados -->
                     <ChartCard title="Número de reservas">
-                        <ReservationsByDayChart :overview="overviewData[0].reservationsPorDia" :from="from" :to="to"
+                        <ReservationsByDayChart :overview="overviewData[0].reservationsPorDia"
                             :resource-id="resourceId" />
                     </ChartCard>
 
-                    <!-- 2) Top recursos -->
+                    <!-- Top recursos -->
                     <ChartCard title="Top recursos más reservados">
                         <TopResourcesChart :overview="overviewData[0].topRecursos" />
                     </ChartCard>
 
-                    <!-- 3) Tasa de pago -->
+                    <!-- Tasa de pago -->
                     <ChartCard title="Porcentaje de reservas pagadas">
-                        <PaymentRateChart :overview="overviewData[0].pagoStats" :from="from" :to="to" />
+                        <PaymentRateChart :overview="overviewData[0].pagoStats" />
                     </ChartCard>
 
-                    <!-- 4) Estadísticas de periódicas -->
+                    <!-- Estadísticas de periódicas -->
                     <ChartCard title="Reservas periódicas por tipo">
-                        <PeriodicStatsChart :overview="overviewData[0].periodicStats" :from="from" :to="to" />
+                        <PeriodicStatsChart :overview="overviewData[0].periodicStats" />
                     </ChartCard>
 
-                    <!-- 5) Reservas por hora -->
+                    <!-- Reservas en un día separadas por horas -->
                     <ChartCard title="Distribución horaria de reservas">
                         <HourlyReservations :overview="overviewData[1]" @update:date="fetchOneShotCharts"
-                            @intervalClick="handleReservaClick" />
+                            @interval-click="handleReservaClick" />
                     </ChartCard>
                 </v-col>
             </v-row>
