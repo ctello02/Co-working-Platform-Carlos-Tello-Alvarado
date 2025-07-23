@@ -67,7 +67,7 @@
 
                     <!-- Reservas en un día separadas por horas -->
                     <ChartCard title="Distribución horaria de reservas">
-                        <HourlyReservations :overview="overviewData[1]" @update:date="fetchOneShotCharts"
+                        <HourlyReservationsChart :overview="overviewData[1]" @update:date="fetchOneShotCharts"
                             @interval-click="handleClick" />
                     </ChartCard>
                 </v-col>
@@ -91,7 +91,7 @@ import ReservationsByDayChart from '@/components/charts/ReservationsByDayChart.v
 import TopResourcesChart from '@/components/charts/TopResourcesChart.vue'
 import PaymentRateChart from '@/components/charts/PaymentRateChart.vue'
 import PeriodicStatsChart from '@/components/charts/PeriodicStatsChart.vue'
-import HourlyReservations from '@/components/charts/HourlyReservations.vue'
+import HourlyReservationsChart from '@/components/charts/HourlyReservationsChart.vue'
 
 const { parseToStringDate } = useTime()
 
