@@ -303,7 +303,7 @@ const filteredMaterials = ref([]);
 const date = ref(new Date());
 const formattedDate = ref(parseToStringDate(date.value));
 const startTime = ref(null);
-const initialLoad = ref(false);
+const initialLoaded = ref(false);
 const durationSearched = ref(null);
 const reservationSeats = ref(1);
 const isLoading = ref(false);
@@ -317,12 +317,12 @@ const slotsByMaterial = reactive({});
 // Cada vez que cambiamos fecha, recargamos datos y slots
 watch(date, () => {
   formattedDate.value = parseToStringDate(date.value);
-  if (initialLoad.value) {
+  if (initialLoaded.value) {
     startTime.value = null;
   }
   // Marcamos que ya pudo cargar la hora inicial de la store
   // El problema es que se inicializaba a null aunque hubiese una hora en la store
-  initialLoad.value = true;
+  initialLoaded.value = true;
   loadDayData();
 });
 

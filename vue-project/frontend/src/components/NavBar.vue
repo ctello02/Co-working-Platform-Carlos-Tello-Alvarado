@@ -1,13 +1,13 @@
 <template>
     <!-- Barra superior -->
-    <v-app-bar app :style="color_nav" density="compact">
+    <v-app-bar app :style="colorNav" density="compact">
         <v-toolbar-title>Co-Working Platform</v-toolbar-title>
         <v-spacer></v-spacer>
         <v-btn class="mx-4" icon="mdi-account-outline" @click="toProfile()"></v-btn>
     </v-app-bar>
 
     <!-- Sidebar permanente -->
-    <v-navigation-drawer app permanent :color="color_sidebar" :width="160">
+    <v-navigation-drawer app permanent :color="colorSidebar" :width="160">
         <v-list>
             <v-list-item @click="toHome">
                 <v-row>
@@ -86,8 +86,8 @@ export default {
     data() {
         return {
             // Eliminamos variables drawer y rail
-            color_nav: 'color:white; background: rgb(0,45,98); background: linear-gradient(61deg, rgba(0,45,98,1) 75%, rgba(16,86,189,1) 75%);',
-            color_sidebar: '#002D62'
+            colorNav: 'color:white; background: rgb(0,45,98); background: linear-gradient(61deg, rgba(0,45,98,1) 75%, rgba(16,86,189,1) 75%);',
+            colorSidebar: '#002D62'
         }
     },
     computed: {

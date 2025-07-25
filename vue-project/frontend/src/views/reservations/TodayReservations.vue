@@ -272,13 +272,9 @@
 import { ref, onMounted, onUnmounted, computed, watch } from 'vue';
 import Table from '@/components/Table.vue';
 import ReservationCard from '@/components/ReservationCard.vue';
-// import { useUserStore } from '@/store/userStore';
 import { useReservationStore } from '@/store/reservationStore';
-// import { useSpaceStore } from '@/store/spaceStore';
-// import { useMaterialStore } from '@/store/materialStore';
 import { useRouter } from 'vue-router';
 import { useTime } from '@/composables/useTime';
-//import TonalButton from '@/components/TonalButton.vue';
 import { reservationService } from '@/services/reservationService';
 
 /* ---------------- Instancias de composables --------------- */

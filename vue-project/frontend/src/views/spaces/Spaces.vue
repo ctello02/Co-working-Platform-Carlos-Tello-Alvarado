@@ -79,7 +79,6 @@ const isAdmin = computed(() => userStore.value.getIsAdmin)
 // Variables reactivas
 const list = ref(false);
 const spaces = ref(null);
-//const selectedSpace = ref(null);
 const deleteModal = ref(false);
 const bulkDeleteModal = ref(false);
 

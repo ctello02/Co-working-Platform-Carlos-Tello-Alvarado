@@ -87,7 +87,7 @@
                                                                     reservado</span>
                                                                 <span class="text-h6" v-else>{{
                                                                     todayReservation.seatsReserved
-                                                                }}
+                                                                    }}
                                                                     asientos
                                                                     reservados</span>
                                                             </v-col>
@@ -433,8 +433,6 @@ function isExpired(endTime) {
     const end = parseLocalDate(endTime)
     return now.value > end
 }
-
-
 </script>
 <style scoped>
 .grey {

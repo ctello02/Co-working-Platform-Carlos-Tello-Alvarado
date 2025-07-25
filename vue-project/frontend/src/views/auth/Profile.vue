@@ -91,7 +91,6 @@ export default {
     return {
       userStore: null,
       user: null,
-      payment_method: null,
       logOutModal: false,
       deleteModal: false,
       bulkDeleteModal: false,
