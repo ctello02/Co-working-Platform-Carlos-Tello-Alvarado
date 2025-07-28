@@ -29,7 +29,7 @@ exports.login = async (req, res) => {
 
     // Verifica si el usuario existe
     if (!user) {
-      return res.status(404).json({ message: 'User not found' }); // Error específico para usuario no encontrado
+      return res.status(404).json({ message: 'Usuario no encontrado' }); // Error específico para usuario no encontrado
     }
 
     // Verifica si la contraseña es correcta
@@ -42,7 +42,7 @@ exports.login = async (req, res) => {
     const token = jwt.sign(user.toJSON(), process.env.SECRET, {
       expiresIn: '1w',
     });
-    res.json({ token, user });
+    res.status(200).json({ token, user });
   } catch (error) {
     res.status(500).json({ message: error.message }); // Error general del servidor
   }
@@ -56,7 +56,7 @@ exports.getUser = async (req, res) => {
     if (user) {
       res.json({ user });
     } else {
-      res.status(404).json({ message: 'User not found' });
+      res.status(404).json({ message: 'Usuario no encontrado' });
     }
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -80,11 +80,13 @@ exports.forgotPassword = async (req, res) => {
           process.env.RESET_PASSWORD_KEY,
           { expiresIn: '15m' }
         );
+        console.log(token);
+
         await sendResetPasswordEmail(req.body.email, token);
         await user.updateOne({ resetLink: token });
-        res.json({ message: 'Email sent to ' + req.body.email });
+        res.json({ message: 'Email enviado a ' + req.body.email });
       } else {
-        res.status(404).json({ message: 'User not found' });
+        res.status(404).json({ message: 'Usuario no encontrado' });
       }
     } catch (error) {
       res.status(500).json({ message: error.message });
@@ -107,10 +109,12 @@ exports.resetPassword = async (req, res) => {
       await user.save();
       res.json({ message: 'Password updated' });
     } else {
-      res.status(404).json({ message: 'User not found' });
+      res.status(404).json({ message: 'Usuario no encontrado' });
     }
   } catch (error) {
-    if (error.name === 'JsonWebTokenError') {
+    if (error.name === 'TokenExpiredError') {
+      res.status(401).json({ message: 'Token expirado' });
+    } else if (error.name === 'JsonWebTokenError') {
       res.status(401).json({ message: 'Invalid token' });
     } else {
       res.status(500).json({ message: error.message });
@@ -122,7 +126,7 @@ exports.changePassword = async (req, res) => {
   try {
     let user = await User.findOne({ _id: req.params.id });
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({ message: 'Usuario no encontrado' });
     }
     const { oldPassword, newPassword } = req.body;
 

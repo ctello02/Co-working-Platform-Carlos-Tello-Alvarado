@@ -26,21 +26,11 @@ export default {
     NavBar,
     RouterView
   },
-  async beforeMount() {
+  async mounted() {
     this.userStore = useUserStore();
-
-    const isValidSession = await this.userStore.validateSession();
-    if (!isValidSession) {
-      this.$router.push("/login"); // Redirigir al login si la sesión es inválida
-    }
     authService.getUser()
-      .then(res => {
-        this.userStore.setThisUser(res.data.user);
-      })
-      .catch(error => {
-        console.log(error);
-      });
-
+      .then(res => this.userStore.setThisUser(res.data.user))
+      .catch(console.error);
   },
   computed: {
     isLogged() {

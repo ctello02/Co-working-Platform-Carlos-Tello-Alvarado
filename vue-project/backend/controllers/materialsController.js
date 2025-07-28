@@ -13,7 +13,7 @@ exports.getMaterials = async (req, res) => {
     if (materials.length === 0) {
       return res.status(404).json({ message: 'No materials found' });
     }
-    res.json({ materials });
+    res.status(200).json({ materials });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -38,8 +38,8 @@ exports.createMaterial = async (req, res) => {
 
 exports.updateMaterial = async (req, res) => {
   try {
-    const material = await Material.findOne({ _id: req.body.id });
-    if (!material) {
+    const updatedMaterial = await Material.findOne({ _id: req.body.id });
+    if (!updatedMaterial) {
       return res.status(404).json({ message: 'Material not found' });
     }
 
@@ -49,7 +49,7 @@ exports.updateMaterial = async (req, res) => {
         __dirname,
         '..',
         'uploads',
-        path.basename(material.image)
+        path.basename(updatedMaterial.image)
       );
 
       // Eliminar la imagen anterior del sistema de archivos
@@ -67,9 +67,9 @@ exports.updateMaterial = async (req, res) => {
       }`;
     }
 
-    material.set(req.body);
+    updatedMaterial.set(req.body);
 
-    const savedMaterial = await material.save();
+    const savedMaterial = await updatedMaterial.save();
     res.status(200).json(savedMaterial);
   } catch (error) {
     console.error('Error al actualizar el material:', error);

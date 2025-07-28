@@ -152,8 +152,11 @@ const router = createRouter({
   history: createWebHistory(),
 });
 
-// Guard global para manejar autenticación y permisos
+const publicPages = ['reset', 'login', 'register', 'forgot_password'];
+
+//Guard global para manejar autenticación y permisos
 router.beforeEach(async (to, from, next) => {
+  console.log('👉 entrando a ruta:', to.name, to.meta);
   const userStore = useUserStore();
 
   // Cargar datos antes de validar sesión
@@ -163,7 +166,13 @@ router.beforeEach(async (to, from, next) => {
 
   const isValidSession = await userStore.validateSession();
 
-  if (!isValidSession && !to.meta.notLoggedUsers) {
+  if (publicPages.includes(to.name)) {
+    console.log('👉 entrando a ruta pública:', to.name);
+    return next();
+  }
+
+  if (!isValidSession) {
+    console.log('👉 entrando a /login:', to.name);
     return next({ name: 'login' });
   }
 

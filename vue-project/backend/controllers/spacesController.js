@@ -13,7 +13,7 @@ exports.getSpaces = async (req, res) => {
     if (spaces.length === 0) {
       return res.status(404).json({ message: 'No spaces found' });
     }
-    res.json({ spaces });
+    res.status(200).json({ spaces });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -38,8 +38,8 @@ exports.createSpace = async (req, res) => {
 
 exports.updateSpace = async (req, res) => {
   try {
-    const space = await Space.findOne({ _id: req.body.id });
-    if (!space) {
+    const updatedSpace = await Space.findOne({ _id: req.body.id });
+    if (!updatedSpace) {
       return res.status(404).json({ message: 'Space not found' });
     }
 
@@ -49,7 +49,7 @@ exports.updateSpace = async (req, res) => {
         __dirname,
         '..',
         'uploads',
-        path.basename(space.image)
+        path.basename(updatedSpace.image)
       );
 
       // Eliminar la imagen anterior del sistema de archivos
@@ -67,9 +67,9 @@ exports.updateSpace = async (req, res) => {
       }`;
     }
 
-    space.set(req.body);
+    updatedSpace.set(req.body);
 
-    const savedSpace = await space.save();
+    const savedSpace = await updatedSpace.save();
     res.status(200).json(savedSpace);
   } catch (error) {
     console.error('Error al actualizar el espacio:', error);
@@ -131,7 +131,7 @@ exports.deleteSpace = async (req, res) => {
 
     await Space.deleteOne({ _id: req.params.id }).session(session);
     await session.commitTransaction();
-    res.json({ message: 'Space deleted successfully' });
+    res.status(200).json({ message: 'Space deleted successfully' });
   } catch (error) {
     await session.abortTransaction();
     session.endSession();
