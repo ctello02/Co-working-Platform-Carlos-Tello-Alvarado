@@ -54,7 +54,7 @@ exports.getUser = async (req, res) => {
       .select('-password')
       .populate();
     if (user) {
-      res.json({ user });
+      res.status(200).json({ user });
     } else {
       res.status(404).json({ message: 'Usuario no encontrado' });
     }
@@ -84,7 +84,7 @@ exports.forgotPassword = async (req, res) => {
 
         await sendResetPasswordEmail(req.body.email, token);
         await user.updateOne({ resetLink: token });
-        res.json({ message: 'Email enviado a ' + req.body.email });
+        res.status(200).json({ message: 'Email enviado a ' + req.body.email });
       } else {
         res.status(404).json({ message: 'Usuario no encontrado' });
       }
@@ -107,7 +107,7 @@ exports.resetPassword = async (req, res) => {
     if (user) {
       user.password = password;
       await user.save();
-      res.json({ message: 'Password updated' });
+      res.status(200).json({ message: 'Password updated' });
     } else {
       res.status(404).json({ message: 'Usuario no encontrado' });
     }
@@ -136,7 +136,7 @@ exports.changePassword = async (req, res) => {
     } else {
       user.password = newPassword;
       await user.save();
-      res.json({ message: 'Password updated' });
+      res.status(200).json({ message: 'Password updated' });
     }
   } catch (error) {
     res.status(500).json({ message: error.message });

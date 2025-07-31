@@ -11,7 +11,7 @@ exports.getUsers = async (req, res) => {
     if (users.length === 0) {
       return res.status(404).json({ message: 'No users found' });
     }
-    res.json({ users });
+    res.status(200).json({ users });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -27,7 +27,7 @@ exports.updateUser = async (req, res) => {
     user.set(req.body);
 
     await user.save();
-    res.json({ message: 'User updated successfully' });
+    res.status(200).json({ message: 'User updated successfully' });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -117,7 +117,9 @@ exports.bulkDeleteUser = async (req, res) => {
     await User.deleteOne({ _id: userId }).session(session);
 
     await session.commitTransaction();
-    res.json({ message: 'Usuario eliminado y pagos reembolsados con éxito.' });
+    res
+      .status(200)
+      .json({ message: 'Usuario eliminado y pagos reembolsados con éxito.' });
   } catch (error) {
     await session.abortTransaction();
     session.endSession();

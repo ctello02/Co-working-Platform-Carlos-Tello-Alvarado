@@ -123,8 +123,18 @@ export default {
     async submit() {
       const toast = useToast();
       if (!this.emptyFields()) {
+
+        const formData = new FormData();
+        formData.append('name', this.name);
+        formData.append('email', this.email);
+        formData.append('password', this.password);
+        formData.append('phone', this.phone);
+        formData.append('address', this.address);
+        formData.append('isCompany', this.isCompany);
+        formData.append('cif', this.cif);
+
         authService
-          .signUp(this.name, this.email, this.password, this.phone, this.address, this.isCompany, this.cif)
+          .signUp(formData)
           .then((res) => {
             console.log(res.data);
             toast.success("¡Usuario registrado con éxito!");

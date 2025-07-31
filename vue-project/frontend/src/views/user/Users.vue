@@ -102,7 +102,6 @@ export default {
         .then(res => {
           this.users = (res.data.users || [])
             .filter(user => user._id !== this.currentUserId)
-          // console.log(this.users);
         })
         .catch(error => {
           console.log(error);

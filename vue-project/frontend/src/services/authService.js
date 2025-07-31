@@ -3,29 +3,34 @@ import axiosInstance from '@/plugins/axiosConfig'; // Importamos la configuraci√
 const API_URL = '/auth';
 
 export const authService = {
+  signUp(formData) {
+    return axiosInstance.post(`${API_URL}/signUp`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+  },
 
-    signUp(name, email, password, phone, address, isCompany, cif) {
-        return axiosInstance.post(`${API_URL}/signup`, { name, email, password, phone, address, isCompany, cif });
-    },
+  login(email, password) {
+    return axiosInstance.post(`${API_URL}/login`, { email, password });
+  },
 
-    login(email, password) {
-        return axiosInstance.post(`${API_URL}/login`, { email, password });
-    },
+  getUser() {
+    return axiosInstance.get(`${API_URL}/user`);
+  },
 
-    getUser() {
-        return axiosInstance.get(`${API_URL}/user`);
-    },
+  forgotPassword(email) {
+    return axiosInstance.post(`${API_URL}/forgotPassword`, email);
+  },
 
-    forgotPassword(email) {
-        return axiosInstance.post(`${API_URL}/forgotPassword`, { email });
-    },
+  resetPassword(password, token) {
+    return axiosInstance.post(`${API_URL}/resetPassword`, { password, token });
+  },
 
-    resetPassword(password, token) {
-        return axiosInstance.post(`${API_URL}/resetPassword`, { password, token });
-    },
-
-    changePassword(oldPassword, newPassword, id) {
-        return axiosInstance.post(`${API_URL}/changePassword/${id}`, { oldPassword, newPassword });
-    },
-
+  changePassword(oldPassword, newPassword, id) {
+    return axiosInstance.post(`${API_URL}/changePassword/${id}`, {
+      oldPassword,
+      newPassword,
+    });
+  },
 };
