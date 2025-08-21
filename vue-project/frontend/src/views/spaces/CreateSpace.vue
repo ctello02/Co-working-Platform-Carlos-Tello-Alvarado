@@ -24,7 +24,8 @@
           <v-row>
             <v-col>
               <v-file-input v-model="spaceImage" accept="image/*" label="Imagen" prepend-icon="mdi-camera"
-                variant="outlined" required :rules="[v => !!v || 'La imagen es obligatoria']" class="ml-n3" />
+                variant="outlined" required :rules="[v => !!v || 'La imagen es obligatoria']" class="ml-n3"
+                @update:modelValue="validateImage" />
             </v-col>
             <v-col>
               <v-text-field v-model.number="spaceSeats" label="Número de asientos" prepend-icon="mdi-table-chair"
@@ -80,6 +81,8 @@ import { useTime } from '@/composables/useTime';
 const router = useRouter();
 const toast = useToast();
 const successToastId = ref(null);
+
+const MAX_MB = 2;
 
 // Variables reactivas
 const spaceName = ref(null);
@@ -157,7 +160,7 @@ const submit = async () => {
   formData.append('pricing', pricing.value);
 
   try {
-    const res = await spaceService.createSpace(formData);
+    await spaceService.createSpace(formData);
     toast.success('¡Espacio creado con éxito!');
     clearFields();
   } catch (error) {
@@ -175,4 +178,18 @@ const routerBack = () => {
   }
   router.go(-1);
 };
+
+function validateImage(file) {
+  if (!file) return;
+  const okTypes = ['image/jpeg', 'image/png', 'image/webp'];
+  if (!okTypes.includes(file.type)) {
+    spaceImage.value = null;
+    toast.error('Formato no permitido (solo JPG/PNG/WebP)');
+    return;
+  }
+  if (file.size > MAX_MB * 1024 * 1024) {
+    spaceImage.value = null;
+    toast.error(`La imagen no puede superar ${MAX_MB}MB`);
+  }
+}
 </script>

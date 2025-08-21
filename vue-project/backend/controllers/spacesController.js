@@ -1,11 +1,30 @@
 const Space = require('../models/space');
 const Reservation = require('../models/reservation');
 const PeriodicReservation = require('../models/periodicReservation');
+
+const path = require('path');
+const fs = require('fs/promises');
+const FileType = require('file-type');
+const sharp = require('sharp');
+const slugify = require('slugify');
+
 const checkout = require('@paypal/checkout-server-sdk');
 const { client } = require('../utils/paypalClient');
 const mongoose = require('mongoose');
-const fs = require('fs'); // Módulo para interactuar con el sistema de archivos
-const path = require('path');
+const UPLOAD_DIR = path.resolve(process.cwd(), 'uploads'); // carpeta dedicada
+const SPACES_DIR = path.join(UPLOAD_DIR, 'spaces'); // subcarpeta
+require('fs').mkdirSync(SPACES_DIR, { recursive: true });
+
+// nombre seguro
+function safeBaseName(str) {
+  return slugify(str || 'img', { lower: true, strict: true }).slice(0, 50);
+}
+// comprueba que la ruta final cae dentro del directorio permitido
+function assertInside(baseDir, candidateAbsPath) {
+  if (!candidateAbsPath.startsWith(baseDir + path.sep)) {
+    throw new Error('Ruta inválida');
+  }
+}
 
 exports.getSpaces = async (req, res) => {
   try {
@@ -21,59 +40,100 @@ exports.getSpaces = async (req, res) => {
 
 exports.createSpace = async (req, res) => {
   try {
-    if (req.file) {
-      req.body.image = `${req.protocol}://${req.get('host')}/uploads/${
-        req.file.filename
-      }`;
+    if (!req.file)
+      return res.status(400).json({ message: 'La imagen es obligatoria' });
+
+    const probe = await FileType.fromBuffer(req.file.buffer);
+    if (
+      !probe ||
+      !['image/jpeg', 'image/png', 'image/webp'].includes(probe.mime)
+    ) {
+      return res.status(400).json({ message: 'Archivo de imagen no válido' });
     }
 
-    const newSpace = new Space(req.body);
+    // nombre y ruta segura
+    const base = safeBaseName(req.body.name);
+    const filename = `${base}-${Date.now()}.webp`;
+    const abs = path.resolve(SPACES_DIR, filename);
+    assertInside(SPACES_DIR, abs);
 
-    const savedSpace = await newSpace.save();
-    res.status(201).json(savedSpace);
+    // reencodear/limpiar y guardar
+    await sharp(req.file.buffer)
+      .rotate()
+      .resize(1600, 1600, { fit: 'inside', withoutEnlargement: true })
+      .webp({ quality: 85 })
+      .toFile(abs);
+
+    const payload = { ...req.body, image: `/uploads/spaces/${filename}` };
+    const saved = await new Space(payload).save();
+    return res.status(201).json(saved);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error(error);
+    return res.status(500).json({ message: error.message });
   }
 };
 
 exports.updateSpace = async (req, res) => {
   try {
     const updatedSpace = await Space.findOne({ _id: req.body.id });
-    if (!updatedSpace) {
+    if (!updatedSpace)
       return res.status(404).json({ message: 'Space not found' });
-    }
 
-    // Si se subió una nueva imagen, eliminamos la anterior
+    let newImageRel = null;
+    let prevAbsToDelete = null;
+
     if (req.file) {
-      const imagePath = path.join(
-        __dirname,
-        '..',
-        'uploads',
-        path.basename(updatedSpace.image)
-      );
+      const probe = await FileType.fromBuffer(req.file.buffer);
+      if (
+        !probe ||
+        !['image/jpeg', 'image/png', 'image/webp'].includes(probe.mime)
+      ) {
+        return res.status(400).json({ message: 'Archivo de imagen no válido' });
+      }
 
-      // Eliminar la imagen anterior del sistema de archivos
-      fs.unlink(imagePath, (err) => {
-        if (err) {
-          console.error('Error al eliminar la imagen:', err);
-        } else {
-          console.log('Imagen eliminada correctamente:', imagePath);
-        }
-      });
+      const base = safeBaseName(req.body.name || updatedSpace.name);
+      const filename = `${base}-${Date.now()}.webp`;
+      const abs = path.resolve(SPACES_DIR, filename);
+      assertInside(SPACES_DIR, abs);
 
-      // Actualizar la URL de la imagen con la nueva
-      req.body.image = `${req.protocol}://${req.get('host')}/uploads/${
-        req.file.filename
-      }`;
+      await sharp(req.file.buffer)
+        .rotate()
+        .resize(1600, 1600, { fit: 'inside', withoutEnlargement: true })
+        .webp({ quality: 85 })
+        .toFile(abs);
+
+      newImageRel = `spaces/${filename}`;
+
+      // Preparar borrado de la imagen anterior
+      if (updatedSpace.image) {
+        try {
+          const prevName = path.basename(
+            new URL('http://x' + updatedSpace.image).pathname
+          );
+          const prevAbs = path.resolve(SPACES_DIR, prevName);
+          assertInside(SPACES_DIR, prevAbs);
+          prevAbsToDelete = prevAbs;
+        } catch {}
+      }
     }
 
-    updatedSpace.set(req.body);
+    const updates = { ...req.body };
+    if (newImageRel) updates.image = `/uploads/${newImageRel}`; // ruta relativa
 
-    const savedSpace = await updatedSpace.save();
-    res.status(200).json(savedSpace);
+    updatedSpace.set(updates);
+    const saved = await updatedSpace.save();
+
+    // Borramos la imagen antigua solo si hay nueva y el save fue exitoso
+    if (prevAbsToDelete) {
+      try {
+        await fs.unlink(prevAbsToDelete);
+      } catch {}
+    }
+
+    return res.status(200).json(saved);
   } catch (error) {
     console.error('Error al actualizar el espacio:', error);
-    res.status(500).json({ message: error.message });
+    return res.status(500).json({ message: error.message });
   }
 };
 
@@ -112,22 +172,11 @@ exports.deleteSpace = async (req, res) => {
         .json({ message: 'Space has periodic reservations' });
     }
 
-    // Obtener la ruta completa de la imagen del servidor
-    const imagePath = path.join(
-      __dirname,
-      '..',
-      'uploads',
-      path.basename(space.image)
-    );
-
-    // Eliminar la imagen del sistema de archivos
-    fs.unlink(imagePath, (err) => {
-      if (err) {
-        console.error('Error al eliminar la imagen:', err);
-      } else {
-        console.log('Imagen eliminada correctamente:', imagePath);
-      }
-    });
+    const prev = path.basename(new URL('http://x' + space.image).pathname);
+    const abs = path.resolve(SPACES_DIR, prev);
+    if (!abs.startsWith(SPACES_DIR + path.sep))
+      return res.status(400).json({ message: 'Ruta inválida' });
+    await fs.unlink(abs).catch(() => {});
 
     await Space.deleteOne({ _id: req.params.id }).session(session);
     await session.commitTransaction();
@@ -170,6 +219,11 @@ exports.bulkDeleteSpace = async (req, res) => {
     await Reservation.deleteMany({ spaceId }).session(session);
 
     await PeriodicReservation.deleteMany({ spaceId }).session(session);
+
+    const prev = path.basename(new URL('http://x' + space.image).pathname);
+    const abs = path.resolve(SPACES_DIR, prev);
+    if (abs.startsWith(SPACES_DIR + path.sep))
+      await fs.unlink(abs).catch(() => {});
 
     await Space.deleteOne({ _id: spaceId }).session(session);
 

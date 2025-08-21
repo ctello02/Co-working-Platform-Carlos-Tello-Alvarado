@@ -1,7 +1,7 @@
 <template>
     <v-container class="pa-5 container">
         <v-card v-if="space" class="mx-auto" :max-width="maxWidth" :class="isPreview ? 'spaceCardPreview' : ''">
-            <v-img :src="space.image" color="surface-variant" :height="isPreview ? '150px' : '300px'" cover
+            <v-img :src="$resolve(space.image)" color="surface-variant" :height="isPreview ? '150px' : '300px'" cover
                 :gradient="isPreview ? 'to bottom, rgba(0,0,0,.1), rgba(0,0,0,.5)' : ''" class="align-end">
                 <v-card-title v-if="isPreview" class="overflow-text text-h5">
                     {{ space.name }}
@@ -171,6 +171,7 @@ import TonalButton from '@/components/TonalButton.vue';
 import AskModal from '@/components/AskModal.vue';
 import { useTime } from '@/composables/useTime';
 import { useSpaceStore } from '@/store/spaceStore';
+
 
 const props = defineProps({
     space: { type: Object, required: true },

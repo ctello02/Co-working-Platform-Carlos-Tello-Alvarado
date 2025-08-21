@@ -1,7 +1,7 @@
 <template>
     <v-container class="pa-5 container">
         <v-card v-if="material" class="mx-auto" :max-width="maxWidth" :class="isPreview ? 'materialCardPreview' : ''">
-            <v-img :src="material.image" color="surface-variant" :height="isPreview ? '150px' : '300px'" cover
+            <v-img :src="$resolve(material.image)" color="surface-variant" :height="isPreview ? '150px' : '300px'" cover
                 :gradient="isPreview ? 'to bottom, rgba(0,0,0,.1), rgba(0,0,0,.5)' : ''" class="align-end">
                 <v-card-title v-if="isPreview" class="overflow-text text-h5">
                     {{ material.name }}
@@ -161,6 +161,7 @@ import TonalButton from '@/components/TonalButton.vue';
 import AskModal from '@/components/AskModal.vue';
 import { useTime } from '@/composables/useTime';
 import { useMaterialStore } from '@/store/materialStore';
+
 
 const props = defineProps({
     material: { type: Object, required: true },
