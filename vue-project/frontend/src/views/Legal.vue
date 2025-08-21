@@ -52,12 +52,23 @@
         <v-divider />
         <p class="text-sm">Última actualización: {{ date }}</p>
     </main>
+    <br>
+
+    <TonalButton color="grey" text="Volver" @click="routerBack" />
 </template>
 
 <script setup>
 import { ref } from 'vue';
+import { useRouter } from 'vue-router';
+import TonalButton from '@/components/TonalButton.vue';
 
 const date = ref(new Date());
 date.value = date.value.toLocaleDateString('es-ES');
+
+const router = useRouter();
+
+function routerBack() {
+    router.go(-1);
+}
 
 </script>

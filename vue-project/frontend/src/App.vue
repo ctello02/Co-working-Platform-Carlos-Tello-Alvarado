@@ -34,7 +34,7 @@ export default {
   },
   computed: {
     isLogged() {
-      return !['login', 'register', 'forgot_password', 'reset'].includes(this.$route.name);
+      return !['login', 'register', 'forgot_password', 'reset', 'legal'].includes(this.$route.name);
     },
     showGradient() {
       return this.$route.meta.gradient;
