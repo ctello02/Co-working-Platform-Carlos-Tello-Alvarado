@@ -178,13 +178,6 @@ function draw() {
         cursorOverStyle: "pointer",
     })
 
-    console.table(reservations.map(r => ({
-        displayName: r.displayName,
-        start: new Date(r.startDate).toLocaleTimeString(),
-        rawStart: r.startDate,
-        end: new Date(r.endDate).toLocaleTimeString()
-    })))
-
     series.data.setAll(reservations)
 
     series.columns.template.events.on("click", ev => {

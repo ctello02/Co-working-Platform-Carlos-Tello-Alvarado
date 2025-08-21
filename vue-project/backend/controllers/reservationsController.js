@@ -154,7 +154,6 @@ exports.createPeriodicReservation = async (req, res) => {
       message: 'Reserva periódica creada con éxito',
       periodicReservation: savedPeriodicReservation,
       conflictCount: conflictCounter || null,
-      conflictObjects: conflictObjects || null,
     });
   } catch (error) {
     await session.abortTransaction();
@@ -232,6 +231,10 @@ exports.getTodayReservations = async (req, res) => {
       .populate('materialId')
       .sort({ startTime: 1 });
 
+    if (reservations.length === 0) {
+      return res.status(404).json({ message: 'No reservations found' });
+    }
+
     return res.json({ reservations });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -290,7 +293,7 @@ exports.updateReservation = async (req, res) => {
     reservation.set(req.body);
 
     await reservation.save();
-    res.json({ message: 'Reserva actualizada con éxito' });
+    res.status(200).json({ message: 'Reserva actualizada con éxito' });
   } catch (error) {
     console.error('Error al actualizar la reserva:', error);
     res.status(500).json({ message: error.message });
@@ -387,7 +390,7 @@ exports.updatePeriodicReservation = async (req, res) => {
     await session.commitTransaction();
     session.endSession();
 
-    return res.json({
+    return res.status(200).json({
       message:
         'La reserva periódica y sus ocurrencias se han actualizado correctamente',
       conflictCount: conflictCounter > 0 ? conflictCounter : null,

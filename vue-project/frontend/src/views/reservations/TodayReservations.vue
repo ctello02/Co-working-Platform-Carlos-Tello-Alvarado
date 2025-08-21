@@ -265,6 +265,17 @@
 
             </v-row>
         </v-col>
+        <v-col v-if="!reservations">
+            <v-row class="d-flex align-center justify-center">
+                <v-col class="d-flex align-center justify-center outline">
+                    <span class="text-h3">
+                        No hay reservas
+                        previstas para
+                        hoy
+                    </span>
+                </v-col>
+            </v-row>
+        </v-col>
     </v-container>
 </template>
 

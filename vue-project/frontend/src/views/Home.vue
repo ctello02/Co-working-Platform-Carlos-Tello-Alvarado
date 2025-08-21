@@ -164,9 +164,10 @@
                 <v-col v-if="reservations.length > 0" class="mt-2">
                     <v-row>
                         <span class="text-h5 ml-3">
-                            Tiene {{ reservations.length }}
-                            <span v-if="reservations.length == 1">reserva</span>
-                            <span v-else>reservas</span>
+                            Tiene
+                            <span>{{ otherReservations.length }} </span>
+                            <span v-if="otherReservations.length == 1"> reserva</span>
+                            <span v-else> reservas</span>
                             esta semana:
                         </span>
                     </v-row>

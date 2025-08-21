@@ -2,14 +2,13 @@
     <!-- Barra superior -->
     <v-app-bar app :style="colorNav" density="compact">
         <v-toolbar-title>Co-Working Platform</v-toolbar-title>
-        <v-spacer></v-spacer>
-        <v-btn class="mx-4" icon="mdi-account-outline" @click="toProfile()"></v-btn>
     </v-app-bar>
 
     <!-- Sidebar permanente -->
     <v-navigation-drawer app permanent :color="colorSidebar" :width="160">
-        <v-list>
-            <v-list-item @click="toHome">
+        <v-list class="d-flex flex-column h-100" nav>
+            <v-list-item :to="{ name: 'home' }" :active="$route.meta.section === 'home'" active-class="active-nav"
+                :ripple="false">
                 <v-row>
                     <v-col cols="1" class="d-flex align-center">
                         <v-icon size="small" icon="mdi-home-outline"></v-icon>
@@ -20,7 +19,8 @@
                 </v-row>
             </v-list-item>
 
-            <v-list-item @click="toReservations">
+            <v-list-item :to="{ name: 'reservations' }" :active="$route.meta.section === 'reservations'"
+                active-class="active-nav" :ripple="false">
                 <v-row>
                     <v-col cols="1" class="d-flex align-center">
                         <v-icon size="small" icon="mdi-calendar-outline"></v-icon>
@@ -31,7 +31,8 @@
                 </v-row>
             </v-list-item>
 
-            <v-list-item @click="toSpaces">
+            <v-list-item :to="{ name: 'spaces' }" :active="$route.meta.section === 'spaces'" active-class="active-nav"
+                :ripple="false">
                 <v-row>
                     <v-col cols="1" class="d-flex align-center">
                         <v-icon size="small" icon="mdi-table-chair"></v-icon>
@@ -42,7 +43,8 @@
                 </v-row>
             </v-list-item>
 
-            <v-list-item @click="toMaterials">
+            <v-list-item :to="{ name: 'materials' }" :active="$route.meta.section === 'materials'"
+                active-class="active-nav" :ripple="false">
                 <v-row>
                     <v-col cols="1" class="d-flex align-center">
                         <v-icon size="small" icon="mdi-tools"></v-icon>
@@ -53,7 +55,8 @@
                 </v-row>
             </v-list-item>
 
-            <v-list-item v-if="userStore.getIsAdmin" @click="toUsers">
+            <v-list-item v-if="userStore.getIsAdmin" :to="{ name: 'users' }" :active="$route.meta.section === 'users'"
+                active-class="active-nav" :ripple="false">
                 <v-row>
                     <v-col cols="1" class="d-flex align-center">
                         <v-icon size="small" icon="mdi-account-group-outline"></v-icon>
@@ -64,17 +67,28 @@
                 </v-row>
             </v-list-item>
 
-            <v-list-item @click="changeAdmin">
+            <v-list-item :to="{ path: '/profile' }" :active="$route.meta.section === 'profile'"
+                active-class="active-nav" :ripple="false">
                 <v-row>
                     <v-col cols="1" class="d-flex align-center">
-                        <v-icon size="small" :icon="userStore.getIsAdmin ? 'mdi-close' : 'mdi-check'"></v-icon>
+                        <v-icon size="small" icon="mdi-account-outline"></v-icon>
                     </v-col>
                     <v-col class="d-flex align-center">
-                        <span class="item" v-if="userStore.getIsAdmin">Quitar Admin</span>
-                        <span class="item" v-else>Hacer Admin</span>
+                        <span class="item">Perfil</span>
                     </v-col>
                 </v-row>
             </v-list-item>
+
+            <v-spacer class="flex-grow-1" />
+
+            <v-list-item :to="{ path: '/legal' }" active-class="active-nav" :ripple="false">
+                <v-row>
+                    <v-col class="d-flex align-center">
+                        <span class="item text-decoration-underline">Aviso legal</span>
+                    </v-col>
+                </v-row>
+            </v-list-item>
+
         </v-list>
     </v-navigation-drawer>
 </template>
@@ -114,9 +128,8 @@ export default {
         toReservations() {
             this.$router.push('/reservations')
         },
-        changeAdmin() {
-            this.userStore.setIsAdmin(!this.userStore.getIsAdmin)
-            localStorage.setItem('isAdmin', this.userStore.getIsAdmin)
+        toLegal() {
+            this.$router.push('/legal')
         }
     }
 }
@@ -125,5 +138,25 @@ export default {
 <style scoped>
 .item {
     font-size: clamp(8px, 1.2vw, 12px);
+}
+
+.active-nav {
+    background-color: #0b3b78 !important;
+    color: #fff !important;
+    border-radius: 8px;
+}
+
+.active-nav .v-icon,
+.active-nav .item {
+    color: #fff !important;
+}
+
+.v-list-item:hover {
+    background-color: rgba(255, 255, 255, 0.007);
+    border-radius: 8px;
+}
+
+.v-list-item:active {
+    background-color: #093264 !important;
 }
 </style>

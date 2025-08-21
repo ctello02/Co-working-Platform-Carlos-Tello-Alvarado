@@ -85,7 +85,7 @@
                   <span class="text-h5">No hay espacios disponibles con estos filtros</span>
                 </v-col>
               </v-row>
-              <v-row class="mt-2 mx-n1" v-else>
+              <v-row class="my-2 mx-n1" v-else>
                 <v-col v-for="spc in filteredSpaces" :key="spc._id" cols="12" md="6" lg="4">
                   <v-card>
                     <v-img :src="spc.image" height="200px" cover />
@@ -123,7 +123,7 @@
                       <div class="d-flex align-center ga-2">
                         <v-icon style="color: #4f5b66">mdi-hand-coin-outline</v-icon>
                         <span class="text-h6" style="color: #4f5b66" v-if="spc.pricing > 0">
-                          Precio por reserva: {{ spc.pricing }}€
+                          Precio por franja horaria: {{ spc.pricing }}€
                         </span>
                         <span class="text-h6" style="color: #4f5b66" v-else>
                           Reservas gratis
