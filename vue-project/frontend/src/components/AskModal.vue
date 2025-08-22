@@ -10,9 +10,18 @@
                     <span class="ml-3" :style="style" v-html="message"></span>
                 </v-row>
                 <v-row v-if="checkboxAction" class="mb-n4">
-                    <v-checkbox label="Borrar todas las reservas periódicas" @click="handleCheckboxAction" />
+                    <v-checkbox v-model="isChecked" label="Borrar todas las reservas periódicas"
+                        @click="handleCheckboxAction" />
                 </v-row>
             </v-card-text>
+
+            <v-fade-transition v-if="warnPaymentRefund && isChecked">
+                <v-row class="mt-n8 mb-9 mx-5">
+                    <v-alert type="warning" density="compact" variant="tonal">
+                        Si has pagado alguna reserva periódica, se te devolverá el pago.
+                    </v-alert>
+                </v-row>
+            </v-fade-transition>
 
             <v-card-actions :class="checkboxAction ? 'mt-n7' : 'mt-n2'" class="mb-3 mr-3 d-flex justify-end ga-3">
                 <TonalButton color="grey" text="Cancelar" @click="handleClose" />
@@ -28,6 +37,7 @@ import TonalButton from './TonalButton.vue';
 export default {
     data() {
         return {
+            isChecked: false,
             style: {
                 color: this.colorText,
             },
@@ -73,7 +83,11 @@ export default {
         maxWidth: {
             type: String,
             default: '450px'
-        }
+        },
+        warnPaymentRefund: {
+            type: Boolean,
+            default: false
+        },
     },
     components: {
         TonalButton
@@ -85,6 +99,13 @@ export default {
             },
             set(value) {
                 this.$emit('update:modelValue', value);
+            }
+        }
+    },
+    watch: {
+        modelValue(newVal) {
+            if (newVal) {
+                this.isChecked = false;
             }
         }
     },

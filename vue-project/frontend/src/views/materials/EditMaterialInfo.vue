@@ -1,8 +1,8 @@
 <template>
   <v-container class="container">
     <v-card v-if="material" class="mx-auto" max-width="600">
-      <v-img :src="newMaterial?.image" color="surface-variant" height="300px" cover class="img-container"
-        @click="triggerFileInput" style="cursor: pointer; border: 0; border-radius: 0">
+      <v-img :src="imgSrc" color="surface-variant" height="300px" cover class="img-container" @click="triggerFileInput"
+        style="cursor: pointer; border: 0; border-radius: 0">
         <v-icon class="mdi-camera camera-icon">mdi-camera</v-icon>
         <input type="file" ref="fileInput" accept="image/*" @change="onFileChange" style="display: none" />
       </v-img>
@@ -64,7 +64,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted } from 'vue';
+import { ref, computed, watch, onMounted, getCurrentInstance } from 'vue';
 import { useRouter } from 'vue-router';
 import { useToast } from 'vue-toastification';
 import { useMaterialStore } from '@/store/materialStore';
@@ -72,6 +72,9 @@ import { materialService } from '@/services/materialService';
 import TonalButton from '@/components/TonalButton.vue';
 
 import { useTime } from '@/composables/useTime';
+
+const { appContext } = getCurrentInstance();
+const resolve = appContext.config.globalProperties.$resolve;
 
 // Store y router
 const router = useRouter();
@@ -84,6 +87,7 @@ const material = ref(null);
 const newMaterial = ref(null);
 const newImage = ref(null);
 const isNewImage = ref(false);
+const previewUrl = ref(null);
 const selectedTimeFrame = ref(null);
 const openingTime = ref(null);
 const closingTime = ref(null);
@@ -120,6 +124,11 @@ const filteredClosingTimes = computed(() => {
   return allTimes.value.slice(openingIndex + 1);
 });
 
+const imgSrc = computed(() => {
+  if (isNewImage.value && previewUrl.value) return previewUrl.value;
+  return resolve(newMaterial.value?.image);
+});
+
 // Watch para validar hora de cierre
 watch(openingTime, (newVal) => {
   if (newVal && closingTime.value && newVal >= closingTime.value) {
@@ -134,17 +143,19 @@ const triggerFileInput = () => {
 
 // Función para manejar la carga de archivos
 const onFileChange = (e) => {
-  const file = e.target.files[0];
-  if (file) {
-    isNewImage.value = true;
-    newImage.value = file;
+  const file = e.target.files?.[0];
+  if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      newMaterial.value.image = e.target.result;
-    };
-    reader.readAsDataURL(file);
-  }
+  const ok = ['image/jpeg', 'image/png', 'image/webp'].includes(file.type);
+  const maxMB = 2;
+  if (!ok) { toast.error('Formato no permitido (JPG/PNG/WebP)'); return; }
+  if (file.size > maxMB * 1024 * 1024) { toast.error(`Máximo ${maxMB}MB`); return; }
+
+  isNewImage.value = true;
+  newImage.value = file;
+
+  if (previewUrl.value) URL.revokeObjectURL(previewUrl.value);
+  previewUrl.value = URL.createObjectURL(file);
 };
 
 // Validación de campos vacíos
@@ -181,10 +192,11 @@ const submit = async () => {
 
   try {
     const res = await materialService.updateMaterial(formData);
-    console.log(res.data);
     toast.success('¡Material actualizado con éxito!');
+    newMaterial.value = res.data;
+    materialStore.setSelectedMaterial(res.data);
     router.go(-1);
-    materialStore.setSelectedMaterial(newMaterial);
+
   } catch (error) {
     console.error(error);
   }

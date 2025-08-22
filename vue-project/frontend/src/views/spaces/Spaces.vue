@@ -45,7 +45,7 @@
                 :closeModal="closeDialog" :action="deleteSpace" />
 
             <AskModal v-model="bulkDeleteModal" :maxWidth="'600px'" :title="'Este espacio tiene reservas pendientes'"
-                :message="'Este espacio tiene reservas pendientes, ¿Estás seguro de que quieres borrarlo?'"
+                :message="'Este espacio tiene reservas pendientes, ¿Estás seguro de que quieres borrarlo? Se devolverá el pago de las reservas que se hayan cobrado.'"
                 :actionText="'Borrar espacio'" :closeModal="closeBulkDeleteDialog" :action="bulkDeleteSpace" />
 
         </v-col>
@@ -79,7 +79,6 @@ const isAdmin = computed(() => userStore.value.getIsAdmin)
 // Variables reactivas
 const list = ref(false);
 const spaces = ref(null);
-//const selectedSpace = ref(null);
 const deleteModal = ref(false);
 const bulkDeleteModal = ref(false);
 

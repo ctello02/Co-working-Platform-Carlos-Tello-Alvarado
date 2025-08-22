@@ -58,13 +58,14 @@
 
                 <v-row v-if="reservation.item === 'space'" class="mt-5 mb-n8">
                   <v-col cols="5">
-                    <v-text-field v-model.number="reservationSeats" label="Número de asientos"
+                    <v-text-field v-model.number="reservationSeats" :disabled="show" label="Número de asientos"
                       prepend-icon="mdi-table-chair" type="number" variant="outlined" density="compact" required
                       @input="reservationSeats = Math.max(1, reservationSeats)" />
                   </v-col>
                   <v-col v-if="admitsRepetition" cols="7">
-                    <v-select v-model="repetition" :items="repetitionOptions" item-title="label" item-value="value"
-                      label="Repetición" prepend-icon="mdi-repeat" variant="outlined" density="compact" />
+                    <v-select v-model="repetition" :items="repetitionOptions" :disabled="show" item-title="label"
+                      item-value="value" label="Repetición" prepend-icon="mdi-repeat" variant="outlined"
+                      density="compact" />
                   </v-col>
                   <v-col v-else>
                     <v-row>
@@ -96,41 +97,62 @@
                 </v-row>
 
                 <v-divider class="mt-6" />
-                <v-row class="mt-3 mb-n8 d-flex align-center justify-center">
-                  <v-col cols="5">
-                    <span class="text-h6" v-if="pricing > 0">
-                      Precio por reserva: {{ calculatePrice }}€
+                <v-row class="mt-3 mb-n3 d-flex align-start ">
+                  <v-col cols="1" class="d-flex align-center ">
+                    <v-icon icon="mdi-hand-coin-outline" />
+                  </v-col>
+                  <v-col class="d-flex ga-2 ml-n1 mt-n1">
+                    <span class="text-h6">
+                      Precio: {{ calculatePrice }}€
                     </span>
-                    <span class="text-h6" v-else>
-                      La reserva será gratis
-                    </span>
+                    <v-tooltip v-if="repetition !== 'no_repeat'" v-model="showTooltip" location="top">
+                      <template v-slot:activator="{ props }">
+                        <v-icon class="mt-1" v-bind="props" size="small">
+                          mdi-information-outline
+                        </v-icon>
+                      </template>
+                      <span>
+                        Únicamente se pagará la reserva seleccionada.
+                        <br>El resto de reservas deberán pagarse manualmente.
+                      </span>
+                      <span v-if="applyToAll">
+                        <br> Solo se pagará esta reserva.
+                      </span>
+                    </v-tooltip>
                   </v-col>
                 </v-row>
-
-                <v-row class="mb-n4">
-                  <v-col class="" style="display: flex; flex-direction: column; gap: 15px;">
-                    <v-fade-transition>
+                <v-fade-transition>
+                  <v-row class="mb-n3" v-if="reservationSeats >= maxAllowed">
+                    <v-col class="mt-n2" style="display: flex; flex-direction: column; gap: 15px;">
                       <v-alert v-if="reservationSeats >= maxAllowed && reservation.item === 'space'" type="warning"
                         density="compact" variant="tonal">
                         No se pueden reservar más de {{ maxAllowed }} asientos.
                       </v-alert>
-                    </v-fade-transition>
-                    <v-fade-transition>
                       <v-alert v-if="periodicReservedModal" type="warning" density="compact" variant="tonal">
                         No se puede reservar periódicamente, ya hay una reserva con el mismo horario.
                       </v-alert>
-                    </v-fade-transition>
-                  </v-col>
-                </v-row>
+                    </v-col>
+                  </v-row>
+                </v-fade-transition>
               </v-col>
             </v-card-text>
             <v-card-actions>
-              <v-row class="mt-n6 mb-3 mr-2 d-flex justify-end ga-3">
-                <TonalButton color="grey" text="Volver" @click="routerBack" />
-                <TonalButton color="blue" text="Reservar" :loading="isLoading" @click="submit">
-                </TonalButton>
+              <v-row class="mt-n5 mb-6 mr-5 d-flex ga-3">
+                <TonalButton class="ml-8" color="grey" text="Volver" @click="routerBack" />
+                <v-spacer />
+
+                <TonalButton v-if="!show" color="blue" text="Reservar" :loading="isLoading"
+                  @click="handleSubmit(false)" />
+                <TonalButton :color="show ? 'grey' : 'blue'" :text="show ? 'Cancelar' : 'Reservar y pagar'"
+                  :loading="isLoading" @click="show ? closePayPal() : handleSubmit(true)" />
               </v-row>
             </v-card-actions>
+
+            <v-expand-transition>
+              <div v-show="show" class="mt-n2 ma-7">
+                <div style="width: 100%;" id="paypal-button-container" />
+              </div>
+            </v-expand-transition>
           </v-card>
         </v-col>
 
@@ -156,6 +178,7 @@ import { useReservationStore } from '@/store/reservationStore';
 import { useSpaceStore } from '@/store/spaceStore';
 import { useMaterialStore } from '@/store/materialStore';
 import { reservationService } from '@/services/reservationService';
+import { paypalService } from '@/services/paypalService';
 import { useToast } from 'vue-toastification';
 
 import TonalButton from '@/components/TonalButton.vue';
@@ -165,10 +188,9 @@ import MaterialCard from '@/components/MaterialCard.vue';
 import { useTime } from '@/composables/useTime';
 
 // ------------------------------------------------
-// Instancias de Router, Toast y Stores
+// Instancias de Router y Stores
 // ------------------------------------------------
 const router = useRouter();
-const toast = useToast();
 const reservationStore = useReservationStore();
 const spaceStore = useSpaceStore();
 const materialStore = useMaterialStore();
@@ -203,7 +225,10 @@ const showSpaceModal = ref(false);
 const showMaterialModal = ref(false);
 const periodicReservedModal = ref(false);
 
+const paypalLoaded = ref(false);
 const isLoading = ref(false);
+const show = ref(false);
+const showTooltip = ref(false)
 
 const reservationSeats = ref(1);
 const maxAllowed = ref(null);
@@ -273,14 +298,14 @@ async function getPeriodicReservations() {
 
 
 // ------------------------------------------------
-// Confirmar Reserva
+// Función para confirmar la reserva y para pagarla
 // ------------------------------------------------
-const submit = async () => {
-
+async function handleSubmit(doPay = false) {
+  const toast = useToast();
   isLoading.value = true;
 
+  // Montamos el formData
   const formData = new FormData();
-
   if (reservation.value.item === 'space') {
     formData.append('spaceId', reservation.value.spaceId);
     formData.append('seatsReserved', reservationSeats.value);
@@ -289,60 +314,88 @@ const submit = async () => {
     formData.append('materialId', reservation.value.materialId);
     formData.append('spaceId', null);
   }
-
   formData.append('userId', reservation.value.userId);
   formData.append('startTime', reservation.value.startTime);
   formData.append('endTime', reservation.value.endTime);
 
-  formData.append('isPaid', true);
-
-  try {
-    let res;
-
-    // Comprobar si hay reservas periodicas
-    // Si hay:
-    //   - Comprobar cada una si es diaria, semanal o mensual
-    // Si no hay: 
-    //   - Sin restricciones
-
-    if (checkPeriodicReservations() == true) {
-      periodicReservedModal.value = true;
-      isLoading.value = false;
-      return;
-    }
-    //---- Si llega hasta aquí es porque se puede reservar ----
-
-    // Comprobar qué tipo de repetición
-    //  - Sin repetición: se crea directamente
-    //  - Diaria, Semanal o Mensual: hay que meter cosas en el formData
-    res = await sendReservation(formData);
-
+  // Comprobar si hay reservas periodicas
+  // Si hay:
+  //   - Comprobar cada una si es diaria, semanal o mensual
+  // Si no hay: 
+  //   - Sin restricciones
+  if (checkPeriodicReservations()) {
+    periodicReservedModal.value = true;
     isLoading.value = false;
-    toast.success(res.data.message);
-
-    const conflictObjects = res.data.conflictObjects || [];
-    if (conflictObjects.length > 0) {
-      toast.warning(`Se han producido ${conflictObjects.length} conflictos. Debe reservar manualmente los días donde ha habido un error.`);
-    }
-
-    router.push('/reservations');
-  } catch (error) {
-    isLoading.value = false;
-    console.error(error);
-
-    // Verificamos si es el error de "too many conflicts"
-    if (
-      error.response &&
-      error.response.status === 409 &&
-      error.response.data?.errorCode === 'TOO_MANY_CONFLICTS'
-    ) {
-      toast.error(error.response.data.message);
-    } else {
-      // Cualquier otro error
-      toast.error('Error al crear la reserva');
-    }
+    return;
   }
-};
+  //---- Si llega hasta aquí es porque se puede reservar ----
+
+  // Si no se va a pagar, añadimos isPaid = false y procesamos
+  if (!doPay) {
+    formData.append('isPaid', false);
+    const ok = await processReservation(formData);
+    isLoading.value = false;
+    if (ok) router.push('/reservations');
+    return;
+  }
+
+  // Si se va a pagar, arrancamos PayPal
+  try {
+    await loadPayPalSdk();
+    const price = calculatePrice.value;
+
+    const container = document.getElementById('paypal-button-container');
+    if (container) container.innerHTML = '';
+
+    paypal.Buttons({
+      createOrder: () =>
+        paypalService
+          .createOrder(reservation.value._id, price)
+          .then(r => r.data.orderID),
+      onApprove: async (data) => {
+        const captureRes = await paypalService.captureOrder(
+          data.orderID,
+          reservation.value._id
+        );
+        if (captureRes.data.paymentStatus !== 'COMPLETED') {
+          return toast.error('Pago invalidado');
+        }
+
+        formData.append('paypalOrderId', data.orderID);
+        formData.append('paypalCaptureId', captureRes.data.capture);
+        formData.append('paymentStatus', 'COMPLETED');
+        formData.append('isPaid', true);
+
+        const ok = await processReservation(formData);
+        show.value = false;
+        if (ok) {
+          router.push('/reservations');
+        }
+      },
+      onError: (err) => {
+        toast.error('Error en la pasarela PayPal');
+        isLoading.value = false;
+      }
+    }).render(container);
+    show.value = true;
+  } catch (err) {
+    console.error('Error arrancando PayPal:', err);
+    toast.error('No se pudo iniciar el pago');
+  } finally {
+    isLoading.value = false;
+  }
+}
+
+function loadPayPalSdk() {
+  if (paypalLoaded.value) return Promise.resolve();
+  return new Promise((resolve, reject) => {
+    const script = document.createElement('script');
+    script.src = `https://www.paypal.com/sdk/js?client-id=${import.meta.env.VITE_PAYPAL_CLIENT_ID}&currency=EUR`;
+    script.onload = () => { paypalLoaded.value = true; resolve(); };
+    script.onerror = reject;
+    document.head.appendChild(script);
+  });
+}
 // ------------------------------------------------
 
 
@@ -405,12 +458,8 @@ function checkPeriodicReservations() {
         else {
           // Comprobamos los asientos de la reserva periódica
           if (reservationSeats.value <= (space.value.seats - periodicReservation.seatsReserved)) {
-            //console.log("Retorna false");
             return false;
           }
-          //console.log("Retorna true");
-          //console.log(reservationSeats.value);
-          //console.log(space.value.seats - periodicReservation.seatsReserved);
 
           return true;
         }
@@ -420,6 +469,43 @@ function checkPeriodicReservations() {
   return false;
 };
 // ------------------------------------------------
+
+
+// ------------------------------------------------
+// Helper para enviar la reserva a la API
+// ------------------------------------------------
+async function processReservation(formData) {
+  const toast = useToast();
+  try {
+    // Comprobar qué tipo de repetición
+    //  - Sin repetición: se crea directamente
+    //  - Diaria, Semanal o Mensual: hay que meter cosas en el formData
+    const res = await sendReservation(formData);
+    toast.success(res.data.message);
+
+    const conflicts = res.data.conflictObjects || [];
+    if (conflicts.length > 0) {
+      toast.warning(
+        `Se han producido ${conflicts.length} conflictos. ` +
+        `Debe reservar manualmente los días donde ha habido un error.`
+      );
+    }
+    return true;
+  } catch (error) {
+    console.error(error);
+    if (
+      error.response?.status === 409 &&
+      error.response.data?.errorCode === 'TOO_MANY_CONFLICTS'
+    ) {
+      toast.error(error.response.data.message);
+    } else {
+      toast.error('Error al crear la reserva');
+    }
+    return false;
+  }
+}
+// ------------------------------------------------
+
 
 // ------------------------------------------------
 // Función para comprobar si hay reservas periodicas
@@ -432,17 +518,19 @@ async function sendReservation(formData) {
     // Si selecciona repetición, creamos una periodicReservation
     // Calculamos el campo lastOccurrenceGenerated. De momento se puede hacer en el front, pero a la hora de implementar la API, se debe hacer en el back
     const selectedOption = repetitionOptions.find(option => option.value === repetition.value);
-    const lastOccurrenceGenerated = new Date(reservation.value.startTime);
+    const last = new Date(reservation.value.startTime);
 
     if (repetition.value === 'daily') {
-      lastOccurrenceGenerated.setDate(lastOccurrenceGenerated.getDate() + selectedOption.occurrences);        // Para 'daily', se suman días 
-    } else if (repetition.value === 'weekly') {
-      lastOccurrenceGenerated.setDate(lastOccurrenceGenerated.getDate() + (selectedOption.occurrences * 7));  // Para 'weekly', son 16 semanas
-    } else if (repetition.value === 'monthly') {
-      lastOccurrenceGenerated.setMonth(lastOccurrenceGenerated.getMonth() + selectedOption.occurrences);      // Para 'monthly', se suman meses 
+      last.setUTCDate(last.getUTCDate() + selectedOption.occurrences);
+    }
+    else if (repetition.value === 'weekly') {
+      last.setUTCDate(last.getUTCDate() + selectedOption.occurrences * 7);
+    }
+    else if (repetition.value === 'monthly') {
+      last.setUTCMonth(last.getUTCMonth() + selectedOption.occurrences);
     }
 
-    formData.append('lastOccurrenceGenerated', lastOccurrenceGenerated.toISOString());
+    formData.append('lastOccurrenceGenerated', last.toISOString());
     formData.append('periodicity', repetition.value);
 
     res = await reservationService.createPeriodicReservation(formData);
@@ -487,7 +575,6 @@ const calculatePrice = computed(() => {
 
   // calculo cuántos bloques completos caben
   const blocks = (endMin - startMin) / dur
-  //console.log(blocks)
 
   // en caso de que no sea un múltiplo exacto, redondeamos hacia abajo
   const fullBlocks = Math.floor(blocks)
@@ -497,6 +584,9 @@ const calculatePrice = computed(() => {
   return total.toFixed(2)
 })
 
+function closePayPal() {
+  show.value = false
+}
 
 const routerBack = () => {
   router.go(-1);

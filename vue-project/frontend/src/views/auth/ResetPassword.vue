@@ -45,6 +45,9 @@ export default {
   components: {
     TonalButton
   },
+  onMounted() {
+    console.log("Entra");
+  },
   methods: {
     emptyFields() {
       // Verificar que los campos no estén vacíos y que cumplan las reglas de validación
@@ -62,6 +65,7 @@ export default {
         })
         .catch(error => {
           console.log(error);
+          toast.error(error.response.data.message);
         });
     },
     toLogin() {

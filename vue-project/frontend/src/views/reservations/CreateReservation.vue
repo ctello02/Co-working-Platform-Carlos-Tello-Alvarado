@@ -85,7 +85,7 @@
                   <span class="text-h5">No hay espacios disponibles con estos filtros</span>
                 </v-col>
               </v-row>
-              <v-row class="mt-2 mx-n1" v-else>
+              <v-row class="my-2 mx-n1" v-else>
                 <v-col v-for="spc in filteredSpaces" :key="spc._id" cols="12" md="6" lg="4">
                   <v-card>
                     <v-img :src="spc.image" height="200px" cover />
@@ -123,7 +123,7 @@
                       <div class="d-flex align-center ga-2">
                         <v-icon style="color: #4f5b66">mdi-hand-coin-outline</v-icon>
                         <span class="text-h6" style="color: #4f5b66" v-if="spc.pricing > 0">
-                          Precio por reserva: {{ spc.pricing }}€
+                          Precio por franja horaria: {{ spc.pricing }}€
                         </span>
                         <span class="text-h6" style="color: #4f5b66" v-else>
                           Reservas gratis
@@ -303,7 +303,7 @@ const filteredMaterials = ref([]);
 const date = ref(new Date());
 const formattedDate = ref(parseToStringDate(date.value));
 const startTime = ref(null);
-const initialLoad = ref(false);
+const initialLoaded = ref(false);
 const durationSearched = ref(null);
 const reservationSeats = ref(1);
 const isLoading = ref(false);
@@ -317,12 +317,12 @@ const slotsByMaterial = reactive({});
 // Cada vez que cambiamos fecha, recargamos datos y slots
 watch(date, () => {
   formattedDate.value = parseToStringDate(date.value);
-  if (initialLoad.value) {
+  if (initialLoaded.value) {
     startTime.value = null;
   }
   // Marcamos que ya pudo cargar la hora inicial de la store
   // El problema es que se inicializaba a null aunque hubiese una hora en la store
-  initialLoad.value = true;
+  initialLoaded.value = true;
   loadDayData();
 });
 

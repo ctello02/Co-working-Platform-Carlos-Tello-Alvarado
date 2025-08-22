@@ -1,5 +1,4 @@
 import axiosInstance from '@/plugins/axiosConfig'; // Importamos la configuración de Axios con interceptores
-import { get } from '@vueuse/core';
 
 const API_URL = '/reservations';
 
@@ -61,5 +60,9 @@ export const reservationService = {
 
   deletePeriodicReservation(id) {
     return axiosInstance.delete(`${API_URL}/deletePeriodicReservation/${id}`);
+  },
+
+  markAsPaid(reservationId) {
+    return axiosInstance.put(`${API_URL}/markAsPaid/${reservationId}`);
   },
 };

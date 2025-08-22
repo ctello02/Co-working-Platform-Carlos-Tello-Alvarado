@@ -5,6 +5,8 @@
                 <v-col class="d-flex align-center justify-end ga-3">
                     <v-btn @click="() => emit('see-event')" variant="text" size="x-small"
                         icon="mdi-information-outline" />
+                    <v-btn @click="() => emit('pay-event')" variant="text" size="x-small" icon="mdi-hand-coin-outline"
+                        v-if="!reservation?.isPaid" />
                     <v-btn v-if="reservation?.canEdit" @click="() => emit('edit-event')" variant="text" size="x-small"
                         icon="mdi-pencil" />
                     <v-btn v-if="reservation?.canEdit" @click="() => emit('delete-event')" variant="text" size="x-small"
@@ -60,6 +62,19 @@
                         </v-col>
                     </v-row>
                 </v-col>
+                <v-divider class="mt-n1 mx-3" />
+                <v-col cols="12" class="mb-n1 mt-n3">
+                    <v-row>
+                        <v-col class="">
+                            <span v-if="reservation.isPaid">
+                                Pagada ({{ calculatePrice }}€)
+                            </span>
+                            <span v-else>
+                                Sin pagar ({{ calculatePrice }}€)
+                            </span>
+                        </v-col>
+                    </v-row>
+                </v-col>
             </v-row>
         </v-col>
     </v-container>
@@ -67,18 +82,51 @@
 
 
 <script setup>
+import { computed } from 'vue';
 import { useTime } from '@/composables/useTime';
 
 const props = defineProps({
     reservation: { type: Object, required: true },
 })
 
-const emit = defineEmits(['see-event', 'edit-event', 'delete-event', 'close']);
+const emit = defineEmits(['see-event', 'pay-event', 'edit-event', 'delete-event', 'close']);
+
+const calculatePrice = computed(() => {
+    const reservation = props.reservation;
+    const startStr = reservation.startTime
+    const endStr = reservation.endTime
+    let dur = 0;
+    let pricePer = 0;
+    if (reservation?.spaceId) {
+        dur = reservation.spaceId.duration      // duración de un bloque, en minutos
+        pricePer = reservation.spaceId.pricing       // precio por bloque
+    } else {
+        dur = reservation.materialId.duration      // duración de un bloque, en minutos
+        pricePer = reservation.materialId.pricing       // precio por bloque
+    }
+
+    // convierto fecha ISO en minutos
+    const startMin = makeMinutesFromIsoLocal(startStr)
+    const endMin = makeMinutesFromIsoLocal(endStr)
+
+    // calculo cuántos bloques completos caben
+    const blocks = (endMin - startMin) / dur
+    //console.log(blocks)
+
+    // en caso de que no sea un múltiplo exacto, redondeamos hacia abajo
+    const fullBlocks = Math.floor(blocks)
+    const seats = reservation?.seatsReserved || 1
+    const total = fullBlocks * pricePer * seats
+
+    // toFixed devuelve una string con dos decimales
+    return total.toFixed(2)
+});
 
 // Extraemos funciones del composable useTime
 const {
     getHoursAndMinsFromDate,
     twoDigitsDate,
+    makeMinutesFromIsoLocal,
 } = useTime();
 
 </script>

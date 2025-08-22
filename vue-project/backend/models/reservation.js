@@ -25,6 +25,14 @@ const ReservationSchema = new Schema({
     default: null,
   },
   isPaid: { type: Boolean, default: false },
+  paypalOrderId: { type: String, default: null },
+  paypalCaptureId: { type: String, default: null },
+  paymentStatus: {
+    type: String,
+    enum: ['CREATED', 'COMPLETED', 'UPDATED', 'FAILED'],
+    default: null,
+    nullable: true,
+  },
 });
 
 const Reservation = mongoose.model('Reservation', ReservationSchema);

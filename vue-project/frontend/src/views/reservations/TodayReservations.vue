@@ -265,6 +265,17 @@
 
             </v-row>
         </v-col>
+        <v-col v-if="!reservations">
+            <v-row class="d-flex align-center justify-center">
+                <v-col class="d-flex align-center justify-center outline">
+                    <span class="text-h3">
+                        No hay reservas
+                        previstas para
+                        hoy
+                    </span>
+                </v-col>
+            </v-row>
+        </v-col>
     </v-container>
 </template>
 
@@ -272,13 +283,9 @@
 import { ref, onMounted, onUnmounted, computed, watch } from 'vue';
 import Table from '@/components/Table.vue';
 import ReservationCard from '@/components/ReservationCard.vue';
-// import { useUserStore } from '@/store/userStore';
 import { useReservationStore } from '@/store/reservationStore';
-// import { useSpaceStore } from '@/store/spaceStore';
-// import { useMaterialStore } from '@/store/materialStore';
 import { useRouter } from 'vue-router';
 import { useTime } from '@/composables/useTime';
-//import TonalButton from '@/components/TonalButton.vue';
 import { reservationService } from '@/services/reservationService';
 
 /* ---------------- Instancias de composables --------------- */
@@ -321,7 +328,6 @@ async function getTodayReservations() {
         .then(res => {
             originalReservations.value = res.data.reservations;
             reservations.value = res.data.reservations;
-            console.log(reservations.value);
         })
         .catch(error => {
             console.log(error);

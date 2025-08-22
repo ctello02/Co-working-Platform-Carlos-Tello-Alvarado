@@ -68,7 +68,6 @@ export default {
       const toast = useToast();
       authService.forgotPassword(this.email)
         .then(res => {
-          console.log(res.data);
           toast.success(res.data.message);
           this.email = null;
         })

@@ -1,10 +1,27 @@
 const express = require('express');
-const { signup, login, getUser, forgotPassword, resetPassword, changePassword, validateToken } = require('../controllers/authController');
+const {
+  signup,
+  login,
+  getUser,
+  forgotPassword,
+  resetPassword,
+  changePassword,
+  validateToken,
+} = require('../controllers/authController');
 const verifyToken = require('../middleware/verify_tokens');
 const router = express.Router();
+const rateLimit = require('express-rate-limit');
 
-router.post('/signup', signup);
-router.post('/login', login);
+const loginLimiter = rateLimit({
+  windowMs: 10 * 60 * 1000, // 10 min
+  max: 10, // 10 intentos por IP
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  message: { message: 'Demasiados intentos. Prueba más tarde.' },
+});
+
+router.post('/signUp', signup);
+router.post('/login', loginLimiter, login);
 router.get('/user', verifyToken, getUser);
 router.get('/validate', verifyToken, validateToken);
 router.post('/forgotPassword', forgotPassword);

@@ -44,6 +44,15 @@
               prepend-icon="mdi-file-document-outline" required :rules="cifRules" class="my-1" />
           </v-row>
 
+          <v-row class="mt-n4">
+            <v-col class="text-center">
+              <p class="subtitle">
+                Al registrarte aceptas nuestros <br>
+                <router-link class="routerLink" to="/legal">Términos y condiciones</router-link>
+              </p>
+            </v-col>
+          </v-row>
+
           <v-row>
             <TonalButton color="primary" text="Registrarse" class="cta-btn custom-disabled-btn" @click="submit"
               :disabled="emptyFields()" block />
@@ -57,6 +66,7 @@
               </p>
             </v-col>
           </v-row>
+
         </v-col>
       </v-card-text>
     </v-card>
@@ -123,8 +133,18 @@ export default {
     async submit() {
       const toast = useToast();
       if (!this.emptyFields()) {
+
+        const formData = new FormData();
+        formData.append('name', this.name);
+        formData.append('email', this.email);
+        formData.append('password', this.password);
+        formData.append('phone', this.phone);
+        formData.append('address', this.address);
+        formData.append('isCompany', this.isCompany);
+        formData.append('cif', this.cif);
+
         authService
-          .signUp(this.name, this.email, this.password, this.phone, this.address, this.isCompany, this.cif)
+          .signUp(formData)
           .then((res) => {
             console.log(res.data);
             toast.success("¡Usuario registrado con éxito!");

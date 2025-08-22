@@ -71,7 +71,7 @@
       :closeModal="closeDialog" :action="deleteUser" />
 
     <AskModal v-model="bulkDeleteModal" :maxWidth="'600px'" :title="'Aún tienes reservas pendientes'"
-      :message="'Tienes reservas pendientes, ¿Estás seguro de que quieres borrar tu cuenta?'"
+      :message="'Tienes reservas pendientes, ¿Estás seguro de que quieres borrar tu cuenta? Se te devolverá el pago de las reservas que te hayan cobrado.'"
       :actionText="'Borrar cuenta'" :closeModal="closeBulkDeleteDialog" :action="bulkDeleteUser" />
 
   </v-container>
@@ -91,7 +91,6 @@ export default {
     return {
       userStore: null,
       user: null,
-      payment_method: null,
       logOutModal: false,
       deleteModal: false,
       bulkDeleteModal: false,
@@ -156,11 +155,11 @@ export default {
     bulkDeleteUser() {
       const toast = useToast();
       userService.bulkDeleteUser(this.user._id)
-        .then(() => {
+        .then((res) => {
           this.closeBulkDeleteDialog();
           this.userStore.clearStore();
           this.$router.push("/login");
-          toast.error('Cuenta eliminada con éxito');
+          toast.error(res.data.message);
         })
         .catch(error => {
           console.log(error);

@@ -1,8 +1,7 @@
-// src/composables/useTime.js
-
 export function useTime() {
-  /** Genera una variable con todas las duraciones
-   * posibles que se permite buscar en un espacio
+  /**
+   * Genera una variable con todas las duraciones
+   * posibles que se permiten buscar en un espacio
    */
   const timeFrames = [
     { label: '15 mins', value: 15 },
@@ -12,20 +11,33 @@ export function useTime() {
     { label: '3 horas', value: 180 },
   ];
 
+  /*
+   * Parsea una repetición de un evento a un string legible
+   */
+  const repetitionMap = {
+    no_repeat: 'Sin repetición',
+    daily: 'Se repite todos los días',
+    weekly: 'Se repite todas las semanas este día',
+    monthly: 'Se repite todos los meses este día',
+  };
+  function parseRepetition(repetition) {
+    return repetitionMap[repetition] || 'Repetición desconocida';
+  }
+
   /**
    * Función para normalizar y verificar si ocurre un evento en una fecha
    */
   function occursOn(pr, date) {
     const s = new Date(pr.startTime);
 
-    if (date < s) return false;
+    if (date < s) return false; // Si la fecha es anterior al evento, no ha ocurrido todavía
 
     switch (pr.periodicity) {
-      case 'daily':
+      case 'daily': // Como es diaria, va a ocurrir siempre
         return true;
-      case 'weekly':
+      case 'weekly': // Como es semanal, va a ocurrir si coincide el día de la semana
         return date.getDay() === s.getDay();
-      case 'monthly':
+      case 'monthly': // Como es mensual, va a ocurrir si coincide el día del mes
         return date.getDate() === s.getDate();
       default:
         return false;
@@ -218,6 +230,23 @@ export function useTime() {
   }
 
   /**
+   * Devuelve true si tanto startDate como endDate están en esta semana
+   * (entre ahora y dentro de 7 días naturales), false en caso contrario.
+   */
+  function isWithinNext7Days(startDate) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const lastDay = new Date(today);
+    lastDay.setDate(lastDay.getDate() + 7);
+    lastDay.setHours(23, 59, 59, 999);
+
+    const start = new Date(startDate);
+
+    return start >= today && start <= lastDay;
+  }
+
+  /**
    * Comprueba si la fecha pasada es igual o posterior al día actual
    * y devuelve true si es < al día actual o devuelve false en caso contrario.
    */
@@ -238,6 +267,7 @@ export function useTime() {
 
   return {
     timeFrames,
+    parseRepetition,
     occursOn,
     generateAllTimes,
     makeMinutes,
@@ -251,6 +281,7 @@ export function useTime() {
     calcPastEvents,
     isToday,
     isWithinNext24Hours,
+    isWithinNext7Days,
     calcPastDates,
   };
 }
