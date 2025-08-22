@@ -23,9 +23,20 @@ exports.signup = async (req, res) => {
 };
 
 exports.login = async (req, res) => {
+  const { email = '', password = '' } = req.body || {};
+  if (
+    typeof email !== 'string' ||
+    typeof password !== 'string' ||
+    email.length > 254 ||
+    password.length > 72
+  ) {
+    return res
+      .status(400)
+      .json({ message: 'Formato de credenciales inválido.' });
+  }
   try {
     // Busca al usuario por email
-    const user = await User.findOne({ email: req.body.email });
+    const user = await User.findOne({ email: email });
 
     // Verifica si el usuario existe
     if (!user) {
@@ -33,7 +44,7 @@ exports.login = async (req, res) => {
     }
 
     // Verifica si la contraseña es correcta
-    const isPasswordValid = await user.comparePassword(req.body.password);
+    const isPasswordValid = await user.comparePassword(password);
     if (!isPasswordValid) {
       return res.status(401).json({ message: 'Incorrect password' }); // Error específico para contraseña incorrecta
     }
