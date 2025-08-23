@@ -17,7 +17,7 @@
                 :type="show ? 'text' : 'password'" prepend-icon="mdi-lock-outline"
                 :append-inner-icon="show ? 'mdi-eye' : 'mdi-eye-off'" @click:append-inner="show = !show" required
                 class="my-1" :rules="passwordRules" :maxlength="MAX_PASSWORD" :counter="MAX_PASSWORD" />
-              <router-link class="align-self-end mt-n1 mb-3 routerLink" to="/forgot_password">
+              <router-link class="align-self-end mt-n1 mb-3 routerLink" to="/forgot_password" v-if="enableRegister">
                 Recuperar contraseña
               </router-link>
             </v-row>
@@ -25,7 +25,7 @@
               <TonalButton type="submit" color="blue" text="Iniciar sesión" class="cta-btn custom-disabled-btn"
                 @click="submit" :disabled="emptyFields() || loading" block />
             </v-row>
-            <v-row>
+            <v-row v-if="enableRegister">
               <v-col class="text-center">
                 <p class="subtitle">
                   ¿No tienes una cuenta?
@@ -50,6 +50,7 @@ import TonalButton from '@/components/TonalButton.vue'
 export default {
   data() {
     return {
+      registerAllowed: false,
       MAX_EMAIL: 254,        // estándar RFC
       MAX_PASSWORD: 72,      // bcrypt recomienda <= 72 bytes
       email: '',
@@ -72,6 +73,11 @@ export default {
   },
   components: {
     TonalButton
+  },
+  computed: {
+    enableRegister() {
+      return (import.meta.env.VITE_ENABLE_REGISTER ?? 'true') === 'true'
+    }
   },
   methods: {
     emptyFields() {
