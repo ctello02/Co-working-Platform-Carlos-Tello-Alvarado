@@ -23,6 +23,7 @@ const SPACES_DIR = path.resolve(process.cwd(), 'uploads/spaces');
 const MATERIALS_DIR = path.resolve(process.cwd(), 'uploads/materials');
 
 const app = express();
+app.set('trust proxy', 1);
 
 // Middlewares globales
 app.use(cors());
@@ -81,6 +82,11 @@ app.use((err, req, res, next) => {
   }
   next(err);
 });
+
+// CORS para Vercel
+app.use(
+  cors({ origin: 'https://co-working-platform-carlos-tello-al.vercel.app/' })
+);
 
 // Iniciar el servidor
 const PORT = process.env.PORT || 3000;
