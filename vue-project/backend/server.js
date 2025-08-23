@@ -66,6 +66,9 @@ app.use('/api/reservations', reservationsRoutes);
 app.use('/api/paypal', paypalRoutes);
 app.use('/api/stats', statsRoutes);
 
+// healthcheck opcional para Render
+app.get('/health', (_, res) => res.send('ok'));
+
 // Ruta principal
 app.get('/', (req, res) => {
   res.json({
@@ -83,13 +86,15 @@ app.use((err, req, res, next) => {
   next(err);
 });
 
-// CORS para Vercel
-app.use(
-  cors({ origin: 'https://co-working-platform-carlos-tello-al.vercel.app/' })
-);
+// CORS para Vercel y localhost
+const allowed = [
+  'https://co-working-platform-carlos-tello-al.vercel.app/',
+  'http://localhost:5173',
+];
+app.use(cors({ origin: allowed, credentials: true }));
 
 // Iniciar el servidor
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`API running on port ${PORT}`);
 });
