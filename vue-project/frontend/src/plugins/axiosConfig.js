@@ -2,12 +2,12 @@ import axios from 'axios';
 import { useUserStore } from '@/store/userStore';
 
 const BASE = (import.meta.env.VITE_API_BASE || '').replace(/\/+$/, '');
+const baseURL = `${BASE || ''}/api`; // => '/api' en dev; 'https://...' + '/api' en prod
 
 // Crear una instancia de axios
 const axiosInstance = axios.create({
-  baseURL: `${BASE}/api`,
+  baseURL,
   timeout: 10000,
-  withCredentials: false,
 });
 
 // Interceptor para las peticiones
@@ -27,12 +27,10 @@ axiosInstance.interceptors.request.use(
 
 // Interceptor para las respuestas
 axiosInstance.interceptors.response.use(
-  (response) => {
-    return response;
-  },
+  (res) => res,
   (error) => {
     if (error.response && error.response.status === 401) {
-      console.log('Token ha expirado. Redirigiendo al login...');
+      console.log('Token inválido/expirado. Redirigiendo a login…');
     }
     return Promise.reject(error);
   }
