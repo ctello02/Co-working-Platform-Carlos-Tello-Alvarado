@@ -23,6 +23,8 @@ exports.signup = async (req, res) => {
 };
 
 exports.login = async (req, res) => {
+  console.log(req.body);
+
   const { email = '', password = '' } = req.body || {};
   if (
     typeof email !== 'string' ||
@@ -34,6 +36,7 @@ exports.login = async (req, res) => {
       .status(400)
       .json({ message: 'Formato de credenciales inválido.' });
   }
+
   try {
     // Busca al usuario por email
     const user = await User.findOne({ email: email });
@@ -46,7 +49,7 @@ exports.login = async (req, res) => {
     // Verifica si la contraseña es correcta
     const isPasswordValid = await user.comparePassword(password);
     if (!isPasswordValid) {
-      return res.status(401).json({ message: 'Incorrect password' }); // Error específico para contraseña incorrecta
+      return res.status(401).json({ message: 'Contraseña incorrecta' }); // Error específico para contraseña incorrecta
     }
 
     // Si ambos son correctos, genera el token

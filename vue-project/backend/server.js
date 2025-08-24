@@ -25,11 +25,24 @@ const MATERIALS_DIR = path.resolve(process.cwd(), 'uploads/materials');
 const app = express();
 app.set('trust proxy', 1);
 
+const corsOpts = {
+  origin: [
+    'http://localhost:5173',
+    'https://co-working-platform-carlos-tello-al.vercel.app',
+  ],
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-access-token'],
+  exposedHeaders: ['Authorization'],
+  credentials: false,
+};
+app.use(cors(corsOpts));
+app.options('*', cors(corsOpts));
+
 // Middlewares globales
-app.use(cors());
 app.use(bodyParser.json());
 app.use(cookieParser());
 app.use(bodyParser.urlencoded({ extended: false }));
+
 // Configurar 'uploads' como carpeta estática para servir imágenes
 app.use(
   '/uploads/spaces',
@@ -56,6 +69,12 @@ app.use(
     },
   })
 );
+
+// anti-cache para endpoints de API (evita 304 confusos)
+// app.use('/api', (req, res, next) => {
+//   res.set('Cache-Control', 'no-store');
+//   next();
+// });
 
 // Rutas base
 app.use('/api/auth', authRoutes);
@@ -85,13 +104,6 @@ app.use((err, req, res, next) => {
   }
   next(err);
 });
-
-// CORS para Vercel y localhost
-const allowed = [
-  'https://co-working-platform-carlos-tello-al.vercel.app/',
-  'http://localhost:5173',
-];
-app.use(cors({ origin: allowed, credentials: true }));
 
 // Iniciar el servidor
 const PORT = process.env.PORT || 3000;
