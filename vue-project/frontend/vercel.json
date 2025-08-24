@@ -7,6 +7,10 @@
     {
       "source": "/uploads/(.*)",
       "destination": "https://co-working-platform-carlos-tello-alvarado.onrender.com/uploads/$1"
+    },
+    {
+      "source": "/((?!api|uploads|.*\\..*).*)",
+      "destination": "/"
     }
   ]
 }
