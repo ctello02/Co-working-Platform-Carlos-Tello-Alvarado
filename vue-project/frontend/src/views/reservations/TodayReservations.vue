@@ -267,7 +267,7 @@
         </v-col>
         <v-col v-if="!reservations">
             <v-row class="d-flex align-center justify-center">
-                <v-col class="d-flex align-center justify-center outline">
+                <v-col class="d-flex align-center justify-center">
                     <span class="text-h3">
                         No hay reservas
                         previstas para

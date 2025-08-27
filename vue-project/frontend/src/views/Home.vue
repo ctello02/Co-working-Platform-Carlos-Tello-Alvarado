@@ -153,9 +153,9 @@
                             </v-row>
                         </v-col>
                     </v-row>
-                    <v-row v-else-if="!todayReservation && reservations.length > 1" class="mt-6 ml-n5">
+                    <v-row v-else-if="!todayReservation && reservations.length >= 1" class="mt-6 ml-n5">
                         <v-col cols="auto" class="d-flex flex-column ga-4">
-                            <span class="text-h5">No tiene reservas para hoy</span>
+                            <span class="text-h5">No tiene reservas programadas para hoy</span>
                             <TonalButton color="blue" text="Reservar" size="x-large"
                                 @click="this.$router.push('/createReservation')" />
                         </v-col>
