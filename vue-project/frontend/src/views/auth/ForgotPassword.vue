@@ -66,12 +66,15 @@ export default {
     async submit() {
       this.loading = true; // Activa el estado de carga
       const toast = useToast();
-      authService.forgotPassword(this.email)
+      console.log(this.email);
+
+      authService.forgotPassword({ email: this.email })
         .then(res => {
           toast.success(res.data.message);
           this.email = null;
         })
         .catch(error => {
+          this.toast.error(error.response.data.message);
           console.log(error);
         })
         .finally(() => {
