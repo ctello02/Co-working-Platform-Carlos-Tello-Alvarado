@@ -1,8 +1,9 @@
 <template>
   <v-container class="container">
     <v-card class="mx-auto px-3" max-width="450">
-      <v-card-title class="my-3">
-        <span class="text-h4"><b>Registro</b></span>
+      <v-card-title class="d-flex justify-center align-center flex-column">
+        <v-img src="/logos/logo_completo_azul.svg" height="160px" width="360px" cover class="align-end" />
+        <span class="text-h5 mt-n3" style="color: #002D62"><b>Registro</b></span>
       </v-card-title>
       <v-card-text>
         <v-col>

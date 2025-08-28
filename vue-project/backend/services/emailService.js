@@ -1,30 +1,9 @@
-// const nodemailer = require('nodemailer');
-
-// exports.sendResetPasswordEmail = async (email, token) => {
-//     const transporter = nodemailer.createTransport({
-//         service: 'gmail',
-//         auth: {
-//             user: process.env.GOOGLE_APP_EMAIL,
-//             pass: process.env.GOOGLE_APP_PW,
-//         },
-//     });
-
-//     const mailOptions = {
-//         from: process.env.GOOGLE_APP_EMAIL,
-//         to: email,
-//         subject: 'Password reset',
-//         html: `<p>Click <a href="${process.env.CLIENT_URL}/reset?token=${token}">here</a> to reset your password</p>`,
-//     };
-
-//     return transporter.sendMail(mailOptions);
-// };
-// backend/services/emailService.js
 const nodemailer = require('nodemailer');
+const path = require('path');
 
 const getResetEmailHTML = ({ clientUrl, token }) => {
   const resetUrl = `${clientUrl}/reset?token=${token}`;
-  const logoUrl =
-    'https://co-working-platform-carlos-tello-al.vercel.app/logos/logo-completo.svg';
+
   return `
 <!doctype html>
 <html lang="es">
@@ -35,8 +14,14 @@ const getResetEmailHTML = ({ clientUrl, token }) => {
         <td align="center" style="padding:24px 16px;">
           <table role="presentation" cellpadding="0" cellspacing="0" width="600" style="max-width:600px;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 6px 24px rgba(0,0,0,0.08);">
             <tr>
-              <td style="background:#002D62;padding:20px;" align="center">
-                <img src="${logoUrl}" alt="Co-Working Platform" width="140" style="display:block;border:0;outline:none;text-decoration:none;max-width:100%;height:auto;">
+              <td align="center" style="
+                padding:24px 20px;
+                background: rgb(0,45,98);
+                background: linear-gradient(61deg, rgba(0,45,98,1) 75%, rgba(16,86,189,1) 75%);
+              ">
+                <img src="cid:logoEmail"
+                    alt="Co-Working Platform"
+                    style="display:block;border:0;outline:none;text-decoration:none;height:60px;width:auto;max-width:none;">             
               </td>
             </tr>
             <tr>
@@ -47,7 +32,7 @@ const getResetEmailHTML = ({ clientUrl, token }) => {
                   Haz clic en el botón para continuar. Si no fuiste tú, ignora este mensaje.
                 </p>
                 <p style="text-align:center;margin:24px 0;">
-                  <a href="${resetUrl}" style="display:inline-block;text-decoration:none;padding:12px 20px;border-radius:999px;background:#1056BD;color:#ffffff;font-weight:600;">
+                  <a href="${resetUrl}" style="display:inline-block;text-decoration:none;padding:12px 20px;border-radius:20px;background:#1056BD;color:#ffffff;font-weight:600;">
                     Restablecer contraseña
                   </a>
                 </p>
@@ -94,7 +79,13 @@ Si no fuiste tú, ignora este mensaje.`;
     subject: 'Restablecer contraseña',
     text,
     html,
+    attachments: [
+      {
+        filename: 'logo-email.png',
+        path: path.join(process.cwd(), 'assets', 'logo_horizontal_blanco.png'),
+        cid: 'logoEmail',
+      },
+    ],
   };
-
   return transporter.sendMail(mailOptions);
 };
