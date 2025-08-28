@@ -1,37 +1,40 @@
 <template>
   <v-container class="container">
     <v-card class="mx-auto px-3" max-width="450">
-      <v-card-title class="my-3">
-        <span class="text-h4"><b>Recuperar contraseña</b></span>
+      <v-card-title class="d-flex justify-center align-center flex-column">
+        <v-img src="/logos/logo_completo_azul.svg" height="160px" width="360px" cover class="align-end" />
+        <span class="text-h5 mt-n3" style="color: #002D62"><b>Recuperar contraseña</b></span>
       </v-card-title>
       <v-card-text>
-        <v-col>
-          <v-row>
-            <v-text-field v-model="email" label="Email" type="email" variant="outlined" prepend-icon="mdi-email-outline"
-              required :rules="emailRules" autocomplete="off" class="my-1" />
-          </v-row>
+        <v-form ref="form" @submit.prevent="submit">
+          <v-col>
+            <v-row>
+              <v-text-field v-model="email" label="Email" type="email" variant="outlined"
+                prepend-icon="mdi-email-outline" required :rules="emailRules" autocomplete="off" class="my-1" />
+            </v-row>
 
-          <v-row>
-            <v-btn class="cta-btn custom-disabled-btn" color="#1056bd" variant="tonal" @click="submit"
-              :disabled="emptyFields() || loading" block>
-              <template v-if="loading">
-                <v-progress-circular indeterminate size="20" color="white" />
-              </template>
-              <template v-else>
-                <b>Enviar correo</b>
-              </template>
-            </v-btn>
+            <v-row>
+              <v-btn type="submit" class="cta-btn custom-disabled-btn" color="#1056bd" variant="tonal" @click="submit"
+                :disabled="emptyFields() || loading" block>
+                <template v-if="loading">
+                  <v-progress-circular indeterminate size="20" color="white" />
+                </template>
+                <template v-else>
+                  <b>Enviar correo</b>
+                </template>
+              </v-btn>
 
-          </v-row>
-          <v-row>
-            <v-col class="text-center">
-              <p class="subtitle">
-                ¿Prefiere volver?
-                <router-link class="routerLink" to="/login">Inicia sesión</router-link>
-              </p>
-            </v-col>
-          </v-row>
-        </v-col>
+            </v-row>
+            <v-row>
+              <v-col class="text-center">
+                <p class="subtitle">
+                  ¿Prefiere volver?
+                  <router-link class="routerLink" to="/login">Inicia sesión</router-link>
+                </p>
+              </v-col>
+            </v-row>
+          </v-col>
+        </v-form>
       </v-card-text>
     </v-card>
   </v-container>
@@ -66,12 +69,15 @@ export default {
     async submit() {
       this.loading = true; // Activa el estado de carga
       const toast = useToast();
-      authService.forgotPassword(this.email)
+      console.log(this.email);
+
+      authService.forgotPassword({ email: this.email })
         .then(res => {
           toast.success(res.data.message);
           this.email = null;
         })
         .catch(error => {
+          this.toast.error(error.response.data.message);
           console.log(error);
         })
         .finally(() => {

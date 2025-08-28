@@ -1,22 +1,26 @@
 <template>
   <v-container class="container">
     <v-card class="mx-auto px-3" max-width="450">
-      <v-card-title class="my-3">
-        <span class="text-h4"><b>Cambia la contraseña</b></span>
+      <v-card-title class="d-flex justify-center align-center flex-column">
+        <v-img src="/logos/logo_completo_azul.svg" height="160px" width="360px" cover class="align-end" />
+        <span class="text-h5 mt-n3" style="color: #002D62"><b>Reestablecer contraseña</b></span>
       </v-card-title>
       <v-card-text>
-        <v-col>
-          <v-row>
-            <v-text-field v-model="password" variant="outlined" label="Contraseña" :type="show ? 'text' : 'password'"
-              prepend-icon="mdi-lock-outline" :append-inner-icon="show ? 'mdi-eye' : 'mdi-eye-off'"
-              @click:append-inner="show = !show" required class="my-1" :rules="passwordRules" />
-          </v-row>
-          <v-row>
-            <TonalButton v-if="this.saveButton" class="cta-btn custom-disabled-btn" text="Guardar" color="blue"
-              @click="submit" :disabled="emptyFields()" block />
-            <TonalButton v-else @click="toLogin" color="blue" text="Iniciar sesión" block />
-          </v-row>
-        </v-col>
+        <v-form ref="form" @submit.prevent="submit">
+          <v-col>
+            <v-row>
+              <v-text-field v-model="password" variant="outlined" label="Contraseña" :type="show ? 'text' : 'password'"
+                prepend-icon="mdi-lock-outline" :append-inner-icon="show ? 'mdi-eye' : 'mdi-eye-off'"
+                @click:append-inner="show = !show" required class="my-1" :rules="passwordRules"
+                :disabled="!this.saveButton" />
+            </v-row>
+            <v-row>
+              <TonalButton v-if="this.saveButton" class="cta-btn custom-disabled-btn mb-2" type="submit" text="Guardar"
+                color="blue" @click="submit" :disabled="emptyFields()" block />
+              <TonalButton v-else @click="toLogin" color="blue" text="Iniciar sesión" block class="mb-2" />
+            </v-row>
+          </v-col>
+        </v-form>
       </v-card-text>
     </v-card>
   </v-container>

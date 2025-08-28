@@ -1,7 +1,9 @@
 <template>
     <!-- Barra superior -->
     <v-app-bar app :style="colorNav" density="compact">
-        <v-toolbar-title>Co-Working Platform</v-toolbar-title>
+        <v-toolbar-title class="ml-1">
+            <v-img src="/logos/logo_horizontal_blanco.png" width="200px" />
+        </v-toolbar-title>
     </v-app-bar>
 
     <!-- Sidebar permanente -->

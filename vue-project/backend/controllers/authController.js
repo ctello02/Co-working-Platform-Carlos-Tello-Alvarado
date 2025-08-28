@@ -86,6 +86,7 @@ exports.forgotPassword = async (req, res) => {
   if (process.env.GOOGLE_APP_EMAIL && process.env.GOOGLE_APP_PW) {
     try {
       const user = await User.findOne({ email: req.body.email });
+
       if (user) {
         const token = jwt.sign(
           { _id: user._id },
@@ -119,7 +120,7 @@ exports.resetPassword = async (req, res) => {
     if (user) {
       user.password = password;
       await user.save();
-      res.status(200).json({ message: 'Password updated' });
+      res.status(200).json({ message: 'Contraseña actualizada' });
     } else {
       res.status(404).json({ message: 'Usuario no encontrado' });
     }
@@ -127,7 +128,7 @@ exports.resetPassword = async (req, res) => {
     if (error.name === 'TokenExpiredError') {
       res.status(401).json({ message: 'Token expirado' });
     } else if (error.name === 'JsonWebTokenError') {
-      res.status(401).json({ message: 'Invalid token' });
+      res.status(401).json({ message: 'Token no válido' });
     } else {
       res.status(500).json({ message: error.message });
     }
@@ -144,11 +145,11 @@ exports.changePassword = async (req, res) => {
 
     const isOldPasswordValid = await user.comparePassword(oldPassword);
     if (!isOldPasswordValid) {
-      return res.status(401).json({ message: 'Incorrect password' }); // Error específico para contraseña incorrecta
+      return res.status(401).json({ message: 'Contraseña incorrecta' }); // Error específico para contraseña incorrecta
     } else {
       user.password = newPassword;
       await user.save();
-      res.status(200).json({ message: 'Password updated' });
+      res.status(200).json({ message: 'Contraseña actualizada' });
     }
   } catch (error) {
     res.status(500).json({ message: error.message });

@@ -20,7 +20,11 @@ export const authService = {
   },
 
   forgotPassword(email) {
-    return axiosInstance.post(`${API_URL}/forgotPassword`, email);
+    return axiosInstance.post(`${API_URL}/forgotPassword`, email, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
   },
 
   resetPassword(password, token) {
