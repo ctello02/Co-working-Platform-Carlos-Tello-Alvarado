@@ -7,24 +7,25 @@ const mongoose = require('mongoose');
 
 exports.createReservation = async (req, res) => {
   try {
-    const {
-      spaceId,
-      materialId,
-      seatsReserved,
-      userId,
-      startTime,
-      endTime,
-      paypalOrderId,
-      paypalCaptureId,
-      paymentStatus,
-    } = req.body;
+    if (!process.env.GOOGLE_APP_EMAIL || !process.env.GOOGLE_APP_PW) {
+      return res.status(400).json({
+        error: 'No hay configuración de Google Apps para enviar emails',
+      });
+    }
 
-    if (spaceId == 'null') req.body.spaceId = null;
-    if (materialId == 'null') req.body.materialId = null;
-    if (seatsReserved == 'null') req.body.seatsReserved = null;
-    if (paypalOrderId == 'null') req.body.paypalOrderId = null;
-    if (paypalCaptureId == 'null') req.body.paypalCaptureId = null;
-    if (paymentStatus == 'null') req.body.paymentStatus = null;
+    const fieldsToMaybeNull = [
+      'spaceId',
+      'materialId',
+      'seatsReserved',
+      'paypalOrderId',
+      'paypalCaptureId',
+      'paymentStatus',
+      'periodicity',
+      'lastOccurrenceGenerated',
+    ];
+    for (const f of fieldsToMaybeNull) {
+      if (req.body[f] === 'null') req.body[f] = null;
+    }
 
     if (!userId || !startTime || !endTime) {
       return res.status(400).json({ message: 'Campos requeridos' });

@@ -83,32 +83,31 @@ exports.validateToken = async (req, res) => {
 };
 
 exports.forgotPassword = async (req, res) => {
-  if (process.env.GOOGLE_APP_EMAIL && process.env.GOOGLE_APP_PW) {
-    try {
-      const user = await User.findOne({ email: req.body.email });
-
-      if (user) {
-        const token = jwt.sign(
-          { _id: user._id },
-          process.env.RESET_PASSWORD_KEY,
-          { expiresIn: '15m' }
-        );
-        console.log(token);
-
-        await sendResetPasswordEmail(req.body.email, token);
-        await user.updateOne({ resetLink: token });
-        res.status(200).json({ message: 'Email enviado a ' + req.body.email });
-      } else {
-        res.status(404).json({ message: 'Usuario no encontrado' });
-      }
-    } catch (error) {
-      res.status(500).json({ message: error.message });
+  try {
+    if (!process.env.GOOGLE_APP_EMAIL || !process.env.GOOGLE_APP_PW) {
+      return res.status(400).json({
+        error: 'No hay configuración de Google Apps para enviar emails',
+      });
     }
-  } else {
-    return res.status(400).json({
-      error:
-        'You have not set up an account to send an email or a reset password key for jwt',
-    });
+
+    const user = await User.findOne({ email: req.body.email });
+
+    if (user) {
+      const token = jwt.sign(
+        { _id: user._id },
+        process.env.RESET_PASSWORD_KEY,
+        { expiresIn: '15m' }
+      );
+      console.log(token);
+
+      await sendResetPasswordEmail(req.body.email, token);
+      await user.updateOne({ resetLink: token });
+      res.status(200).json({ message: 'Email enviado a ' + req.body.email });
+    } else {
+      res.status(404).json({ message: 'Usuario no encontrado' });
+    }
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 };
 
