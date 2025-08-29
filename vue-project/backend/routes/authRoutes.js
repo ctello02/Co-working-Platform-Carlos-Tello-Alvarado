@@ -1,6 +1,7 @@
 const express = require('express');
 const {
   signup,
+  verifyEmail,
   login,
   getUser,
   forgotPassword,
@@ -11,6 +12,7 @@ const {
 const verifyToken = require('../middleware/verify_tokens');
 const router = express.Router();
 const rateLimit = require('express-rate-limit');
+const upload = require('../utils/multerConfig');
 
 const blockIfDisabled = (req, res, next) => {
   if (process.env.ALLOW_REGISTRATION !== 'true') {
@@ -27,7 +29,8 @@ const loginLimiter = rateLimit({
   message: { message: 'Demasiados intentos. Prueba más tarde.' },
 });
 
-router.post('/signUp', blockIfDisabled, signup);
+router.post('/signUp', blockIfDisabled, upload.none(), signup);
+router.get('/verifyEmail', verifyEmail);
 router.post('/login', loginLimiter, login);
 router.get('/user', verifyToken, getUser);
 router.get('/validate', verifyToken, validateToken);

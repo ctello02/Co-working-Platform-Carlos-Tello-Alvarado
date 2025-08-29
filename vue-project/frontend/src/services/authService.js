@@ -4,11 +4,7 @@ const API_URL = '/auth';
 
 export const authService = {
   signUp(formData) {
-    return axiosInstance.post(`${API_URL}/signUp`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
+    return axiosInstance.post(`${API_URL}/signUp`, formData);
   },
 
   login(email, password) {

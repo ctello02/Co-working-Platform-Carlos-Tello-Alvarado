@@ -302,18 +302,22 @@ async function getPeriodicReservations() {
 // ------------------------------------------------
 async function handleSubmit(doPay = false) {
   const toast = useToast();
+  const price = calculatePrice.value;
   isLoading.value = true;
 
   // Montamos el formData
   const formData = new FormData();
   if (reservation.value.item === 'space') {
     formData.append('spaceId', reservation.value.spaceId);
+    formData.append('spaceName', space.value.name);
     formData.append('seatsReserved', reservationSeats.value);
     formData.append('materialId', null);
   } else {
     formData.append('materialId', reservation.value.materialId);
+    formData.append('materialName', material.value.name);
     formData.append('spaceId', null);
   }
+  formData.append('price', price);
   formData.append('userId', reservation.value.userId);
   formData.append('startTime', reservation.value.startTime);
   formData.append('endTime', reservation.value.endTime);
@@ -342,7 +346,6 @@ async function handleSubmit(doPay = false) {
   // Si se va a pagar, arrancamos PayPal
   try {
     await loadPayPalSdk();
-    const price = calculatePrice.value;
 
     const container = document.getElementById('paypal-button-container');
     if (container) container.innerHTML = '';

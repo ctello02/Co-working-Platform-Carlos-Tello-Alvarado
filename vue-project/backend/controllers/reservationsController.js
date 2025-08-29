@@ -5,6 +5,11 @@ const { client } = require('../utils/paypalClient');
 
 const mongoose = require('mongoose');
 
+const User = require('../models/user');
+const {
+  sendReservationConfirmationEmail,
+} = require('../services/emailService');
+
 exports.createReservation = async (req, res) => {
   try {
     if (!process.env.GOOGLE_APP_EMAIL || !process.env.GOOGLE_APP_PW) {
@@ -15,7 +20,10 @@ exports.createReservation = async (req, res) => {
 
     const fieldsToMaybeNull = [
       'spaceId',
+      'spaceName',
       'materialId',
+      'materialName',
+      'price',
       'seatsReserved',
       'paypalOrderId',
       'paypalCaptureId',
@@ -27,19 +35,49 @@ exports.createReservation = async (req, res) => {
       if (req.body[f] === 'null') req.body[f] = null;
     }
 
+    const { userId, startTime, endTime } = req.body;
     if (!userId || !startTime || !endTime) {
       return res.status(400).json({ message: 'Campos requeridos' });
     }
 
     const newReservation = new Reservation(req.body);
-
     const savedReservation = await newReservation.save();
+
     res.status(201).json({
       savedReservation,
-      message: paypalCaptureId
+      message: req.body.paypalCaptureId
         ? 'Reserva creada y pagada con éxito'
         : 'Reserva creada con éxito',
     });
+
+    // Enviar email de confirmación
+    try {
+      // IMPORTANTE: mejor usar findById; si prefieres findOne, sería { _id: userId }
+      const user = await User.findById(userId);
+      if (user?.email) {
+        await sendReservationConfirmationEmail({
+          to: user.email,
+          isSeries: false,
+          data: {
+            spaceId: req.body.spaceId,
+            spaceName: req.body.spaceName,
+            materialId: req.body.materialId,
+            materialName: req.body.materialName,
+            price: req.body.price,
+            userId: req.body.userId,
+            startTime: req.body.startTime,
+            endTime: req.body.endTime,
+            seatsReserved: req.body.seatsReserved,
+            paypalOrderId: req.body.paypalOrderId,
+            paypalCaptureId: req.body.paypalCaptureId,
+            paymentStatus: req.body.paymentStatus,
+            isPaid: req.body.isPaid,
+          },
+        });
+      }
+    } catch (mailErr) {
+      console.error('Fallo al enviar email de reserva:', mailErr);
+    }
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -52,7 +90,10 @@ exports.createPeriodicReservation = async (req, res) => {
   try {
     const {
       spaceId,
+      spaceName,
       materialId,
+      materialName,
+      price,
       userId,
       startTime,
       endTime,
@@ -62,8 +103,11 @@ exports.createPeriodicReservation = async (req, res) => {
     } = req.body;
 
     if (spaceId == 'null') req.body.spaceId = null;
+    if (spaceName == 'null') req.body.spaceName = null;
     if (materialId == 'null') req.body.materialId = null;
+    if (materialName == 'null') req.body.materialName = null;
     if (seatsReserved == 'null') req.body.seatsReserved = null;
+    if (price == 'null') req.body.price = null;
 
     if (
       !userId ||
@@ -78,7 +122,6 @@ exports.createPeriodicReservation = async (req, res) => {
     }
 
     const newPeriodicReservation = new PeriodicReservation(req.body);
-
     const savedPeriodicReservation = await newPeriodicReservation.save({
       session,
     });
@@ -151,11 +194,36 @@ exports.createPeriodicReservation = async (req, res) => {
     await session.commitTransaction();
     session.endSession();
 
-    return res.status(201).json({
+    res.status(201).json({
       message: 'Reserva periódica creada con éxito',
       periodicReservation: savedPeriodicReservation,
       conflictCount: conflictCounter || null,
     });
+
+    try {
+      const user = await User.findById(userId);
+      if (user?.email) {
+        await sendReservationConfirmationEmail({
+          to: user.email,
+          isSeries: true,
+          data: {
+            spaceId,
+            spaceName,
+            materialId,
+            materialName,
+            price,
+            userId,
+            startTime,
+            endTime,
+            seatsReserved,
+            periodicity,
+            lastOccurrenceGenerated,
+          },
+        });
+      }
+    } catch (mailErr) {
+      console.error('Fallo al enviar email de reserva periódica:', mailErr);
+    }
   } catch (error) {
     await session.abortTransaction();
     session.endSession();
