@@ -1,8 +1,9 @@
 const nodemailer = require('nodemailer');
 const path = require('path');
 
-const frontendBase = process.env.CLIENT_URL || 'http://localhost:5173';
-const backendBase = process.env.API_BASE_URL || 'http://localhost:3000';
+const frontendBase = process.env.CLIENT_URL;
+const backendBase = process.env.API_BASE_URL;
+
 
 const formatDateTime = (isoStr) => {
   try {

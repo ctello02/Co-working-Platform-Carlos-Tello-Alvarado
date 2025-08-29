@@ -9,8 +9,7 @@
                     <v-row v-if="reservations.length == 0" class="mt-6 ml-n5">
                         <v-col cols="auto" class="d-flex flex-column ga-4">
                             <span class="text-h5">Aún no tiene reservas</span>
-                            <TonalButton color="blue" text="Reservar" size="x-large"
-                                @click="this.$router.push('/createReservation')" />
+                            <TonalButton color="blue" text="Reservar" size="x-large" @click="openCreateReservation" />
                         </v-col>
                     </v-row>
                     <v-row v-if="todayReservation" class="mt-6">
@@ -87,7 +86,7 @@
                                                                     reservado</span>
                                                                 <span class="text-h6" v-else>{{
                                                                     todayReservation.seatsReserved
-                                                                    }}
+                                                                }}
                                                                     asientos
                                                                     reservados</span>
                                                             </v-col>
@@ -156,8 +155,7 @@
                     <v-row v-else-if="!todayReservation && reservations.length >= 1" class="mt-6 ml-n5">
                         <v-col cols="auto" class="d-flex flex-column ga-4">
                             <span class="text-h5">No tiene reservas programadas para hoy</span>
-                            <TonalButton color="blue" text="Reservar" size="x-large"
-                                @click="this.$router.push('/createReservation')" />
+                            <TonalButton color="blue" text="Reservar" size="x-large" @click="openCreateReservation" />
                         </v-col>
                     </v-row>
                 </v-col>
@@ -420,6 +418,10 @@ function openReservation(reservation) {
 
     router.push('/reservationInfo');
 }
+
+function openCreateReservation() {
+    router.push('/createReservation');
+};
 
 function closePayPal() {
     show.value = false
