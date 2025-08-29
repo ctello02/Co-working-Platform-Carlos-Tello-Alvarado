@@ -148,7 +148,7 @@ export default {
           .signUp(formData)
           .then((res) => {
             console.log(res.data);
-            toast.success("¡Usuario registrado con éxito!");
+            toast.success("¡Usuario registrado con éxito! Revisa tu correo para verificar la cuenta.");
             this.$router.push("/login");
           })
           .catch((error) => {

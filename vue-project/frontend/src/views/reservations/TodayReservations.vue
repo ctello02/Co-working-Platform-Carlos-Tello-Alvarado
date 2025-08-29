@@ -2,7 +2,10 @@
     <v-container fluid class="container">
         <v-col v-if="reservations">
             <v-row>
-                <v-tabs class="mb-5" v-model="todaysTab" align-tabs="center" slider-color="#1056bd" height="40">
+                <span class="text-h4">Reservas de hoy</span>
+            </v-row>
+            <v-row>
+                <v-tabs class="mt-3 mb-5" v-model="todaysTab" align-tabs="center" slider-color="#1056bd" height="40">
                     <v-tab :ripple="false" value="all" class="no-hover text-none v-tab-text">Todos</v-tab>
                     <v-tab :ripple="false" value="spaces" class="no-hover text-none v-tab-text">Espacios</v-tab>
                     <v-tab :ripple="false" value="materials" class="no-hover text-none v-tab-text">Materiales</v-tab>

@@ -1,17 +1,25 @@
 const User = require('../models/user');
 const jwt = require('jsonwebtoken');
-const { sendResetPasswordEmail } = require('../services/emailService');
+const {
+  sendResetPasswordEmail,
+  sendVerifyEmail,
+} = require('../services/emailService');
 
 exports.signup = async (req, res) => {
   try {
     let newUser = new User(req.body);
-
+    newUser.isVerified = false;
     await newUser.save();
-    const token = jwt.sign({ _id: newUser._id }, process.env.SECRET, {
-      expiresIn: '1w',
-    });
 
-    res.status(201).json({ token, user: newUser });
+    const verifyToken = jwt.sign(
+      { sub: newUser._id.toString(), purpose: 'verify' },
+      process.env.EMAIL_VERIFY_KEY,
+      { expiresIn: '24h' }
+    );
+
+    await sendVerifyEmail(newUser.email, verifyToken);
+
+    res.status(201).json({ verifyToken, user: newUser });
   } catch (error) {
     // Verificar si el error es de clave duplicada
     if (error.code === 11000 && error.keyPattern && error.keyPattern.email) {
@@ -19,6 +27,38 @@ exports.signup = async (req, res) => {
       return res.status(409).json({ message: 'El correo ya está en uso' });
     }
     res.status(500).json({ message: error.message });
+  }
+};
+
+exports.verifyEmail = async (req, res) => {
+  try {
+    const { token } = req.query;
+    const payload = jwt.verify(token, process.env.EMAIL_VERIFY_KEY);
+
+    if (payload.purpose !== 'verify') {
+      return res.redirect(`${process.env.CLIENT_URL}/login?verified=invalid`);
+    }
+
+    const user = await User.findById(payload.sub);
+    if (!user) {
+      return res.redirect(`${process.env.CLIENT_URL}/login?verified=notfound`);
+    }
+
+    if (user.isVerified) {
+      return res.redirect(`${process.env.CLIENT_URL}/login?verified=already`);
+    }
+
+    // Verificar una única vez
+    user.isVerified = true;
+    await user.save();
+
+    // Ok
+    return res.redirect(`${process.env.CLIENT_URL}/login?verified=1`);
+  } catch (e) {
+    if (e.name === 'TokenExpiredError') {
+      return res.redirect(`${process.env.CLIENT_URL}/login?verified=expired`);
+    }
+    return res.redirect(`${process.env.CLIENT_URL}/login?verified=error`);
   }
 };
 
@@ -48,6 +88,12 @@ exports.login = async (req, res) => {
     const isPasswordValid = await user.comparePassword(password);
     if (!isPasswordValid) {
       return res.status(401).json({ message: 'Contraseña incorrecta' }); // Error específico para contraseña incorrecta
+    }
+
+    if (!user.isVerified) {
+      return res.status(403).json({
+        message: 'Debes verificar tu correo antes de iniciar sesión',
+      });
     }
 
     // Si ambos son correctos, genera el token
@@ -83,32 +129,31 @@ exports.validateToken = async (req, res) => {
 };
 
 exports.forgotPassword = async (req, res) => {
-  if (process.env.GOOGLE_APP_EMAIL && process.env.GOOGLE_APP_PW) {
-    try {
-      const user = await User.findOne({ email: req.body.email });
-
-      if (user) {
-        const token = jwt.sign(
-          { _id: user._id },
-          process.env.RESET_PASSWORD_KEY,
-          { expiresIn: '15m' }
-        );
-        console.log(token);
-
-        await sendResetPasswordEmail(req.body.email, token);
-        await user.updateOne({ resetLink: token });
-        res.status(200).json({ message: 'Email enviado a ' + req.body.email });
-      } else {
-        res.status(404).json({ message: 'Usuario no encontrado' });
-      }
-    } catch (error) {
-      res.status(500).json({ message: error.message });
+  try {
+    if (!process.env.GOOGLE_APP_EMAIL || !process.env.GOOGLE_APP_PW) {
+      return res.status(400).json({
+        error: 'No hay configuración de Google Apps para enviar emails',
+      });
     }
-  } else {
-    return res.status(400).json({
-      error:
-        'You have not set up an account to send an email or a reset password key for jwt',
-    });
+
+    const user = await User.findOne({ email: req.body.email });
+
+    if (user) {
+      const token = jwt.sign(
+        { _id: user._id },
+        process.env.RESET_PASSWORD_KEY,
+        { expiresIn: '15m' }
+      );
+      console.log(token);
+
+      await sendResetPasswordEmail(req.body.email, token);
+      await user.updateOne({ resetLink: token });
+      res.status(200).json({ message: 'Email enviado a ' + req.body.email });
+    } else {
+      res.status(404).json({ message: 'Usuario no encontrado' });
+    }
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 };
 

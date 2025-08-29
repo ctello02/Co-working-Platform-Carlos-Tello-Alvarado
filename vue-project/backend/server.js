@@ -70,12 +70,6 @@ app.use(
   })
 );
 
-// anti-cache para endpoints de API (evita 304 confusos)
-// app.use('/api', (req, res, next) => {
-//   res.set('Cache-Control', 'no-store');
-//   next();
-// });
-
 // Rutas base
 app.use('/api/auth', authRoutes);
 app.use('/api/users', usersRoutes);

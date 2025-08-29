@@ -80,6 +80,28 @@ export default {
       return (import.meta.env.VITE_ENABLE_REGISTER ?? 'true') === 'true'
     }
   },
+  mounted() {
+    const toast = useToast();
+    const status = this.$route?.query?.verified;
+
+    if (status) {
+      const messages = {
+        '1': { text: 'Tu cuenta ha sido verificada. Ya puedes iniciar sesión', type: 'success' },
+        'already': { text: 'Tu cuenta ya estaba verificada', type: 'info' },
+        'expired': { text: 'El enlace ha caducado. Solicita uno nuevo', type: 'warning' },
+        'invalid': { text: 'Enlace de verificación no válido', type: 'error' },
+        'notfound': { text: 'No se ha podido verificar el correo', type: 'error' },
+        'error': { text: 'No se ha podido verificar el correo', type: 'error' },
+      };
+
+      const m = messages[status] ?? { text: 'Error desconocido', type: 'info' };
+      // Mostrar toast según el tipo
+      if (m.type === 'success') toast.success(m.text);
+      else if (m.type === 'warning') toast.warning?.(m.text) || toast.info(m.text);
+      else if (m.type === 'error') toast.error(m.text);
+      else toast.info(m.text);
+    }
+  },
   methods: {
     emptyFields() {
       // Verificar que los campos no estén vacíos y que cumplan las reglas de validación
@@ -105,6 +127,8 @@ export default {
             toast.error("Contraseña incorrecta");
           } else if (error.response && error.response.status === 404) {
             toast.error("Usuario no econtrado");
+          } else if (error.response && error.response.status === 403) {
+            toast.error("Debes verificar tu correo antes de iniciar sesión");
           } else {
             toast.error(error.response.data.message);
           }
