@@ -1,13 +1,23 @@
 <template>
     <!-- Barra superior -->
-    <v-app-bar app :style="colorNav" density="compact">
-        <v-toolbar-title class="ml-1">
-            <v-img src="/logos/logo_horizontal_blanco.png" width="200px" />
-        </v-toolbar-title>
+    <v-app-bar :style="colorNav" density="comfortable" app>
+        <template #prepend>
+            <!-- Hamburguesa solo en móvil -->
+            <v-app-bar-nav-icon v-if="mdAndDown" @click="drawer = !drawer" />
+
+            <!-- Logo a la izquierda -->
+            <RouterLink to="/" class="d-flex align-center text-decoration-none">
+                <img src="/logos/logo_horizontal_blanco.png" alt="Co-Working Platform"
+                    style="height:32px; display:block" />
+            </RouterLink>
+        </template>
+
+        <v-spacer />
     </v-app-bar>
 
     <!-- Sidebar permanente -->
-    <v-navigation-drawer app permanent :color="colorSidebar" :width="160">
+    <v-navigation-drawer v-model="drawer" app :temporary="mdAndDown" :permanent="lgAndUp" :width="mdAndDown ? 280 : 180"
+        :color="colorSidebar">
         <v-list class="d-flex flex-column h-100" nav>
             <v-list-item :to="{ name: 'home' }" :active="$route.meta.section === 'home'" active-class="active-nav"
                 :ripple="false">
@@ -95,46 +105,22 @@
     </v-navigation-drawer>
 </template>
 
-<script>
+<script setup>
 import { useUserStore } from '../store/userStore'
+import { ref, computed } from 'vue'
+import { useDisplay } from 'vuetify'
 
-export default {
-    data() {
-        return {
-            // Eliminamos variables drawer y rail
-            colorNav: 'color:white; background: rgb(0,45,98); background: linear-gradient(61deg, rgba(0,45,98,1) 75%, rgba(16,86,189,1) 75%);',
-            colorSidebar: '#002D62'
-        }
-    },
-    computed: {
-        userStore() {
-            return useUserStore()
-        }
-    },
-    methods: {
-        toHome() {
-            this.$router.push('/')
-        },
-        toSpaces() {
-            this.$router.push('/spaces')
-        },
-        toMaterials() {
-            this.$router.push('/materials')
-        },
-        toUsers() {
-            this.$router.push('/users')
-        },
-        toProfile() {
-            this.$router.push('/profile')
-        },
-        toReservations() {
-            this.$router.push('/reservations')
-        },
-        toLegal() {
-            this.$router.push('/legal')
-        }
-    }
-}
+
+const colorNav = 'color:white; background: rgb(0,45,98); background: linear-gradient(61deg, rgba(0,45,98,1) 75%, rgba(16,86,189,1) 75%);'
+const colorSidebar = '#002D62'
+
+const userStore = useUserStore()
+
+const drawer = ref(false)
+
+// Breakpoints de Vuetify
+const { mdAndDown, lgAndUp } = useDisplay()
+
 </script>
 
 <style scoped>
