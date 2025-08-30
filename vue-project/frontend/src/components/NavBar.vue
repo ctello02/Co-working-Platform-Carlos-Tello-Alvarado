@@ -110,16 +110,16 @@ import { useUserStore } from '../store/userStore'
 import { ref, computed } from 'vue'
 import { useDisplay } from 'vuetify'
 
+// Breakpoints de Vuetify
+const { mdAndDown, lgAndUp } = useDisplay()
 
 const colorNav = 'color:white; background: rgb(0,45,98); background: linear-gradient(61deg, rgba(0,45,98,1) 75%, rgba(16,86,189,1) 75%);'
 const colorSidebar = '#002D62'
 
 const userStore = useUserStore()
 
-const drawer = ref(false)
+const drawer = ref(lgAndUp.value)
 
-// Breakpoints de Vuetify
-const { mdAndDown, lgAndUp } = useDisplay()
 
 </script>
 
