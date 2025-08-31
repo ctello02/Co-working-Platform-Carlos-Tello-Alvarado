@@ -6,7 +6,7 @@
                     <v-btn @click="() => emit('see-event')" variant="text" size="x-small"
                         icon="mdi-information-outline" />
                     <v-btn @click="() => emit('pay-event')" variant="text" size="x-small" icon="mdi-hand-coin-outline"
-                        v-if="!reservation?.isPaid" />
+                        v-if="!reservation?.isPaid && calculatePrice > 0" />
                     <v-btn v-if="reservation?.canEdit" @click="() => emit('edit-event')" variant="text" size="x-small"
                         icon="mdi-pencil" />
                     <v-btn v-if="reservation?.canEdit" @click="() => emit('delete-event')" variant="text" size="x-small"
@@ -65,13 +65,19 @@
                 <v-divider class="mt-n1 mx-3" />
                 <v-col cols="12" class="mb-n1 mt-n3">
                     <v-row>
-                        <v-col class="">
-                            <span v-if="reservation.isPaid">
-                                Pagada ({{ calculatePrice }}€)
+                        <v-col>
+                            <span v-if="calculatePrice > 0">
+                                <span v-if="reservation.isPaid">
+                                    Pagada ({{ calculatePrice }}€)
+                                </span>
+                                <span v-else>
+                                    Sin pagar ({{ calculatePrice }}€)
+                                </span>
                             </span>
                             <span v-else>
-                                Sin pagar ({{ calculatePrice }}€)
+                                Gratis
                             </span>
+
                         </v-col>
                     </v-row>
                 </v-col>

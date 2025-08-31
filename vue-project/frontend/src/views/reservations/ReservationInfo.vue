@@ -122,9 +122,18 @@
                                 </v-col>
                                 <v-col>
                                     <span :class="smAndDown ? '' : 'text-h6'">
-                                        {{ calculatePrice }}€
-                                        <span v-if="reservation.isPaid">(Pagada)</span>
-                                        <span v-else>(Sin pagar)</span>
+                                        <span v-if="calculatePrice > 0">
+                                            {{ calculatePrice }}€
+                                            <span v-if="reservation.isPaid">
+                                                (Pagada)
+                                            </span>
+                                            <span v-else>
+                                                (Sin pagar)
+                                            </span>
+                                        </span>
+                                        <span v-else>
+                                            Gratis
+                                        </span>
                                     </span>
                                 </v-col>
                             </v-row>
