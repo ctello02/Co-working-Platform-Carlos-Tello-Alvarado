@@ -143,8 +143,9 @@
 
                 <TonalButton v-if="!show" color="blue" text="Reservar" :loading="isLoading"
                   @click="handleSubmit(false)" />
-                <TonalButton :color="show ? 'grey' : 'blue'" :text="show ? 'Cancelar' : 'Reservar y pagar'"
-                  :loading="isLoading" @click="show ? closePayPal() : handleSubmit(true)" />
+                <TonalButton v-if="calculatePrice > 0" :color="show ? 'grey' : 'blue'"
+                  :text="show ? 'Cancelar' : 'Reservar y pagar'" :loading="isLoading"
+                  @click="show ? closePayPal() : handleSubmit(true)" />
               </v-row>
             </v-card-actions>
 

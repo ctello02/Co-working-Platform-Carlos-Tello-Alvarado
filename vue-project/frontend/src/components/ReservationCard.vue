@@ -80,11 +80,16 @@
                     <v-col cols="12" class="mb-n1 mt-n3">
                         <v-row>
                             <v-col class="">
-                                <span v-if="reservation.isPaid" class="text-h6">
-                                    Pagada ({{ calculatePrice }}€)
+                                <span class="text-h6" v-if="calculatePrice > 0">
+                                    <span v-if="reservation.isPaid">
+                                        Pagada ({{ calculatePrice }}€)
+                                    </span>
+                                    <span v-else>
+                                        Sin pagar ({{ calculatePrice }}€)
+                                    </span>
                                 </span>
-                                <span v-else class="text-h6">
-                                    Sin pagar ({{ calculatePrice }}€)
+                                <span class="text-h6" v-else>
+                                    Gratis
                                 </span>
                             </v-col>
                         </v-row>

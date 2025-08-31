@@ -139,14 +139,21 @@
                                                             </v-col>
                                                             <v-col>
                                                                 <span :class="smAndDown ? '' : 'text-h6'">
-                                                                    {{ calculatePrice(todayReservation,
+                                                                    <span v-if="calculatePrice(todayReservation,
                                                                         todayReservation.startTime,
-                                                                        todayReservation.endTime) }}€
-                                                                    <span v-if="todayReservation.isPaid">
-                                                                        (Pagada)
+                                                                        todayReservation.endTime) > 0">
+                                                                        {{ calculatePrice(todayReservation,
+                                                                            todayReservation.startTime,
+                                                                            todayReservation.endTime) }}€
+                                                                        <span v-if="reservation.isPaid">
+                                                                            (Pagada)
+                                                                        </span>
+                                                                        <span v-else>
+                                                                            (Sin pagar)
+                                                                        </span>
                                                                     </span>
                                                                     <span v-else>
-                                                                        (Sin pagar)
+                                                                        Gratis
                                                                     </span>
                                                                 </span>
                                                             </v-col>
@@ -181,12 +188,15 @@
                 </v-col>
                 <v-col v-if="reservations.length > 0" class="mt-2" :cols="smAndDown ? 12 : auto">
                     <v-row>
-                        <span class="text-h5 ml-3">
+                        <span v-if="otherReservations.length > 0" class="text-h5 ml-3">
                             Tiene
                             <span>{{ otherReservations.length }} </span>
                             <span v-if="otherReservations.length == 1"> reserva</span>
                             <span v-else> reservas</span>
                             esta semana:
+                        </span>
+                        <span v-else class="text-h5 ml-3">
+                            No tiene reservas esta semana
                         </span>
                     </v-row>
                     <v-row>

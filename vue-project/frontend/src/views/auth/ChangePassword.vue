@@ -16,7 +16,8 @@
                         <v-text-field v-model="newPassword" variant="outlined" label="Nueva contraseña"
                             :type="newShow ? 'text' : 'password'" prepend-icon="mdi-lock-outline"
                             :append-inner-icon="newShow ? 'mdi-eye' : 'mdi-eye-off'"
-                            @click:append-inner="newShow = !newShow" required class="my-1" :rules="passwordRules" />
+                            @click:append-inner="newShow = !newShow" required class="my-1" :rules="passwordRules"
+                            :maxlength="MAX_PASSWORD" :counter="MAX_PASSWORD" />
                     </v-row>
                 </v-col>
             </v-card-text>
@@ -37,6 +38,7 @@ import { useToast } from 'vue-toastification';
 export default {
     data() {
         return {
+            MAX_PASSWORD: 72,      // bcrypt recomienda <= 72 bytes
             userStore: null,
             oldPassword: "",
             oldShow: false,
@@ -45,6 +47,7 @@ export default {
             passwordRules: [
                 v => !!v || 'La contraseña es requerida',
                 v => v.length >= 8 || 'La contraseña debe tener al menos 8 caracteres',
+                v => v.length <= 72 || 'Máximo 72 caracteres',
                 v => /[A-Z]/.test(v) || 'La contraseña debe incluir al menos una letra mayúscula',
                 v => /[a-z]/.test(v) || 'La contraseña debe incluir al menos una letra minúscula',
                 v => /\d/.test(v) || 'La contraseña debe incluir al menos un número',
