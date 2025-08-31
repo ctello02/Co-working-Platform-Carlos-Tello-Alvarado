@@ -16,7 +16,7 @@
     </v-app-bar>
 
     <!-- Sidebar permanente -->
-    <v-navigation-drawer v-model="drawer" app :temporary="mdAndDown" :permanent="lgAndUp" :width="mdAndDown ? 280 : 180"
+    <v-navigation-drawer v-model="drawer" app :temporary="mdAndDown" :permanent="lgAndUp" :width="mdAndDown ? 280 : 160"
         :color="colorSidebar">
         <v-list class="d-flex flex-column h-100" nav>
             <v-list-item :to="{ name: 'home' }" :active="$route.meta.section === 'home'" active-class="active-nav"
@@ -100,32 +100,30 @@
                     </v-col>
                 </v-row>
             </v-list-item>
-
         </v-list>
     </v-navigation-drawer>
 </template>
 
 <script setup>
 import { useUserStore } from '../store/userStore'
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 import { useDisplay } from 'vuetify'
 
+// Breakpoints de Vuetify
+const { mdAndDown, lgAndUp } = useDisplay()
 
 const colorNav = 'color:white; background: rgb(0,45,98); background: linear-gradient(61deg, rgba(0,45,98,1) 75%, rgba(16,86,189,1) 75%);'
 const colorSidebar = '#002D62'
 
 const userStore = useUserStore()
 
-const drawer = ref(false)
-
-// Breakpoints de Vuetify
-const { mdAndDown, lgAndUp } = useDisplay()
+const drawer = ref(lgAndUp.value)
 
 </script>
 
 <style scoped>
 .item {
-    font-size: clamp(8px, 1.2vw, 12px);
+    font-size: clamp(12px, 1.2vw, 12px);
 }
 
 .active-nav {

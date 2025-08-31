@@ -2,12 +2,17 @@
   <v-app>
     <NavBar v-if="isLogged" />
     <v-main :class="{ 'main-gradient': showGradient, 'main-background': !showGradient }">
-      <v-container fluid class="px-10">
+      <v-container fluid :class="xs ? 'px-0' : 'px-10'">
         <RouterView />
       </v-container>
     </v-main>
   </v-app>
 </template>
+
+<script setup>
+import { useDisplay } from 'vuetify'
+const { mdAndDown, xs } = useDisplay()
+</script>
 
 <script>
 import { RouterView } from 'vue-router'

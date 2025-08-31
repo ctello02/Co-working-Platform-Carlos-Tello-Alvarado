@@ -9,20 +9,20 @@
           <v-row>
             <v-text-field v-model="user.name" type="text" variant="outlined" label="Nombre"
               :prepend-icon="user?.isCompany ? 'mdi-office-building-outline' : 'mdi-account-circle-outline'" required
-              :rules="nameRules" class="my-1" />
+              :rules="nameRules" class="my-1" :density="smAndDown ? 'compact' : 'default'" />
           </v-row>
           <v-row>
             <v-text-field v-model="user.email" variant="outlined" label="E-mail" prepend-icon="mdi-email-outline"
-              required class="my-1" :rules="emailRules" />
+              required class="my-1" :rules="emailRules" :density="smAndDown ? 'compact' : 'default'" />
           </v-row>
           <v-row>
             <v-text-field v-model="user.phone" variant="outlined" label="Teléfono" prepend-icon="mdi-phone-outline"
-              required class="my-1" :rules="phoneRules" />
+              required class="my-1" :rules="phoneRules" :density="smAndDown ? 'compact' : 'default'" />
           </v-row>
           <v-row>
             <v-text-field v-model="user.address" variant="outlined" label="Dirección"
               :prepend-icon="user?.isCompany ? 'mdi-map-marker-outline' : 'mdi-home-outline'" required class="my-1"
-              :rules="addressRules" />
+              :rules="addressRules" :density="smAndDown ? 'compact' : 'default'" />
           </v-row>
 
           <v-radio-group inline class="ml-3 mt-1 d-flex justify-center" v-model="user.isCompany" label="¿Es empresa?">
@@ -32,12 +32,13 @@
 
           <v-row>
             <v-text-field v-if="user.isCompany" variant="outlined" v-model="user.cif"
-              prepend-icon="mdi-file-document-outline" label="CIF" required :rules="cifRules" class="mb-n5 mt-5" />
+              prepend-icon="mdi-file-document-outline" label="CIF" required :rules="cifRules" class="mb-n5 mt-5"
+              :density="smAndDown ? 'compact' : 'default'" />
           </v-row>
         </v-col>
       </v-card-text>
 
-      <v-card-actions class="mb-3 mr-2 d-flex justify-end ga-3">
+      <v-card-actions class="mb-3 mr-2 d-flex ga-3" :class="xs ? 'justify-center flex-column' : 'justify-end'">
         <TonalButton color="grey" text="Volver" @click="routerBack" />
         <TonalButton text="Cambiar contraseña" color="grey" @click="toChangePassword" />
         <TonalButton color="blue" text="Actualizar" @click="submit" :disabled="emptyFields()" />
@@ -45,6 +46,11 @@
     </v-card>
   </v-container>
 </template>
+
+<script setup>
+import { useDisplay } from 'vuetify'
+const { smAndDown, xs } = useDisplay()
+</script>
 
 <script>
 import { useUserStore } from '@/store/userStore';

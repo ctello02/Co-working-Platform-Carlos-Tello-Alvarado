@@ -1,13 +1,18 @@
 <template>
     <v-container class="pa-5 container">
         <v-card v-if="reservation && reservationUser" class="mx-auto" max-width="600">
+            <!-- Imagen -->
             <v-img :src="reservation.spaceId?.image || reservation.materialId?.image" color="surface-variant"
-                height="300px" cover />
+                :height="smAndDown ? '200px' : '300px'" cover />
+
             <v-card-text v-if="reservation">
                 <v-col>
+                    <!-- Título + acciones de admin -->
                     <v-row class="mt-n5 mb-n3" cols="12">
                         <v-col>
-                            <span class="text-h4">{{ reservation.spaceId?.name || reservation.materialId?.name }}</span>
+                            <span :class="smAndDown ? 'text-h5' : 'text-h4'">
+                                {{ reservation.spaceId?.name || reservation.materialId?.name }}
+                            </span>
                         </v-col>
                         <v-col class="d-flex align-center justify-end ga-3">
                             <v-btn v-if="canEdit" @click="openEditReservationInfo()" variant="tonal" size="small"
@@ -17,96 +22,109 @@
                         </v-col>
                     </v-row>
 
-                    <v-row class="my-n3" cols="12">
+                    <!-- Descripción -->
+                    <v-row :class="smAndDown ? 'my-n3' : 'my-n2'" cols="12">
                         <v-col cols="1" class="d-flex align-center">
                             <v-icon icon="mdi-text" />
                         </v-col>
                         <v-col>
-                            <span class="text-h6">{{ reservation.spaceId?.description ||
-                                reservation.materialId?.description }}</span>
+                            <span :class="smAndDown ? '' : 'text-h6'">
+                                {{ reservation.spaceId?.description || reservation.materialId?.description }}
+                            </span>
                         </v-col>
                     </v-row>
 
-                    <v-row v-if="userStore.isAdmin" class="my-n3" cols="12">
+                    <!-- Usuario (solo admin) -->
+                    <v-row v-if="userStore.isAdmin" :class="smAndDown ? '' : 'my-n3'" cols="12">
                         <v-col cols="1" class="d-flex align-center">
                             <v-icon icon="mdi-account-outline" />
                         </v-col>
                         <v-col>
-                            <span class="text-h6">{{ reservationUser?.name }}, {{ reservationUser?.email }}</span>
+                            <span :class="smAndDown ? '' : 'text-h6'">
+                                {{ reservationUser?.name }}, {{ reservationUser?.email }}
+                            </span>
                         </v-col>
                     </v-row>
 
-                    <v-row class="my-n3">
+                    <!-- Fecha -->
+                    <v-row :class="!smAndDown ? 'my-n3' : ''">
                         <v-col cols="1" class="d-flex align-center">
                             <v-icon icon="mdi-calendar-outline" size="small" />
                         </v-col>
-                        <v-col><span class="text-h6"> {{ parseToStringDate(new
-                            Date(reservation.startTime)) }}</span></v-col>
+                        <v-col>
+                            <span class="text-h6" v-if="!smAndDown">
+                                {{ parseToStringDate(new Date(reservation.startTime)) }}
+                            </span>
+                            <span v-else>
+                                {{ twoDigitsDate(reservation.startTime) }}
+                            </span>
+                        </v-col>
                     </v-row>
 
-                    <v-row class="my-n3 d-flex justify-center align-center" cols="12">
-                        <v-col>
+                    <!-- Hora + Asientos -->
+                    <v-row class="d-flex justify-center align-center" :class="!smAndDown ? 'my-n3' : ''" cols="12">
+                        <v-col :cols="smAndDown ? 12 : ''">
                             <v-row>
-                                <v-col :cols="reservation.spaceId ? '2' : '1'" class="d-flex align-center">
+                                <v-col :cols="reservation.spaceId ? (smAndDown ? 1 : 2) : 1"
+                                    class="d-flex align-center">
                                     <v-icon icon="mdi-clock-outline" size="small" />
                                 </v-col>
                                 <v-col>
-                                    <span class="pt-2 text-h6">
-                                        {{ getHoursAndMinsFromDate(reservation.startTime) }}h
-                                        -
+                                    <span :class="smAndDown ? '' : 'text-h6'">
+                                        {{ getHoursAndMinsFromDate(reservation.startTime) }}h -
                                         {{ getHoursAndMinsFromDate(reservation.endTime) }}h
                                     </span>
                                 </v-col>
                             </v-row>
                         </v-col>
-                        <v-col v-if="reservation.seatsReserved">
+
+                        <v-col v-if="reservation.seatsReserved" :cols="smAndDown ? 12 : ''">
                             <v-row>
-                                <v-col cols="2" class="d-flex align-center">
+                                <v-col :cols="smAndDown ? 1 : 2" class="d-flex align-center">
                                     <v-icon icon="mdi-table-chair" size="small" />
                                 </v-col>
                                 <v-col>
-                                    <span class="text-h6" v-if="reservation.seatsReserved == 1">{{
-                                        reservation.seatsReserved }} asiento
-                                        reservado</span>
-                                    <span class="text-h6" v-else>{{ reservation.seatsReserved }} asientos
-                                        reservados</span>
+                                    <span :class="smAndDown ? '' : 'text-h6'">
+                                        <template v-if="reservation.seatsReserved == 1">
+                                            {{ reservation.seatsReserved }} asiento reservado
+                                        </template>
+                                        <template v-else>
+                                            {{ reservation.seatsReserved }} asientos reservados
+                                        </template>
+                                    </span>
                                 </v-col>
                             </v-row>
                         </v-col>
                     </v-row>
 
-                    <v-row class="my-n3 d-flex justify-center align-center" cols="12">
-                        <v-col>
+                    <!-- Repetición + Precio -->
+                    <v-row class="d-flex justify-center align-center" :class="!smAndDown ? 'my-n3' : ''" cols="12">
+                        <v-col :cols="smAndDown ? 12 : ''">
                             <v-row>
-                                <v-col cols="2" class="d-flex align-center">
+                                <v-col :cols="smAndDown ? 1 : 2" class="d-flex align-center">
                                     <v-icon icon="mdi-repeat" size="small" />
                                 </v-col>
                                 <v-col>
-                                    <span class="pt-2 text-h6">
+                                    <span :class="smAndDown ? '' : 'text-h6'">
                                         <span v-if="reservation.periodicReservationId">
                                             {{ parseRepetition(reservation.periodicReservationId.periodicity) }}
                                         </span>
-                                        <span v-else>
-                                            Sin repetición
-                                        </span>
+                                        <span v-else>Sin repetición</span>
                                     </span>
                                 </v-col>
                             </v-row>
                         </v-col>
-                        <v-col v-if="reservation">
+
+                        <v-col v-if="reservation" :cols="smAndDown ? 12 : ''">
                             <v-row>
-                                <v-col cols="2" class="d-flex align-center">
+                                <v-col :cols="smAndDown ? 1 : 2" class="d-flex align-center">
                                     <v-icon icon="mdi-hand-coin-outline" size="small" />
                                 </v-col>
                                 <v-col>
-                                    <span class="text-h6">
+                                    <span :class="smAndDown ? '' : 'text-h6'">
                                         {{ calculatePrice }}€
-                                        <span v-if="reservation.isPaid">
-                                            (Pagada)
-                                        </span>
-                                        <span v-else>
-                                            (Sin pagar)
-                                        </span>
+                                        <span v-if="reservation.isPaid">(Pagada)</span>
+                                        <span v-else>(Sin pagar)</span>
                                     </span>
                                 </v-col>
                             </v-row>
@@ -115,7 +133,9 @@
                 </v-col>
             </v-card-text>
 
-            <v-card-actions class="d-flex justify-end ga-3 mt-n3 mb-5 mr-5">
+            <!-- Acciones -->
+            <v-card-actions class="d-flex ga-3"
+                :class="xs ? 'mt-2 mb-4 mr-3 justify-center flex-column' : 'mt-n3 mb-5 mr-5 justify-end'">
                 <TonalButton color="grey" text="Volver" @click="routerBack" />
 
                 <TonalButton v-if="!reservation.isPaid && reservationUser._id !== userStore.getId" color="blue"
@@ -127,7 +147,7 @@
             </v-card-actions>
 
             <v-expand-transition>
-                <div v-show="show" class="mt-n2 ma-7">
+                <div v-show="show" class="mt-n2 ma-7" :class="xs ? 'ma-0' : ''">
                     <div style="width: 100%;" id="paypal-button-container" />
                 </div>
             </v-expand-transition>
@@ -160,6 +180,11 @@ import { paypalService } from '@/services/paypalService';
 import { useTime } from '@/composables/useTime';
 import { useToast } from 'vue-toastification';
 
+import { useDisplay } from 'vuetify'
+
+// Breakpoints de Vuetify
+const { smAndDown, xs } = useDisplay()
+
 // Instanciar stores
 const userStore = useUserStore();
 const reservationStore = useReservationStore();
@@ -188,6 +213,7 @@ const {
     parseRepetition,
     getHoursAndMinsFromDate,
     parseToStringDate,
+    twoDigitsDate,
     calcPastEvents,
     isWithinNext24Hours,
     isToday,

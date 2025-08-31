@@ -7,50 +7,57 @@
       <v-card-text>
         <v-col>
           <v-row>
-            <v-col cols="8">
+            <v-col :cols="smAndDown ? 12 : ''">
               <v-text-field v-model="materialName" label="Nombre" type="text" variant="outlined" required
-                :rules="[v => !!v || 'El campo es obligatorio']" class="my-1 ml-n3" />
+                :rules="[v => !!v || 'El campo es obligatorio']" :class="smAndDown ? 'mx-n3' : 'ml-n3'"
+                :density="smAndDown ? 'compact' : 'default'" />
             </v-col>
-            <v-col cols="4">
+            <v-col :cols="smAndDown ? 12 : '4'">
               <v-text-field suffix="€" v-model.number="pricing" label="Precio de reserva"
                 prepend-icon="mdi-hand-coin-outline" type="number" variant="outlined" required
-                @input="pricing = Math.max(0, pricing)" class="mr-n3" />
+                @input="pricing = Math.max(0, pricing)" :class="smAndDown ? 'mx-n3' : 'mr-n3'"
+                :density="smAndDown ? 'compact' : 'default'" />
             </v-col>
           </v-row>
           <v-row>
             <v-text-field v-model="materialDescription" label="Descripción" prepend-icon="mdi-text" type="text"
-              variant="outlined" required :rules="[v => !!v || 'El campo es obligatorio']" class="my-1" />
+              variant="outlined" required :rules="[v => !!v || 'El campo es obligatorio']"
+              :density="smAndDown ? 'compact' : 'default'" />
           </v-row>
           <v-row>
             <v-col>
               <v-file-input v-model="materialImage" accept="image/*" label="Imagen" prepend-icon="mdi-camera"
-                variant="outlined" required :rules="[v => !!v || 'La imagen es obligatoria']" class="ml-n3"
-                @update:modelValue="validateImage" />
+                variant="outlined" required :rules="[v => !!v || 'La imagen es obligatoria']" class="mx-n3"
+                @update:modelValue="validateImage" :density="smAndDown ? 'compact' : 'default'" />
             </v-col>
           </v-row>
           <v-row>
             <v-select v-model="selectedTimeFrame" :items="timeFrames" item-title="label" item-value="value"
               label="Duración de las reservas" prepend-icon="mdi-timer-outline"
-              :rules="[v => !!v || 'El campo es obligatorio']" variant="outlined" class="my-1" />
+              :rules="[v => !!v || 'El campo es obligatorio']" variant="outlined"
+              :density="smAndDown ? 'compact' : 'default'" />
           </v-row>
 
-          <v-row class="mt-1">
+          <v-row>
+            <span v-if="smAndDown" class="">¿Permite repetición de reservas?</span>
             <v-radio-group inline prepend-icon="mdi-repeat" v-model="materialRepetition"
-              label="¿Permite repetición de reservas?">
+              :label="smAndDown ? '' : '¿Permite repetición de reservas?'">
               <v-radio label="Si" :value="true" />
               <v-radio label="No" :value="false" />
             </v-radio-group>
           </v-row>
 
-          <v-row class="mt-n1">
-            <v-col cols="6">
-              <v-select class="ml-n3" v-model="openingTime" :items="allTimes" label="Hora de apertura"
-                prepend-icon="mdi-weather-sunny" variant="outlined"></v-select>
+          <v-row>
+            <v-col :cols="smAndDown ? 12 : ''">
+              <v-select :class="smAndDown ? 'mx-n3' : 'ml-n3'" v-model="openingTime" :items="allTimes"
+                label="Hora de apertura" prepend-icon="mdi-weather-sunny" variant="outlined"
+                :density="smAndDown ? 'compact' : 'default'"></v-select>
             </v-col>
 
-            <v-col cols="6">
-              <v-select class="mr-n3" v-model="closingTime" :items="filteredClosingTimes" label="Hora de cierre"
-                prepend-icon="mdi-weather-night" :disabled="!openingTime" variant="outlined"></v-select>
+            <v-col :cols="smAndDown ? 12 : ''">
+              <v-select :class="smAndDown ? 'mx-n3' : 'mr-n3'" v-model="closingTime" :items="filteredClosingTimes"
+                label="Hora de cierre" prepend-icon="mdi-weather-night" :disabled="!openingTime" variant="outlined"
+                :density="smAndDown ? 'compact' : 'default'"></v-select>
             </v-col>
           </v-row>
         </v-col>
@@ -71,6 +78,10 @@ import { useToast } from 'vue-toastification';
 import { materialService } from '@/services/materialService';
 import TonalButton from '@/components/TonalButton.vue';
 import { useTime } from '@/composables/useTime';
+import { useDisplay } from 'vuetify'
+
+// Breakpoints de Vuetify
+const { smAndDown } = useDisplay()
 
 // Router y notificaciones
 const router = useRouter();
