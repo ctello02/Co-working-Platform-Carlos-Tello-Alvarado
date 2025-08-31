@@ -5,58 +5,63 @@
         <v-col>
           <v-row cols="12">
             <v-col cols="1" class="d-flex align-center">
-              <v-icon size="x-large"
+              <v-icon :size="smAndDown ? 'small' : 'x-large'"
                 :icon="user?.isCompany ? 'mdi-office-building-outline' : 'mdi-account-circle-outline'" />
             </v-col>
             <v-col>
-              <span class="ml-n1 text-h4">{{ user?.name }}</span>
+              <span class="ml-n1" :class="smAndDown ? 'text-h5' : 'text-h4'">{{ user?.name }}</span>
               <v-spacer />
-              <span v-if="user?.isCompany" style="color: grey;" class="text-h6">Empresa, CIF: {{ user?.cif }}</span>
-              <span v-else style="color: grey;" class="text-h6">Usuario</span>
+              <span v-if="user?.isCompany" style="color: grey;" :class="smAndDown ? '' : 'text-h6'">Empresa, CIF: {{
+                user?.cif }}</span>
+              <span v-else style="color: grey;" :class="smAndDown ? '' : 'text-h6'">Usuario</span>
             </v-col>
           </v-row>
 
           <v-row v-if="user?.isAdmin" cols="12">
             <v-col cols="1" class="d-flex align-center">
-              <v-icon size="x-large" icon="mdi-account-lock-outline"></v-icon>
+              <v-icon :size="smAndDown ? 'small' : 'x-large'" icon="mdi-account-lock-outline" />
             </v-col>
             <v-col>
-              <span class="text-h6">Administrador</span>
+              <span :class="smAndDown ? '' : 'text-h6'">Administrador</span>
             </v-col>
           </v-row>
 
           <v-row cols="12">
             <v-col cols="1" class="d-flex align-center">
-              <v-icon size="x-large" icon="mdi-email-outline"></v-icon>
+              <v-icon :size="smAndDown ? 'small' : 'x-large'" icon="mdi-email-outline" />
             </v-col>
             <v-col>
-              <span class="text-h6">{{ user?.email }}</span>
+              <span :class="smAndDown ? '' : 'text-h6'">{{ user?.email }}</span>
             </v-col>
           </v-row>
 
           <v-row cols="12">
             <v-col cols="1" class="d-flex align-center">
-              <v-icon size="x-large" icon="mdi-phone-outline"></v-icon>
+              <v-icon :size="smAndDown ? 'small' : 'x-large'" icon="mdi-email-outline" />
             </v-col>
             <v-col>
-              <span class="text-h6">{{ user?.phone }}</span>
+              <span :class="smAndDown ? '' : 'text-h6'">{{ user?.phone }}</span>
             </v-col>
           </v-row>
 
           <v-row cols="12">
             <v-col cols="1" class="d-flex align-center">
-              <v-icon size="x-large" :icon="user?.isCompany ? 'mdi-map-marker-outline' : 'mdi-home-outline'"
-                icon="mdi-map-marker-outline"></v-icon>
+              <v-icon :size="smAndDown ? 'small' : 'x-large'"
+                :icon="user?.isCompany ? 'mdi-map-marker-outline' : 'mdi-home-outline'" icon="mdi-map-marker-outline" />
             </v-col>
             <v-col>
-              <span class="text-h6">{{ user?.address }}</span>
+              <span :class="smAndDown ? '' : 'text-h6'">{{ user?.address }}</span>
             </v-col>
           </v-row>
         </v-col>
       </v-card-text>
 
-      <v-card-actions class="mt-n3 mb-3 mr-2 d-flex justify-end ga-3">
-        <v-btn @click="openEditProfileInfo" variant="tonal" size="small" icon="mdi-pencil" />
+      <v-card-actions class="mt-n3 mb-3 mr-2 d-flex ga-3 flex-wrap"
+        :class="xs ? 'justify-center flex-column' : 'justify-end'">
+        <v-btn v-if="!xs" @click="openEditProfileInfo" variant="tonal" size="small" icon="mdi-pencil" />
+        <TonalButton v-if="xs" text="Editar perfil" color="grey" prepend-icon="mdi-pencil"
+          @click="openEditProfileInfo" />
+
         <TonalButton text="Borrar cuenta" prepend-icon="mdi-trash-can-outline" color="red"
           @click="deleteModal = true" />
         <TonalButton text="Cerrar sesión" color="red" prepend-icon="mdi-logout" @click="logOutModal = true" />
@@ -77,6 +82,11 @@
   </v-container>
 </template>
 
+<script setup>
+import { useDisplay } from 'vuetify'
+const { smAndDown, xs } = useDisplay()
+</script>
+
 <script>
 import { useUserStore } from "@/store/userStore";
 import { userService } from '@/services/userService';
@@ -84,6 +94,7 @@ import { authService } from '@/services/authService';
 import { useToast } from 'vue-toastification';
 import TonalButton from '@/components/TonalButton.vue'
 import AskModal from "@/components/AskModal.vue";
+
 
 export default {
   name: "Profile",

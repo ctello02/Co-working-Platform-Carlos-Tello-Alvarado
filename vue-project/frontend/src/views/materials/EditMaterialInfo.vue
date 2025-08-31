@@ -1,55 +1,71 @@
 <template>
   <v-container class="container">
     <v-card v-if="material" class="mx-auto" max-width="600">
-      <v-img :src="imgSrc" color="surface-variant" height="300px" cover class="img-container" @click="triggerFileInput"
-        style="cursor: pointer; border: 0; border-radius: 0">
+      <v-img :src="imgSrc" color="surface-variant" :height="smAndDown ? '150px' : '300px'" cover class="img-container"
+        @click="triggerFileInput" style="cursor: pointer; border: 0; border-radius: 0">
         <v-icon class="mdi-camera camera-icon">mdi-camera</v-icon>
+        <span class="d-flex justify-center " v-if="smAndDown" style="background-color: rgba(0, 0, 0, 0.5);">Cambiar
+          imagen</span>
         <input type="file" ref="fileInput" accept="image/*" @change="onFileChange" style="display: none" />
       </v-img>
 
       <v-card-text>
         <v-col>
           <v-row>
-            <v-col>
+            <v-col :cols="smAndDown ? 12 : ''">
               <v-text-field v-model="newMaterial.name" label="Nombre" variant="outlined" required
-                :rules="[v => !!v || 'El texto es requerido']" class="my-n1" />
+                :density="smAndDown ? 'compact' : 'default'" :rules="[v => !!v || 'El texto es requerido']"
+                class="my-n1" />
             </v-col>
-            <v-col cols="4">
+            <v-col :cols="smAndDown ? 12 : 4">
               <v-text-field suffix="€" v-model.number="newMaterial.pricing" label="Precio de reserva"
                 prepend-icon="mdi-hand-coin-outline" type="number" variant="outlined" required
-                @input="newMaterial.pricing = Math.max(0, newMaterial.pricing)" class="my-n1" />
+                @input="newMaterial.pricing = Math.max(0, newMaterial.pricing)" class="my-n1"
+                :density="smAndDown ? 'compact' : 'default'" />
             </v-col>
           </v-row>
           <v-row>
             <v-col>
               <v-text-field v-model="newMaterial.description" label="Descripción" variant="outlined"
-                prepend-icon="mdi-text" required :rules="[v => !!v || 'El texto es requerido']" class="my-n1" />
+                prepend-icon="mdi-text" required :rules="[v => !!v || 'El texto es requerido']" class="my-n1"
+                :density="smAndDown ? 'compact' : 'default'" />
+            </v-col>
+          </v-row>
+          <v-row>
+            <v-col>
+              <v-text-field v-model.number="newMaterial.seats" label="Número de asientos" prepend-icon="mdi-table-chair"
+                type="number" variant="outlined" required :rules="[v => !!v || 'El campo es obligatorio']"
+                @input="newMaterial.seats = Math.max(0, newMaterial.seats)" class="my-n1"
+                :density="smAndDown ? 'compact' : 'default'" />
             </v-col>
           </v-row>
           <v-row>
             <v-col>
               <v-select v-model="selectedTimeFrame" :items="timeFrames" item-title="label" item-value="value"
                 label="Duración de las reservas" prepend-icon="mdi-clock-outline"
-                :rules="[v => !!v || 'El campo es obligatorio']" variant="outlined" class="my-n1" />
+                :rules="[v => !!v || 'El campo es obligatorio']" variant="outlined" class="my-n1"
+                :density="smAndDown ? 'compact' : 'default'" />
             </v-col>
           </v-row>
           <v-row class="mt-1">
             <v-col>
+              <span v-if="smAndDown" class="">¿Permite repetición de reservas?</span>
               <v-radio-group inline prepend-icon="mdi-repeat" v-model="newMaterial.admitsRepetition"
-                label="¿Permite repetición de reservas?">
+                :label="smAndDown ? '' : '¿Permite repetición de reservas?'">
                 <v-radio label="Si" :value="true" />
                 <v-radio label="No" :value="false" />
               </v-radio-group>
             </v-col>
           </v-row>
           <v-row class="mt-n1">
-            <v-col cols="6">
+            <v-col :cols="smAndDown ? 12 : ''">
               <v-select v-model="openingTime" variant="outlined" :items="allTimes" label="Hora de apertura"
-                prepend-icon="mdi-weather-sunny"></v-select>
+                prepend-icon="mdi-weather-sunny" :density="smAndDown ? 'compact' : 'default'" />
             </v-col>
-            <v-col cols="6">
+            <v-col :cols="smAndDown ? 12 : ''">
               <v-select v-model="closingTime" variant="outlined" :items="filteredClosingTimes" label="Hora de cierre"
-                prepend-icon="mdi-weather-night" :disabled="!openingTime"></v-select>
+                prepend-icon="mdi-weather-night" :disabled="!openingTime"
+                :density="smAndDown ? 'compact' : 'default'" />
             </v-col>
           </v-row>
         </v-col>
@@ -72,6 +88,11 @@ import { materialService } from '@/services/materialService';
 import TonalButton from '@/components/TonalButton.vue';
 
 import { useTime } from '@/composables/useTime';
+
+import { useDisplay } from 'vuetify'
+
+// Breakpoints de Vuetify
+const { smAndDown } = useDisplay()
 
 const { appContext } = getCurrentInstance();
 const resolve = appContext.config.globalProperties.$resolve;

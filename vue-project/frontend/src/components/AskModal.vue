@@ -23,13 +23,22 @@
                 </v-row>
             </v-fade-transition>
 
-            <v-card-actions :class="checkboxAction ? 'mt-n7' : 'mt-n2'" class="mb-3 mr-3 d-flex justify-end ga-3">
+            <v-card-actions :class="[
+                checkboxAction ? 'mt-n7' : 'mt-n2',
+                'mb-3 mr-3 d-flex ga-3',
+                xs ? 'justify-center flex-column' : 'justify-end'
+            ]">
                 <TonalButton color="grey" text="Cancelar" @click="handleClose" />
                 <TonalButton :color="colorButton" :text="actionText" @click="handleAction" />
             </v-card-actions>
         </v-card>
     </v-dialog>
 </template>
+
+<script setup>
+import { useDisplay } from 'vuetify'
+const { xs } = useDisplay()
+</script>
 
 <script>
 import TonalButton from './TonalButton.vue';
