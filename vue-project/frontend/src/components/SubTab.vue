@@ -19,7 +19,7 @@
 
             <!-- Modo tarjetas -->
             <v-row v-else>
-                <v-col v-for="reservation in filteredReservations" :key="reservation._id" lg="3" md="4" sm="12" xs="12"
+                <v-col v-for="reservation in filteredReservations" :key="reservation._id" lg="3" md="4" sm="6" xs="12"
                     class="ma-0 pa-0">
                     <ReservationCard :reservation="reservation" />
                 </v-col>

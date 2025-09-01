@@ -4,7 +4,6 @@ const path = require('path');
 const frontendBase = process.env.CLIENT_URL;
 const backendBase = process.env.API_BASE_URL;
 
-
 const formatDateTime = (isoStr) => {
   try {
     const d = new Date(isoStr);
@@ -122,7 +121,6 @@ const getVerifyEmailHTML = ({ token }) => {
 };
 
 const getReservationEmailHTML = ({ isSeries, data }) => {
-  // data: objeto con los campos que recibes por FormData (ver sección 3)
   const {
     spaceId,
     spaceName,
@@ -145,6 +143,15 @@ const getReservationEmailHTML = ({ isSeries, data }) => {
     ? 'Se ha creado tu reserva periódica con los siguientes detalles.'
     : 'Se ha creado tu reserva con los siguientes detalles.';
 
+  const periodicityFormatted =
+    periodicity === 'daily'
+      ? 'Diaria'
+      : periodicity === 'weekly'
+      ? 'Semanal'
+      : periodicity === 'monthly'
+      ? 'Mensual'
+      : '—';
+
   const rows = [
     ['Inicio', formatDateTime(startTime)],
     ['Fin', formatDateTime(endTime)],
@@ -156,10 +163,10 @@ const getReservationEmailHTML = ({ isSeries, data }) => {
   } else if (materialId) rows.push(['Material', materialName ?? '—']);
 
   if (isSeries) {
-    rows.push(['Periodicidad', periodicity ?? '—']);
+    rows.push(['Periodicidad', periodicityFormatted]);
     rows.push([
       'Generada hasta',
-      formatDateTime(lastOccurrenceGenerated) ?? '—',
+      lastOccurrenceGenerated ? formatDateTime(lastOccurrenceGenerated) : '—',
     ]);
   }
 
@@ -168,7 +175,6 @@ const getReservationEmailHTML = ({ isSeries, data }) => {
   if (isPaid === 'true') rows.push(['Pagado', '✅']);
   else rows.push(['Pagado', '❌']);
 
-  // PayPal (si aplica)
   if (paymentStatus || paypalOrderId || paypalCaptureId) {
     rows.push(['Estado de pago', paymentStatus ?? '—']);
     rows.push(['Pedido PayPal', paypalOrderId ?? '—']);
@@ -185,6 +191,13 @@ const getReservationEmailHTML = ({ isSeries, data }) => {
   `
     )
     .join('');
+
+  const seriesNote = isSeries
+    ? `<p style="margin:16px 0 0 0;color:#64748b;font-size:12px;line-height:1.6;">
+         Las reservas periódicas se irán generando automáticamente conforme se acerque la fecha prevista.
+         <br>Tranquilo, aunque aún no aparezcan en tu calendario, ¡se crearán en el momento oportuno!
+       </p>`
+    : '';
 
   return `
 <!doctype html>
@@ -213,6 +226,8 @@ const getReservationEmailHTML = ({ isSeries, data }) => {
               <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;background:#fafbff;border-radius:12px;overflow:hidden;">
                 ${rowsHTML}
               </table>
+
+              ${seriesNote}
 
               <p style="margin:16px 0 0 0;color:#64748b;font-size:12px;line-height:1.6;">
                 Puedes gestionar tus reservas desde tu panel en

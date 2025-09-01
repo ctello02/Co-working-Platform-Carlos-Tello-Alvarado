@@ -1,5 +1,6 @@
 const Reservation = require('../models/reservation');
 const PeriodicReservation = require('../models/periodicReservation');
+const Space = require('../models/space');
 const checkout = require('@paypal/checkout-server-sdk');
 const { client } = require('../utils/paypalClient');
 
@@ -9,6 +10,86 @@ const User = require('../models/user');
 const {
   sendReservationConfirmationEmail,
 } = require('../services/emailService');
+
+// Helper de validación común a crear/actualizar y a ocurrencias de periódicas
+async function validateAvailability({
+  spaceId,
+  materialId,
+  startTime,
+  endTime,
+  seatsReserved = 1,
+  excludeReservationId = null,
+}) {
+  const start = new Date(startTime);
+  const end = new Date(endTime);
+  if (
+    !(start instanceof Date) ||
+    !(end instanceof Date) ||
+    isNaN(start) ||
+    isNaN(end) ||
+    start >= end
+  ) {
+    return { ok: false, status: 400, message: 'Rango horario inválido' };
+  }
+  if (!spaceId && !materialId) {
+    return {
+      ok: false,
+      status: 400,
+      message: 'Debe indicarse espacio o material',
+    };
+  }
+
+  const resourceFilter = spaceId ? { spaceId } : { materialId };
+  const overlapFilter = {
+    ...resourceFilter,
+    startTime: { $lt: end },
+    endTime: { $gt: start },
+    ...(excludeReservationId ? { _id: { $ne: excludeReservationId } } : {}),
+  };
+
+  const overlapping = await Reservation.find(overlapFilter)
+    .select('seatsReserved')
+    .lean();
+
+  // Materials (cualquier solapamiento rechaza la reserva)
+  if (materialId) {
+    if (overlapping.length > 0) {
+      return {
+        ok: false,
+        status: 409,
+        message: 'El material ya está reservado en ese horario',
+      };
+    }
+    return { ok: true };
+  }
+
+  // Espacios (hay que mirar las sumas de asientos reservados)
+  const space = await Space.findById(spaceId).select('seats').lean();
+  if (!space)
+    return { ok: false, status: 404, message: 'Espacio no encontrado' };
+
+  const occuped = overlapping.reduce(
+    (acc, r) => acc + (Number(r.seatsReserved) || 0),
+    0
+  );
+  const solicited = Number(seatsReserved) || 0;
+
+  if (occuped >= space.seats) {
+    return {
+      ok: false,
+      status: 409,
+      message: 'No quedan asientos disponibles en ese horario',
+    };
+  }
+  if (occuped + solicited > space.seats) {
+    return {
+      ok: false,
+      status: 409,
+      message: `Solo quedan ${space.seats - occuped} asientos disponibles`,
+    };
+  }
+  return { ok: true };
+}
 
 exports.createReservation = async (req, res) => {
   try {
@@ -40,6 +121,18 @@ exports.createReservation = async (req, res) => {
       return res.status(400).json({ message: 'Campos requeridos' });
     }
 
+    const { spaceId, materialId, seatsReserved } = req.body;
+
+    const check = await validateAvailability({
+      spaceId,
+      materialId,
+      startTime,
+      endTime,
+      seatsReserved,
+    });
+    if (!check.ok)
+      return res.status(check.status).json({ message: check.message });
+
     const newReservation = new Reservation(req.body);
     const savedReservation = await newReservation.save();
 
@@ -52,7 +145,6 @@ exports.createReservation = async (req, res) => {
 
     // Enviar email de confirmación
     try {
-      // IMPORTANTE: mejor usar findById; si prefieres findOne, sería { _id: userId }
       const user = await User.findById(userId);
       if (user?.email) {
         await sendReservationConfirmationEmail({
@@ -121,19 +213,18 @@ exports.createPeriodicReservation = async (req, res) => {
       return res.status(400).json({ message: 'Campos requeridos' });
     }
 
-    const newPeriodicReservation = new PeriodicReservation(req.body);
-    const savedPeriodicReservation = await newPeriodicReservation.save({
-      session,
-    });
+    const savedPeriodicReservation = await new PeriodicReservation(
+      req.body
+    ).save({ session });
 
+    // Rango que va a iterar
     let currentStart = new Date(startTime);
     let currentEnd = new Date(endTime);
     const limitDate = new Date(lastOccurrenceGenerated);
 
-    // Establecemos el umbral de conflictos según la periodicidad
+    // Umbral de conflictos según la periodicidad
     const conflictThreshold = periodicity === 'monthly' ? 6 : 15;
     let conflictCounter = 0;
-    let conflictObjects = [];
 
     // Función para avanzar la fecha según la periodicidad
     const incrementDates = () => {
@@ -149,43 +240,35 @@ exports.createPeriodicReservation = async (req, res) => {
       }
     };
 
-    const idSearched = req.body.spaceId
-      ? req.body.spaceId
-      : req.body.materialId;
-
     // Bucle para generar las ocurrencias
     while (currentStart <= limitDate) {
-      // Buscamos si existe alguna reserva que se solape en ese espacio y rango horario
-      const conflict = await Reservation.findOne({
-        idSearched,
-        $or: [
-          { startTime: { $lt: currentEnd }, endTime: { $gt: currentStart } },
-        ],
-      }).session(session);
-
-      const newObject = {
-        ...req.body,
+      const check = await validateAvailability({
+        spaceId,
+        materialId,
         startTime: currentStart,
         endTime: currentEnd,
-        periodicReservationId: savedPeriodicReservation._id,
-      };
+        seatsReserved,
+      });
 
-      if (conflict) {
-        conflictCounter++;
-        conflictObjects.push(newObject);
-
+      if (!check.ok) {
+        conflictCounter += 1;
         if (conflictCounter > conflictThreshold) {
-          // Si se supera el umbral de conflictos, abortamos la operación
           await session.abortTransaction();
           session.endSession();
           return res.status(409).json({
             errorCode: 'TOO_MANY_CONFLICTS',
-            message: 'Demasiados conflictos. Intente con otra franja horaria.',
+            message: 'Demasiados conflictos. Intenta con otra franja horaria.',
           });
         }
       } else {
-        // Si no hay conflictos, creamos la reserva
-        await new Reservation(newObject).save({ session });
+        // Crear occurrence
+        const occurrence = {
+          ...req.body, // (spaceId/materialId/userId/seats/price…)
+          startTime: new Date(currentStart),
+          endTime: new Date(currentEnd),
+          periodicReservationId: savedPeriodicReservation._id,
+        };
+        await new Reservation(occurrence).save({ session });
       }
 
       incrementDates();
@@ -253,7 +336,7 @@ exports.getUserReservations = async (req, res) => {
   try {
     const now = new Date();
 
-    // Obtenemos todas las reservas
+    // Se obtienen todas las reservas
     const reservations = await Reservation.find({
       userId: req.params.id,
     })
@@ -266,14 +349,14 @@ exports.getUserReservations = async (req, res) => {
       return res.status(404).json({ message: 'No se han encontrado reservas' });
     }
 
-    // Filtramos según endTime
+    // Se filtran según endTime
     const pastReservations = reservations.filter((r) => r.endTime < now);
     const nextReservations = reservations.filter((r) => r.endTime >= now);
 
     res.json({
-      reservations, // todas las reservas
-      pastReservations, // terminadas (endTime < now)
-      nextReservations, // en curso o futuras (endTime >= now)
+      reservations,
+      pastReservations,
+      nextReservations,
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -282,9 +365,8 @@ exports.getUserReservations = async (req, res) => {
 
 exports.getTodayReservations = async (req, res) => {
   try {
-    // inicio de hoy (00:00) y de mañana (00:00)
     const today = new Date();
-    //today.setHours(0, 0, 0, 0);
+    today.setHours(0, 0, 0, 0);
 
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
@@ -358,6 +440,20 @@ exports.updateReservation = async (req, res) => {
     if (!reservation) {
       return res.status(404).json({ message: 'Reserva no encontrada' });
     }
+
+    // Tomar los valores que van a quedar tras la actualización
+    const next = { ...reservation.toObject(), ...req.body };
+
+    const check = await validateAvailability({
+      spaceId: next.spaceId,
+      materialId: next.materialId,
+      startTime: next.startTime,
+      endTime: next.endTime,
+      seatsReserved: next.seatsReserved,
+      excludeReservationId: reservation._id,
+    });
+    if (!check.ok)
+      return res.status(check.status).json({ message: check.message });
 
     reservation.set(req.body);
 

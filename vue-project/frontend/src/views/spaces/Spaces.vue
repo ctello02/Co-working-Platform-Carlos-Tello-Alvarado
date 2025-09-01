@@ -7,7 +7,7 @@
                 <div class="d-flex align-center">
                     <TonalButton color="blue" text="Crear espacio" class="mr-3" v-if="userStore.getIsAdmin"
                         @click="openCreateSpace" />
-                    <v-btn variant="text" :ripple="false"
+                    <v-btn v-if="!xs" variant="text" :ripple="false"
                         :icon="list ? 'mdi-format-list-bulleted' : 'mdi-view-grid-outline'" @click="list = !list" />
                 </div>
             </v-row>
@@ -64,6 +64,10 @@ import SpaceCard from '@/components/SpaceCard.vue';
 import AskModal from '@/components/AskModal.vue';
 import Table from '@/components/Table.vue';
 import { useTime } from '@/composables/useTime';
+import { useDisplay } from 'vuetify'
+
+// Breakpoints de Vuetify
+const { xs } = useDisplay()
 
 // Router, notificaciones y stores
 const router = useRouter();

@@ -12,13 +12,13 @@
                                 <!-- Detalles de la reserva -->
                                 <v-row>
                                     <v-col>
-                                        <span class="text-h5">Detalles de la reserva:</span>
+                                        <span :class="xs ? 'text-h6' : 'text-h5'">Detalles de la reserva:</span>
                                     </v-col>
                                 </v-row>
                                 <v-divider class="mt-1" />
                                 <v-row class="d-flex align-center justify-center mt-6" cols="12">
-                                    <span class="text-h4">{{ space?.name || material?.name }}</span>
-                                    <v-btn icon="mdi-information-outline" variant="text" density="compact"
+                                    <span :class="xs ? 'text-h5' : 'text-h4'">{{ space?.name || material?.name }}</span>
+                                    <v-btn v-if="!xs" icon="mdi-information-outline" variant="text" density="compact"
                                         :ripple="false"
                                         @click="reservation.spaceId ? showSpaceModal = !showSpaceModal : showMaterialModal = !showMaterialModal" />
                                 </v-row>
@@ -26,11 +26,11 @@
                                     <v-col>
                                         <v-row>
                                             <v-col style="color: grey" class="text-center"><span
-                                                    class="text-h6">Fecha:</span>
+                                                    :class="xs ? '' : 'text-h6'">Fecha:</span>
                                             </v-col>
                                         </v-row>
                                         <v-row>
-                                            <v-col class="text-center mt-n7"><span class="text-h4">
+                                            <v-col class="text-center mt-n7"><span :class="xs ? 'text-h5' : 'text-h4'">
                                                     {{
                                                         parseToStringDate(new Date(reservation.startTime))
                                                     }}
@@ -40,7 +40,7 @@
                                     </v-col>
                                 </v-row>
                                 <v-divider class="mt-6" />
-                                <v-row class="d-flex justify-space-between my-2">
+                                <v-row class="d-flex justify-space-between my-2" :class="xs ? 'flex-column' : ''">
                                     <v-col>
                                         <v-row>
                                             <v-col cols="1" class="d-flex align-center">
@@ -70,7 +70,7 @@
                                     </v-col>
                                 </v-row>
                                 <v-divider />
-                                <v-row class="mt-3 d-flex justify-center">
+                                <v-row class="mt-3 d-flex justify-center" :class="xs ? 'flex-column' : ''">
                                     <v-col v-if="reservation.spaceId">
                                         <v-row>
                                             <v-col cols="1" class="d-flex align-center"><v-icon size="small"
@@ -95,7 +95,7 @@
                                                     repetitionOptions.find(option => option.value === repetition).value == 'no_repeat' ? '8' : ''"
                                                 class="d-flex"
                                                 :class="reservation.spaceId ? 'align-start ml-2' : admitsRepetition ? 'align-center justify-center ml-n2' : 'align-center justify-center ml-n6'">
-                                                <span class="text-h6">
+                                                <span :class="xs ? '' : 'text-h6'">
                                                     {{
                                                         admitsRepetition ?
                                                             repetitionOptions.find(option => option.value === repetition).label
@@ -190,9 +190,13 @@
                                 </v-fade-transition>
                             </v-col>
                         </v-card-text>
-                        <v-card-actions class="d-flex justify-end ga-3 mb-6 mr-5"
-                            :class="reservation.periodicReservationId ? 'mt-n5' : 'mt-0'">
-                            <TonalButton :disabled="show" class="ml-5" color="grey" text="Reiniciar"
+                        <v-card-actions :class="[
+                            reservation.periodicReservationId ? 'mt-n5' : 'mt-0',
+                            'ga-3 mb-6 mr-5 d-flex justify-end',
+                            xs ? 'flex-column justify-center align-center' : ' '
+                        ]
+                            ">
+                            <TonalButton :disabled="show" :class="xs ? 'mb-n2' : 'ml-5'" color="grey" text="Reiniciar"
                                 @click="initialValues" />
                             <v-spacer />
 
@@ -243,6 +247,11 @@ import TonalButton from '@/components/TonalButton.vue';
 import SpaceCard from '@/components/SpaceCard.vue';
 import MaterialCard from '@/components/MaterialCard.vue';
 import { useToast } from 'vue-toastification';
+
+import { useDisplay } from 'vuetify'
+
+// Breakpoints de Vuetify
+const { xs } = useDisplay()
 
 const router = useRouter();
 const reservationStore = useReservationStore();

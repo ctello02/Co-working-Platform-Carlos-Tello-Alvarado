@@ -8,7 +8,7 @@
       <!-- Filtros generales -->
       <v-row>
         <v-card class="pa-2 mt-4 mb-n3" width="100%">
-          <v-card-text class="d-flex justify-space-between mb-n5 flex-wrap">
+          <v-card-text class="d-flex justify-space-between mb-n5 flex-wrap" :class="xs ? 'flex-column' : ''">
             <v-col xl="3" lg="3" md="4" sm="12" xs="12">
               <v-row>
                 <span class="text-h6">Seleccione una fecha</span>
@@ -89,47 +89,53 @@
                 <v-col v-for="spc in filteredSpaces" :key="spc._id" cols="12" md="6" lg="4">
                   <v-card>
                     <v-img :src="spc.image" height="200px" cover />
-                    <v-card-title class="text-h4 mb-n1">{{ spc.name }}</v-card-title>
-                    <v-card-text>
-                      <div class="d-flex align-center ga-2">
-                        <v-icon style="color: #4f5b66">mdi-clock-outline</v-icon>
-                        <span class="text-h6" style="color: #4f5b66">
-                          Abre: {{ makeHoursAndMinutes(spc.opening) }} —
-                          Cierra: {{ makeHoursAndMinutes(spc.closing) }}
-                        </span>
-                      </div>
-                      <div class="d-flex align-center ga-2">
-                        <v-icon style="color: #4f5b66">mdi-table-chair</v-icon>
-                        <span class="text-h6" style="color: #4f5b66">
-                          Capacidad: {{ spc.seats }} asientos
-                        </span>
-                      </div>
-                      <div class="d-flex align-center ga-2">
-                        <v-icon style="color: #4f5b66">mdi-timer-outline</v-icon>
-                        <span class="text-h6" style="color: #4f5b66" v-if="spc.duration < 60">Tiempos de: {{
-                          spc.duration }}
-                          minutos</span>
-                        <span class="text-h6" style="color: #4f5b66" v-if="spc.duration == 60">Tiempos de: {{
-                          spc.duration /
-                          60
-                        }}
-                          hora</span>
-                        <span class="text-h6" style="color: #4f5b66" v-if="spc.duration > 60">Tiempos de: {{
-                          spc.duration /
-                          60
-                        }}
-                          horas</span>
-                      </div>
-                      <div class="d-flex align-center ga-2">
-                        <v-icon style="color: #4f5b66">mdi-hand-coin-outline</v-icon>
-                        <span class="text-h6" style="color: #4f5b66" v-if="spc.pricing > 0">
-                          Precio por franja horaria: {{ spc.pricing }}€
-                        </span>
-                        <span class="text-h6" style="color: #4f5b66" v-else>
-                          Reservas gratis
-                        </span>
-                      </div>
-                    </v-card-text>
+                    <v-card-title class="d-flex text-h4 mb-n1 justify-space-between align-center">
+                      {{ spc.name }}
+                      <v-btn v-if="xs" :icon="isOpen(spc._id) ? 'mdi-chevron-up' : 'mdi-chevron-down'" variant="text"
+                        size="small" @click="toggle(spc._id)" />
+                    </v-card-title>
+                    <v-expand-transition>
+                      <v-card-text v-show="isOpen(spc._id)">
+                        <div class="d-flex align-center ga-2">
+                          <v-icon style="color: #4f5b66">mdi-clock-outline</v-icon>
+                          <span class="text-h6" style="color: #4f5b66">
+                            Abre: {{ makeHoursAndMinutes(spc.opening) }} —
+                            Cierra: {{ makeHoursAndMinutes(spc.closing) }}
+                          </span>
+                        </div>
+                        <div class="d-flex align-center ga-2">
+                          <v-icon style="color: #4f5b66">mdi-table-chair</v-icon>
+                          <span class="text-h6" style="color: #4f5b66">
+                            Capacidad: {{ spc.seats }} asientos
+                          </span>
+                        </div>
+                        <div class="d-flex align-center ga-2">
+                          <v-icon style="color: #4f5b66">mdi-timer-outline</v-icon>
+                          <span class="text-h6" style="color: #4f5b66" v-if="spc.duration < 60">Tiempos de: {{
+                            spc.duration }}
+                            minutos</span>
+                          <span class="text-h6" style="color: #4f5b66" v-if="spc.duration == 60">Tiempos de: {{
+                            spc.duration /
+                            60
+                          }}
+                            hora</span>
+                          <span class="text-h6" style="color: #4f5b66" v-if="spc.duration > 60">Tiempos de: {{
+                            spc.duration /
+                            60
+                          }}
+                            horas</span>
+                        </div>
+                        <div class="d-flex align-center ga-2">
+                          <v-icon style="color: #4f5b66">mdi-hand-coin-outline</v-icon>
+                          <span class="text-h6" style="color: #4f5b66" v-if="spc.pricing > 0">
+                            Precio por franja horaria: {{ spc.pricing }}€
+                          </span>
+                          <span class="text-h6" style="color: #4f5b66" v-else>
+                            Reservas gratis
+                          </span>
+                        </div>
+                      </v-card-text>
+                    </v-expand-transition>
                     <v-divider />
                     <!-- Selectores siempre visibles -->
                     <v-card-text>
@@ -277,6 +283,12 @@ import { useTime } from '@/composables/useTime';
 import { useSpaceSlots } from '@/composables/useSpaceSlots';
 import { useMaterialSlots } from '@/composables/useMaterialSlots';
 import TonalButton from '@/components/TonalButton.vue';
+import { useDisplay } from 'vuetify'
+
+// Breakpoints de Vuetify
+const { smAndDown, xs } = useDisplay()
+
+const show = ref({})
 
 const router = useRouter();
 const spaceStore = useSpaceStore();
@@ -544,6 +556,19 @@ async function createMaterialReservation(mtl) {
   materialStore.setSelectedMaterial(mtl);
   router.push('/confirmReservation');
 }
+
+// Despegables en las tarjetas
+const isOpen = (id) => (xs.value ? !!show.value[id] : true)
+
+const toggle = (id) => {
+  if (!xs.value) return
+  show.value[id] = !show.value[id]
+}
+
+watch(xs, (isXs) => {
+  const keys = Object.keys(show.value)
+  keys.forEach(k => (show.value[k] = !isXs))
+}, { immediate: true })
 </script>
 <style scoped>
 .loader-overlay {
