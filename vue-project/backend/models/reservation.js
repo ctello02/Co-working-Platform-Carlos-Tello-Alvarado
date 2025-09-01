@@ -22,7 +22,7 @@ const ReservationSchema = new Schema({
     type: Schema.Types.ObjectId,
     ref: 'PeriodicReservation',
     required: false,
-    default: null,
+    nullable: true,
   },
   isPaid: { type: Boolean, default: false },
   paypalOrderId: { type: String, default: null },
