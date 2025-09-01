@@ -4,7 +4,7 @@ const Space = require('../models/space');
 const checkout = require('@paypal/checkout-server-sdk');
 const { client } = require('../utils/paypalClient');
 
-const mongoose = require('mongoose');
+const { isValidObjectId, Types, mongoose } = require('mongoose');
 
 const User = require('../models/user');
 const {
@@ -22,16 +22,17 @@ async function validateAvailability({
 }) {
   const start = new Date(startTime);
   const end = new Date(endTime);
-  if (
-    !(start instanceof Date) ||
-    !(end instanceof Date) ||
-    isNaN(start) ||
-    isNaN(end) ||
-    start >= end
-  ) {
+  if (isNaN(start) || isNaN(end) || start >= end) {
     return { ok: false, status: 400, message: 'Rango horario inválido' };
   }
-  if (!spaceId && !materialId) {
+
+  const sid = toNullableId(spaceId);
+  const mid = toNullableId(materialId);
+
+  if (sid && mid) {
+    return { ok: false, status: 400, message: 'No mezclar espacio y material' };
+  }
+  if (!sid && !mid) {
     return {
       ok: false,
       status: 400,
@@ -39,7 +40,7 @@ async function validateAvailability({
     };
   }
 
-  const resourceFilter = spaceId ? { spaceId } : { materialId };
+  const resourceFilter = sid ? { spaceId: sid } : { materialId: mid };
   const overlapFilter = {
     ...resourceFilter,
     startTime: { $lt: end },
@@ -51,8 +52,7 @@ async function validateAvailability({
     .select('seatsReserved')
     .lean();
 
-  // Materials (cualquier solapamiento rechaza la reserva)
-  if (materialId) {
+  if (mid) {
     if (overlapping.length > 0) {
       return {
         ok: false,
@@ -63,32 +63,40 @@ async function validateAvailability({
     return { ok: true };
   }
 
-  // Espacios (hay que mirar las sumas de asientos reservados)
-  const space = await Space.findById(spaceId).select('seats').lean();
+  const space = await Space.findById(sid).select('seats').lean();
   if (!space)
     return { ok: false, status: 404, message: 'Espacio no encontrado' };
 
-  const occuped = overlapping.reduce(
+  const ocupados = overlapping.reduce(
     (acc, r) => acc + (Number(r.seatsReserved) || 0),
     0
   );
-  const solicited = Number(seatsReserved) || 0;
+  const solicitados = Number(seatsReserved) || 0;
 
-  if (occuped >= space.seats) {
+  if (ocupados >= space.seats) {
     return {
       ok: false,
       status: 409,
       message: 'No quedan asientos disponibles en ese horario',
     };
   }
-  if (occuped + solicited > space.seats) {
+  if (ocupados + solicitados > space.seats) {
     return {
       ok: false,
       status: 409,
-      message: `Solo quedan ${space.seats - occuped} asientos disponibles`,
+      message: `Solo quedan ${space.seats - ocupados} asientos disponibles`,
     };
   }
   return { ok: true };
+}
+
+function toNullableId(v) {
+  if (v == null) return null;
+  if (typeof v === 'string') {
+    const t = v.trim().toLowerCase();
+    if (!t || t === 'null' || t === 'undefined') return null;
+  }
+  return isValidObjectId(v) ? v : null;
 }
 
 exports.createReservation = async (req, res) => {
@@ -99,46 +107,32 @@ exports.createReservation = async (req, res) => {
       });
     }
 
-    const fieldsToMaybeNull = [
-      'spaceId',
-      'spaceName',
-      'materialId',
-      'materialName',
-      'price',
-      'seatsReserved',
-      'paypalOrderId',
-      'paypalCaptureId',
-      'paymentStatus',
-      'periodicity',
-      'lastOccurrenceGenerated',
-    ];
-    for (const f of fieldsToMaybeNull) {
-      if (req.body[f] === 'null') req.body[f] = null;
-    }
+    const payload = { ...req.body };
+    payload.spaceId = toNullableId(payload.spaceId);
+    payload.materialId = toNullableId(payload.materialId);
+    payload.seatsReserved = toNullableId(payload.seatsReserved);
+    payload.periodicReservationId = toNullableId(payload.periodicReservationId);
 
-    const { userId, startTime, endTime } = req.body;
+    const { userId, startTime, endTime } = payload;
     if (!userId || !startTime || !endTime) {
       return res.status(400).json({ message: 'Campos requeridos' });
     }
 
-    const { spaceId, materialId, seatsReserved } = req.body;
-
     const check = await validateAvailability({
-      spaceId,
-      materialId,
-      startTime,
-      endTime,
-      seatsReserved,
+      spaceId: payload.spaceId,
+      materialId: payload.materialId,
+      startTime: payload.startTime,
+      endTime: payload.endTime,
+      seatsReserved: payload.seatsReserved,
     });
     if (!check.ok)
       return res.status(check.status).json({ message: check.message });
 
-    const newReservation = new Reservation(req.body);
-    const savedReservation = await newReservation.save();
+    const savedReservation = await new Reservation(payload).save();
 
     res.status(201).json({
       savedReservation,
-      message: req.body.paypalCaptureId
+      message: payload.paypalCaptureId
         ? 'Reserva creada y pagada con éxito'
         : 'Reserva creada con éxito',
     });
@@ -151,19 +145,19 @@ exports.createReservation = async (req, res) => {
           to: user.email,
           isSeries: false,
           data: {
-            spaceId: req.body.spaceId,
-            spaceName: req.body.spaceName,
-            materialId: req.body.materialId,
-            materialName: req.body.materialName,
-            price: req.body.price,
-            userId: req.body.userId,
-            startTime: req.body.startTime,
-            endTime: req.body.endTime,
-            seatsReserved: req.body.seatsReserved,
-            paypalOrderId: req.body.paypalOrderId,
-            paypalCaptureId: req.body.paypalCaptureId,
-            paymentStatus: req.body.paymentStatus,
-            isPaid: req.body.isPaid,
+            spaceId: payload.spaceId,
+            spaceName: payload.spaceName,
+            materialId: payload.materialId,
+            materialName: payload.materialName,
+            price: payload.price,
+            userId: payload.userId,
+            startTime: payload.startTime,
+            endTime: payload.endTime,
+            seatsReserved: payload.seatsReserved,
+            paypalOrderId: payload.paypalOrderId,
+            paypalCaptureId: payload.paypalCaptureId,
+            paymentStatus: payload.paymentStatus,
+            isPaid: payload.isPaid,
           },
         });
       }
@@ -180,10 +174,14 @@ exports.createPeriodicReservation = async (req, res) => {
   session.startTransaction();
 
   try {
+    const payload = { ...req.body };
+    payload.spaceId = toNullableId(payload.spaceId);
+    payload.materialId = toNullableId(payload.materialId);
+
     const {
       spaceId,
-      spaceName,
       materialId,
+      spaceName,
       materialName,
       price,
       userId,
@@ -192,14 +190,7 @@ exports.createPeriodicReservation = async (req, res) => {
       seatsReserved,
       periodicity,
       lastOccurrenceGenerated,
-    } = req.body;
-
-    if (spaceId == 'null') req.body.spaceId = null;
-    if (spaceName == 'null') req.body.spaceName = null;
-    if (materialId == 'null') req.body.materialId = null;
-    if (materialName == 'null') req.body.materialName = null;
-    if (seatsReserved == 'null') req.body.seatsReserved = null;
-    if (price == 'null') req.body.price = null;
+    } = payload;
 
     if (
       !userId ||
@@ -213,20 +204,18 @@ exports.createPeriodicReservation = async (req, res) => {
       return res.status(400).json({ message: 'Campos requeridos' });
     }
 
+    // Guarda la periódica con los IDs saneados
     const savedPeriodicReservation = await new PeriodicReservation(
-      req.body
+      payload
     ).save({ session });
 
-    // Rango que va a iterar
     let currentStart = new Date(startTime);
     let currentEnd = new Date(endTime);
     const limitDate = new Date(lastOccurrenceGenerated);
 
-    // Umbral de conflictos según la periodicidad
     const conflictThreshold = periodicity === 'monthly' ? 6 : 15;
     let conflictCounter = 0;
 
-    // Función para avanzar la fecha según la periodicidad
     const incrementDates = () => {
       if (periodicity === 'daily') {
         currentStart.setDate(currentStart.getDate() + 1);
@@ -240,7 +229,6 @@ exports.createPeriodicReservation = async (req, res) => {
       }
     };
 
-    // Bucle para generar las ocurrencias
     while (currentStart <= limitDate) {
       const check = await validateAvailability({
         spaceId,
@@ -261,11 +249,15 @@ exports.createPeriodicReservation = async (req, res) => {
           });
         }
       } else {
-        // Crear occurrence
         const occurrence = {
-          ...req.body,
+          userId,
+          spaceId,
+          materialId,
+          price,
+          seatsReserved,
           startTime: new Date(currentStart),
           endTime: new Date(currentEnd),
+          isPaid: false,
           periodicReservationId: savedPeriodicReservation._id,
         };
         await new Reservation(occurrence).save({ session });
@@ -283,6 +275,7 @@ exports.createPeriodicReservation = async (req, res) => {
       conflictCount: conflictCounter || null,
     });
 
+    // email
     try {
       const user = await User.findById(userId);
       if (user?.email) {
@@ -314,7 +307,6 @@ exports.createPeriodicReservation = async (req, res) => {
     return res.status(500).json({ message: error.message });
   }
 };
-
 exports.getPeriodicReservations = async (req, res) => {
   try {
     const periodicReservations = await PeriodicReservation.find().sort({
@@ -441,6 +433,8 @@ exports.updateReservation = async (req, res) => {
 
     // Hereda los valores que van a quedar tras la actualización
     const next = { ...reservation.toObject(), ...req.body };
+    next.spaceId = toNullableId(next.spaceId);
+    next.materialId = toNullableId(next.materialId);
 
     const check = await validateAvailability({
       spaceId: next.spaceId,
@@ -453,7 +447,11 @@ exports.updateReservation = async (req, res) => {
     if (!check.ok)
       return res.status(check.status).json({ message: check.message });
 
-    reservation.set(req.body);
+    reservation.set({
+      ...req.body,
+      spaceId: next.spaceId,
+      materialId: next.materialId,
+    });
 
     await reservation.save();
     res.status(200).json({ message: 'Reserva actualizada con éxito' });
