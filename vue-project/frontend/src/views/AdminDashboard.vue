@@ -7,7 +7,8 @@
             <!-- Filtros -->
             <v-row>
                 <v-card class="pa-1 mt-4">
-                    <v-card-text class="d-flex justify-space-between mb-n5 ml-n1 flex-wrap">
+                    <v-card-text class="d-flex  mb-n5 ml-n1 flex-wrap"
+                        :class="smAndDown ? 'justify-center align-center' : 'justify-space-between'">
                         <v-col cols="auto">
                             <v-menu :close-on-content-click="false" location="bottom" transition="slide-y-transition">
                                 <template v-slot:activator="{ props }">
@@ -19,7 +20,7 @@
                                 <v-date-picker is-required v-model="startDate" />
                             </v-menu>
                         </v-col>
-                        <v-col cols="auto">
+                        <v-col v-if="!smAndDown" cols="auto">
                             <span class="text-h6">→</span>
                         </v-col>
                         <v-col cols="auto">
@@ -92,7 +93,9 @@ import TopResourcesChart from '@/components/charts/TopResourcesChart.vue'
 import PaymentRateChart from '@/components/charts/PaymentRateChart.vue'
 import PeriodicStatsChart from '@/components/charts/PeriodicStatsChart.vue'
 import HourlyReservationsChart from '@/components/charts/HourlyReservationsChart.vue'
+import { useDisplay } from 'vuetify'
 
+const { xs, smAndDown } = useDisplay()
 const { parseToStringDate } = useTime()
 
 const router = useRouter()

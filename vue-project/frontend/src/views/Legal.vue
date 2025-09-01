@@ -1,5 +1,5 @@
 <template>
-    <main class="prose">
+    <main class="prose" :class="xs ? 'pa-3' : ''">
         <v-divider />
         <h1>Aviso legal y Política de privacidad</h1>
         <p>Responsable: <strong>Carlos Tello Alvarado</strong> — Contacto: <strong>carlostello@usal.es</strong>.</p>
@@ -54,13 +54,16 @@
     </main>
     <br>
 
-    <TonalButton color="grey" text="Volver" @click="routerBack" />
+    <TonalButton color="grey" text="Volver" @click="routerBack" :class="xs ? 'ma-3' : ''" />
 </template>
 
 <script setup>
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import TonalButton from '@/components/TonalButton.vue';
+import { useDisplay } from 'vuetify'
+
+const { xs } = useDisplay()
 
 const date = ref(new Date());
 date.value = date.value.toLocaleDateString('es-ES');
