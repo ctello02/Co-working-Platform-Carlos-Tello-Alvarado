@@ -23,7 +23,6 @@ exports.signup = async (req, res) => {
   } catch (error) {
     // Verificar si el error es de clave duplicada
     if (error.code === 11000 && error.keyPattern && error.keyPattern.email) {
-      // Código 409: "Conflict"
       return res.status(409).json({ message: 'El correo ya está en uso' });
     }
     res.status(500).json({ message: error.message });
@@ -48,11 +47,9 @@ exports.verifyEmail = async (req, res) => {
       return res.redirect(`${process.env.CLIENT_URL}/login?verified=already`);
     }
 
-    // Verificar una única vez
     user.isVerified = true;
     await user.save();
 
-    // Ok
     return res.redirect(`${process.env.CLIENT_URL}/login?verified=1`);
   } catch (e) {
     if (e.name === 'TokenExpiredError') {
@@ -190,7 +187,7 @@ exports.changePassword = async (req, res) => {
 
     const isOldPasswordValid = await user.comparePassword(oldPassword);
     if (!isOldPasswordValid) {
-      return res.status(401).json({ message: 'Contraseña incorrecta' }); // Error específico para contraseña incorrecta
+      return res.status(401).json({ message: 'Contraseña incorrecta' });
     } else {
       user.password = newPassword;
       await user.save();

@@ -128,10 +128,9 @@ import {
     createViewWeek,
 } from '@schedule-x/calendar';
 import '@schedule-x/theme-default/dist/index.css';
+
 import { useToast } from 'vue-toastification';
 import { useDisplay } from 'vuetify'
-
-// Breakpoints de Vuetify
 const { smAndDown, xs } = useDisplay()
 /* -------------------------------------------------------------------- */
 
@@ -297,7 +296,7 @@ const calendarApp = createCalendar({
 
             reservationStore.setReservation(selectedReservation);
         },
-        onClickDate(date) { // p.e. YYYY-MM-DD
+        onClickDate(date) {
             if (calcPastDates(new Date(date))) return;      // Si se hace clic en una fecha pasada, se ignora
 
             const stringDate = parseToStringDate(new Date(date));
@@ -367,7 +366,6 @@ function getAllEvents() {
 
 function addCalendarEvents(reservations) {
     return reservations.map(reservation => {
-        // Usamos la función del composable useTime para transformar startTime y endTime
         const formattedStart = parseDateTo_YYYYMMDD_HHMM(reservation.startTime);
         const formattedEnd = parseDateTo_YYYYMMDD_HHMM(reservation.endTime);
         const name = reservation.spaceId?.name || reservation.materialId?.name;
@@ -576,7 +574,7 @@ const tableHeaders = computed(() => {
 function tableDropdownItems(reservations) {
     return reservations.map((reservation, i) => {
         return {
-            id: reservation._id,        // key para v-for
+            id: reservation._id,
             date: `${twoDigitsDate(new Date(reservation.startTime))}`,
             name: reservation.spaceId?.name || reservation.materialId?.name,
             schedule: `${getHoursAndMinsFromDate(reservation.startTime)}h - ${getHoursAndMinsFromDate(reservation.endTime)}h`,
@@ -594,11 +592,11 @@ const tableItems = computed(() => {
 
     return reservationsToSearch.map((reservation, i) => {
         return {
-            id: reservation._id,        // key para v-for
+            id: reservation._id,
             date: `${twoDigitsDate(new Date(reservation.startTime))}`,
             name: reservation.spaceId?.name || reservation.materialId?.name,
             schedule: `${getHoursAndMinsFromDate(reservation.startTime)}h - ${getHoursAndMinsFromDate(reservation.endTime)}h`,
-            object: reservation,      // guardamos el objeto para usarlo en las acciones
+            object: reservation,
         }
     })
 })

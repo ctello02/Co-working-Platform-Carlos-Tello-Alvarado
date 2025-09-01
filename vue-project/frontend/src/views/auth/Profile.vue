@@ -115,7 +115,7 @@ export default {
     this.userStore = useUserStore();
     this.user = this.userStore.getThisUser;
     if (!this.user) {
-      this.getUser(); // Redirigir al componente padre
+      this.getUser();
     }
   },
   methods: {

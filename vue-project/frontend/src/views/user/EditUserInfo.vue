@@ -96,23 +96,22 @@ export default {
         this.user = this.userStore.getSelectedUser;
 
         if (!this.user) {
-            this.$router.push('/users'); // Redirigir al componente padre
+            this.$router.push('/users');
         }
 
-        this.newUser = { ...this.user };    // Hacer una copia del objeto user
+        this.newUser = { ...this.user };
     },
     methods: {
         routerBack() {
             const toast = useToast();
             if (this.successToastId) {
-                toast.dismiss(this.successToastId); // Cierra el toast específico usando el ID
+                toast.dismiss(this.successToastId);
             } else {
-                toast.clear(); // Elimina todos los toasts como respaldo
+                toast.clear();
             }
             this.$router.push('/userInfo');
         },
         emptyFields() {
-            // Verificar que los campos no estén vacíos y que cumplan las reglas de validación
             const nameValid = this.nameRules.every(rule => rule(this.newUser.name) === true);
             const emailValid = this.emailRules.every(rule => rule(this.newUser.email) === true);
             const phoneValid = this.phoneRules.every(rule => rule(this.newUser.phone) === true);
@@ -136,7 +135,6 @@ export default {
                         console.log(res.data);
                         const newUserSelected = { ...this.newUser };
                         this.userStore.setSelectedUser(newUserSelected);
-                        // Mostrar la alerta de éxito y ocultarla después de 3 segundos
                         this.successToastId = toast.success('¡Usuario actualizado con éxito!');
                     })
                     .catch(error => {
@@ -146,7 +144,6 @@ export default {
 
             } catch (error) {
                 console.error(error);
-                // Mensaje de error usando el toast
                 this.successToastId = toast.error('Error al actualizar el usuario');
             }
         },

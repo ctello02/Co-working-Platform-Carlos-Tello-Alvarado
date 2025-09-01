@@ -50,7 +50,7 @@ export default {
   data() {
     return {
       email: "",
-      loading: false, // Estado de carga
+      loading: false,
       emailRules: [
         v => !!v || 'El email es obligatorio',
         v => /^[\w.-]+@[a-zA-Z\d.-]+\.[a-zA-Z]{2,}$/i.test(v) || 'El email debe ser válido',
@@ -62,12 +62,11 @@ export default {
   },
   methods: {
     emptyFields() {
-      // Verificar que los campos no estén vacíos y que cumplan las reglas de validación
       const emailValido = this.emailRules.every(rule => rule(this.email) === true);
       return !(this.email && emailValido);
     },
     async submit() {
-      this.loading = true; // Activa el estado de carga
+      this.loading = true;
       const toast = useToast();
       console.log(this.email);
 
@@ -81,7 +80,7 @@ export default {
           console.log(error);
         })
         .finally(() => {
-          this.loading = false; // Desactiva el estado de carga
+          this.loading = false;
         });
     },
   }

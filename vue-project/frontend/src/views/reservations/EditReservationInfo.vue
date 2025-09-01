@@ -250,7 +250,6 @@ import { useToast } from 'vue-toastification';
 
 import { useDisplay } from 'vuetify'
 
-// Breakpoints de Vuetify
 const { xs } = useDisplay()
 
 const router = useRouter();
@@ -400,24 +399,22 @@ function calculatePrice(start, end) {
     let dur = 0;
     let pricePer = 0;
     if (reservationStore.getReservation?.spaceId) {
-        dur = space?.value.duration      // duración de un bloque, en minutos
-        pricePer = space?.value.pricing       // precio por bloque
+        dur = space?.value.duration
+        pricePer = space?.value.pricing
     } else {
-        dur = material?.value.duration      // duración de un bloque, en minutos
-        pricePer = material?.value.pricing       // precio por bloque
+        dur = material?.value.duration
+        pricePer = material?.value.pricing
     }
 
-    // calculo cuántos bloques completos caben
     const blocks = (endMin - startMin) / dur
 
-    // en caso de que no sea un múltiplo exacto, redondeamos hacia abajo
     const fullBlocks = Math.floor(blocks)
     const total = fullBlocks * pricePer * reservationSeats?.value
 
     return total.toFixed(2)
 }
 
-// Carga dinámica del SDK de PayPal
+// Carga dinámicamente el SDK de PayPal
 function loadPayPalSdk() {
     if (paypalLoaded.value) return Promise.resolve();
     return new Promise((resolve, reject) => {

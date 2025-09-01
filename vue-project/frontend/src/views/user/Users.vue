@@ -82,7 +82,7 @@ export default {
   methods: {
     openUserInfo(user) {
       this.userStore.setSelectedUser(user); // Guardar el usuario seleccionado en el store
-      this.$router.push('/userInfo'); // Navegar a la nueva ruta
+      this.$router.push('/userInfo');
     },
     openDeleteModal(user) {
       this.selectedUser = { ...user }; // Hacer una copia del usuario seleccionado
@@ -166,7 +166,6 @@ tbody tr:hover {
 
 th,
 td {
-  /*width: 20%;  Ajusta este valor si es necesario */
   text-align: left;
   padding: 10px;
   white-space: nowrap;

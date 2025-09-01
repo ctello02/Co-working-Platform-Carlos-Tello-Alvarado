@@ -101,10 +101,8 @@ const openingTime = ref(null);
 const closingTime = ref(null);
 const allTimes = ref([]);
 
-// Extraemos funciones del composable useTime
 const { timeFrames, generateAllTimes, makeMinutes } = useTime();
 
-// Cargar las horas disponibles al montar el componente
 onMounted(() => {
   allTimes.value = generateAllTimes();
 });
@@ -123,13 +121,11 @@ watch(openingTime, (newVal) => {
   }
 });
 
-// Función para validar campos vacíos
 const emptyFields = () => {
   return !materialName.value || !materialDescription.value || !selectedTimeFrame.value ||
     !materialImage.value || !openingTime.value || !closingTime.value;
 };
 
-// Limpiar los campos del formulario
 const clearFields = () => {
   materialName.value = null;
   materialDescription.value = null;
@@ -148,7 +144,6 @@ const submit = async () => {
     return;
   }
 
-  // Descomposición de las horas y minutos de apertura y cierre
   const openingTimeInMinutes = makeMinutes(openingTime.value);
   const closingTimeInMinutes = makeMinutes(closingTime.value);
 
@@ -171,7 +166,6 @@ const submit = async () => {
   }
 };
 
-// Función para volver a la vista anterior
 const routerBack = () => {
   const toast = useToast();
   if (successToastId.value) {

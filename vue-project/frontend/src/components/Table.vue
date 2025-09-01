@@ -75,7 +75,6 @@ tbody tr:hover {
 
 th,
 td {
-    /*width: 20%;  Ajusta este valor si es necesario */
     text-align: left;
     padding: 10px;
     white-space: nowrap;

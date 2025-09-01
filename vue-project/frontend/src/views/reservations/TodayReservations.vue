@@ -291,12 +291,10 @@ import { useRouter } from 'vue-router';
 import { useTime } from '@/composables/useTime';
 import { reservationService } from '@/services/reservationService';
 
-/* ---------------- Instancias de composables --------------- */
 const {
     twoDigitsDate,
     getHoursAndMinsFromDate,
 } = useTime();
-/* ---------------------------------------------------------- */
 
 const router = useRouter();
 const reservationStore = useReservationStore();
@@ -439,26 +437,25 @@ const tableHeaders = computed(() => {
 function tableDropdownItems(reservations) {
     return reservations.map((reservation, i) => {
         return {
-            id: reservation._id,        // key para v-for
+            id: reservation._id,
             date: `${twoDigitsDate(new Date(reservation.startTime))}`,
             name: reservation.spaceId?.name || reservation.materialId?.name,
             user: reservation.userId?.name + ', ' + reservation.userId?.email,
             schedule: `${getHoursAndMinsFromDate(reservation.startTime)}h - ${getHoursAndMinsFromDate(reservation.endTime)}h`,
-            object: reservation,      // guardamos el objeto para usarlo en las acciones
+            object: reservation,
         }
     })
 }
 
-// Transformamos 'nextReservations o pastReservations' en 'tableItems'
 const tableItems = computed(() => {
     return displayedReservations.value.map((reservation, i) => {
         return {
-            id: reservation._id,        // key para v-for
+            id: reservation._id,
             date: `${twoDigitsDate(new Date(reservation.startTime))}`,
             name: reservation.spaceId?.name || reservation.materialId?.name,
             user: reservation.userId?.name + ', ' + reservation.userId?.email,
             schedule: `${getHoursAndMinsFromDate(reservation.startTime)}h - ${getHoursAndMinsFromDate(reservation.endTime)}h`,
-            object: reservation,      // guardamos el objeto para usarlo en las acciones
+            object: reservation,
         }
     })
 });

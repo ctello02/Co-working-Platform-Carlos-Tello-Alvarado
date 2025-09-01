@@ -100,7 +100,7 @@ export default {
         this.user = this.userStore.getSelectedUser;
 
         if (!this.user) {
-            this.$router.push('/users'); // Redirigir al componente padre
+            this.$router.push('/users');
         }
     },
     components: {
@@ -111,9 +111,9 @@ export default {
         routerBack() {
             const toast = useToast();
             if (this.successToastId) {
-                toast.dismiss(this.successToastId); // Cierra el toast específico usando el ID
+                toast.dismiss(this.successToastId);
             } else {
-                toast.clear(); // Elimina todos los toasts como respaldo
+                toast.clear();
             }
             this.$router.push('/users');
         },

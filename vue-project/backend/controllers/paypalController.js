@@ -75,7 +75,7 @@ exports.captureOrder = async (req, res) => {
       });
     }
 
-    //Ha fallado:
+    //Fallo
     await Reservation.updateOne(
       { _id: reservationId },
       { $set: { paymentStatus: 'FAILED' } }

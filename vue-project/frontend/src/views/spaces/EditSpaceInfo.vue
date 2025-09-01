@@ -91,20 +91,17 @@ import { useTime } from '@/composables/useTime';
 
 import { useDisplay } from 'vuetify'
 
-// Breakpoints de Vuetify
 const { smAndDown } = useDisplay()
 
 const { appContext } = getCurrentInstance();
 const resolve = appContext.config.globalProperties.$resolve;
 
-// Store y router
 const router = useRouter();
 const successToastId = ref(null);
 const toast = useToast();
 const spaceStore = useSpaceStore();
 
 
-// Variables reactivas
 const space = ref(null);
 const newSpace = ref(null);
 const newImage = ref(null);
@@ -116,7 +113,6 @@ const closingTime = ref(null);
 const fileInput = ref(null);
 const allTimes = ref([]);
 
-// Extraemos funciones del composable useTime
 const {
   timeFrames,
   generateAllTimes,
@@ -124,7 +120,6 @@ const {
   makeHoursAndMinutes
 } = useTime();
 
-// Cargar datos al montar el componente
 onMounted(() => {
   allTimes.value = generateAllTimes();
   space.value = spaceStore.getSelectedSpace;
@@ -139,7 +134,6 @@ onMounted(() => {
   selectedTimeFrame.value = space.value?.duration;
 });
 
-// Computed para filtrar las horas de cierre
 const filteredClosingTimes = computed(() => {
   if (!openingTime.value) return allTimes.value;
   const openingIndex = allTimes.value.indexOf(openingTime.value);
@@ -151,19 +145,16 @@ const imgSrc = computed(() => {
   return resolve(newSpace.value?.image);
 });
 
-// Watch para validar hora de cierre
 watch(openingTime, (newVal) => {
   if (newVal && closingTime.value && newVal >= closingTime.value) {
     closingTime.value = null;
   }
 });
 
-// Función para activar la selección de archivo
 const triggerFileInput = () => {
   fileInput.value.click();
 };
 
-// Función para manejar la carga de archivos
 const onFileChange = (e) => {
   const file = e.target.files?.[0];
   if (!file) return;
@@ -180,20 +171,17 @@ const onFileChange = (e) => {
   previewUrl.value = URL.createObjectURL(file);
 };
 
-// Validación de campos vacíos
 const emptyFields = () => {
   return !newSpace.value.name || !newSpace.value.description || !newSpace.value.seats ||
     !selectedTimeFrame.value || !openingTime.value || !closingTime.value;
 };
 
-// Guardar cambios
 const submit = async () => {
   if (emptyFields()) {
     toast.error('Formulario inválido');
     return;
   }
 
-  //Guardamos en el nuevo espacio los nuevos valores
   newSpace.value.opening = makeMinutes(openingTime.value);
   newSpace.value.closing = makeMinutes(closingTime.value);
   newSpace.value.duration = parseFloat(selectedTimeFrame.value);
@@ -224,7 +212,6 @@ const submit = async () => {
   }
 };
 
-// Función para volver a la vista anterior
 const routerBack = () => {
   const toast = useToast();
   if (successToastId.value) {

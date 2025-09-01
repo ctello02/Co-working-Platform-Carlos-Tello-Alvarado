@@ -86,17 +86,14 @@ import TonalButton from '@/components/TonalButton.vue';
 import { useTime } from '@/composables/useTime';
 import { useDisplay } from 'vuetify'
 
-// Breakpoints de Vuetify
 const { smAndDown } = useDisplay()
 
-// Router y notificaciones
 const router = useRouter();
 const toast = useToast();
 const successToastId = ref(null);
 
 const MAX_MB = 2;
 
-// Variables reactivas
 const spaceName = ref(null);
 const spaceDescription = ref(null);
 const spaceImage = ref(null);
@@ -108,10 +105,8 @@ const openingTime = ref(null);
 const closingTime = ref(null);
 const allTimes = ref([]);
 
-// Extraemos funciones del composable useTime
 const { timeFrames, generateAllTimes, makeMinutes } = useTime();
 
-// Cargar las horas disponibles al montar el componente
 onMounted(() => {
   allTimes.value = generateAllTimes();
 });
@@ -149,14 +144,12 @@ const clearFields = () => {
   closingTime.value = null;
 };
 
-// Función para manejar la creación del espacio
 const submit = async () => {
   if (emptyFields()) {
     toast.error('Formulario inválido');
     return;
   }
 
-  // Descomposición de las horas y minutos de apertura y cierre
   const openingTimeInMinutes = makeMinutes(openingTime.value);
   const closingTimeInMinutes = makeMinutes(closingTime.value);
 
@@ -180,7 +173,6 @@ const submit = async () => {
   }
 };
 
-// Función para volver a la vista anterior
 const routerBack = () => {
   const toast = useToast();
   if (successToastId.value) {

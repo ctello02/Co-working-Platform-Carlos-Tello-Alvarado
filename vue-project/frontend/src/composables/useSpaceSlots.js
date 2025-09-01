@@ -1,4 +1,3 @@
-// composables/useSpaceSlots.js
 import { useItemSlots } from './useItemSlots';
 import { computed } from 'vue';
 

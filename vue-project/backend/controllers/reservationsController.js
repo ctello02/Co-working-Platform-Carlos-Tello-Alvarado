@@ -11,7 +11,7 @@ const {
   sendReservationConfirmationEmail,
 } = require('../services/emailService');
 
-// Helper de validación común a crear/actualizar y a ocurrencias de periódicas
+// Función de validación
 async function validateAvailability({
   spaceId,
   materialId,
@@ -263,7 +263,7 @@ exports.createPeriodicReservation = async (req, res) => {
       } else {
         // Crear occurrence
         const occurrence = {
-          ...req.body, // (spaceId/materialId/userId/seats/price…)
+          ...req.body,
           startTime: new Date(currentStart),
           endTime: new Date(currentEnd),
           periodicReservationId: savedPeriodicReservation._id,
@@ -336,7 +336,7 @@ exports.getUserReservations = async (req, res) => {
   try {
     const now = new Date();
 
-    // Se obtienen todas las reservas
+    // Se obtienen todas las reservas del usuario
     const reservations = await Reservation.find({
       userId: req.params.id,
     })
@@ -372,7 +372,7 @@ exports.getTodayReservations = async (req, res) => {
     tomorrow.setDate(tomorrow.getDate() + 1);
 
     // buscamos cualquier reserva que empiece antes de mañana
-    // y termine después de hoy (se solapa en algún punto)
+    // y termine después de hoy
     const reservations = await Reservation.find({
       startTime: { $lt: tomorrow },
       endTime: { $gte: today },
@@ -383,7 +383,7 @@ exports.getTodayReservations = async (req, res) => {
       .sort({ startTime: 1 });
 
     if (reservations.length === 0) {
-      return res.status(404).json({ message: 'No reservations found' });
+      return res.status(404).json({ message: 'No se han encontrado reservas' });
     }
 
     return res.json({ reservations });
@@ -394,20 +394,18 @@ exports.getTodayReservations = async (req, res) => {
 
 exports.getReservationsByDate = async (req, res) => {
   try {
-    const date = req.params.date; // Recibir la fecha como parámetro en formato YYYY-MM-DD
+    const date = req.params.date;
 
     if (!date) {
       return res.status(400).json({ message: 'Se necesita una fecha' });
     }
 
-    // Crear los límites del día seleccionado
     const startOfDay = new Date(date);
     startOfDay.setHours(0, 0, 0, 0);
 
     const endOfDay = new Date(date);
     endOfDay.setHours(23, 59, 59, 999);
 
-    // Buscar reservas que ocurren dentro de la fecha seleccionada
     const reservations = await Reservation.find({
       startTime: { $lt: endOfDay },
       endTime: { $gt: startOfDay },
@@ -441,7 +439,7 @@ exports.updateReservation = async (req, res) => {
       return res.status(404).json({ message: 'Reserva no encontrada' });
     }
 
-    // Tomar los valores que van a quedar tras la actualización
+    // Hereda los valores que van a quedar tras la actualización
     const next = { ...reservation.toObject(), ...req.body };
 
     const check = await validateAvailability({
@@ -496,18 +494,17 @@ exports.updatePeriodicReservation = async (req, res) => {
     const newStartDay = new Date(newStart);
     newStartDay.setHours(0, 0, 0, 0);
 
-    // 2) Recuperamos todas las Occurrences existentes
+    // Recuperamos todas las reservas existentes
     const children = await Reservation.find({
       periodicReservationId: periodicReservation._id,
       startTime: { $gte: newStartDay },
     }).session(session);
 
-    // 3) Preparamos la lógica de conflictos
     const conflictThreshold =
       periodicReservation.periodicity === 'monthly' ? 6 : 15;
     let conflictCounter = 0;
 
-    // 4) Recorremos cada reserva hija
+    // Recorremos cada reserva hija
     for (let child of children) {
       // Calculamos sus nuevos start/end combinando fecha original con la nueva hora
       const origDate = child.startTime;
@@ -520,7 +517,7 @@ exports.updatePeriodicReservation = async (req, res) => {
       );
       const updatedEnd = new Date(updatedStart.getTime() + durationMs);
 
-      // Buscamos conflictos (excluyendo la propia reserva child)
+      // Buscamos conflictos
       const conflict = await Reservation.findOne({
         _id: { $ne: child._id },
         spaceId: periodicReservation.spaceId,
@@ -529,7 +526,7 @@ exports.updatePeriodicReservation = async (req, res) => {
       }).session(session);
 
       if (conflict) {
-        // Hay solapamiento: acumulamos y no tocamos esta ocurrencia
+        // Hay solapamiento
         conflictCounter++;
 
         // Si superamos el umbral, abortamos
@@ -543,7 +540,6 @@ exports.updatePeriodicReservation = async (req, res) => {
           });
         }
       } else {
-        // No hay conflicto: aplicamos los cambios
         child.startTime = updatedStart;
         child.endTime = updatedEnd;
         child.seatsReserved = seatsReserved;
@@ -551,7 +547,6 @@ exports.updatePeriodicReservation = async (req, res) => {
       }
     }
 
-    // 5) Commit de la transacción
     await session.commitTransaction();
     session.endSession();
 
@@ -561,7 +556,7 @@ exports.updatePeriodicReservation = async (req, res) => {
       conflictCount: conflictCounter > 0 ? conflictCounter : null,
     });
   } catch (error) {
-    // Rollback en caso de error inesperado
+    // Rollback en caso de error
     await session.abortTransaction();
     console.error('Error actualizando reserva periódica:', error);
     return res.status(500).json({ message: error.message });
@@ -615,7 +610,7 @@ exports.deletePeriodicReservation = async (req, res) => {
       periodicReservationId: periodicId,
     }).session(session);
 
-    // Marcamos para borrar las reservas que estan dentro de las siguientes 24 horas
+    // Se marcan para borrar las reservas que estan dentro de las siguientes 24 horas
     const toDelete = reservations.filter((r) => {
       const start = new Date(r.startTime);
       return start >= limit24h;

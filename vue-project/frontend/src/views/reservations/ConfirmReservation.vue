@@ -194,7 +194,6 @@ import MaterialCard from '@/components/MaterialCard.vue';
 import { useTime } from '@/composables/useTime';
 import { useDisplay } from 'vuetify'
 
-// Breakpoints de Vuetify
 const { xs } = useDisplay()
 
 // ------------------------------------------------
@@ -295,7 +294,6 @@ async function getPeriodicReservations() {
     periodic = pr.data.periodicReservations || [];
   } catch (e) {
     if (e.response?.status === 404) {
-      // no hay reservas periódicas, lo tomamos como un array vacío
       periodic = [];
     } else throw e;
   }
@@ -575,25 +573,21 @@ const calculatePrice = computed(() => {
   let dur = 0;
   let pricePer = 0;
   if (reservation.value.item === 'space') {
-    dur = space.value.duration      // duración de un bloque, en minutos
-    pricePer = space.value.pricing       // precio por bloque
+    dur = space.value.duration
+    pricePer = space.value.pricing
   } else {
-    dur = material.value.duration      // duración de un bloque, en minutos
-    pricePer = material.value.pricing       // precio por bloque
+    dur = material.value.duration
+    pricePer = material.value.pricing
   }
 
-  // convierto fecha ISO en minutos
   const startMin = makeMinutesFromIsoLocal(startStr)
   const endMin = makeMinutesFromIsoLocal(endStr)
 
-  // calculo cuántos bloques completos caben
   const blocks = (endMin - startMin) / dur
 
-  // en caso de que no sea un múltiplo exacto, redondeamos hacia abajo
   const fullBlocks = Math.floor(blocks)
   const total = fullBlocks * pricePer * reservationSeats.value
 
-  // toFixed devuelve una string con dos decimales
   return total.toFixed(2)
 })
 
@@ -609,7 +603,6 @@ const routerBack = () => {
 </script>
 
 <style scoped>
-/* Transición de deslizamiento hacia la derecha (mostrar SpaceCard) */
 .slide-right-enter-active,
 .slide-right-leave-active {
   transition: opacity 0.3s ease, transform 0.3s ease;

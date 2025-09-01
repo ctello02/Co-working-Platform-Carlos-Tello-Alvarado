@@ -27,7 +27,7 @@ exports.getMaterials = async (req, res) => {
   try {
     const materials = await Material.find();
     if (materials.length === 0) {
-      return res.status(404).json({ message: 'No materials found' });
+      return res.status(404).json({ message: 'Materiales no encontrado' });
     }
     res.status(200).json({ materials });
   } catch (error) {
@@ -71,7 +71,8 @@ exports.createMaterial = async (req, res) => {
 exports.updateMaterial = async (req, res) => {
   try {
     const doc = await Material.findOne({ _id: req.body.id });
-    if (!doc) return res.status(404).json({ message: 'Material not found' });
+    if (!doc)
+      return res.status(404).json({ message: 'Material no encontrado' });
 
     let newImageRel = null;
     let prevAbsToDelete = null;
@@ -140,7 +141,7 @@ exports.deleteMaterial = async (req, res) => {
     if (!material) {
       await session.abortTransaction();
       session.endSession();
-      return res.status(404).json({ message: 'Material not found' });
+      return res.status(404).json({ message: 'Material no encontrado' });
     }
 
     const now = new Date();
@@ -152,7 +153,7 @@ exports.deleteMaterial = async (req, res) => {
     if (reservations.length > 0) {
       await session.abortTransaction();
       session.endSession();
-      return res.status(409).json({ message: 'Material has reservations' });
+      return res.status(409).json({ message: 'El material tiene reservas' });
     }
 
     let periodicReservations = await PeriodicReservation.find({
@@ -163,10 +164,9 @@ exports.deleteMaterial = async (req, res) => {
       session.endSession();
       return res
         .status(409)
-        .json({ message: 'Material has periodic reservations' });
+        .json({ message: 'El material tiene reservas periódicas' });
     }
 
-    // Obtener la ruta completa de la imagen del servidor
     const prev = path.basename(new URL('http://x' + material.image).pathname);
     const abs = path.resolve(MATERIALS_DIR, prev);
     if (!abs.startsWith(MATERIALS_DIR + path.sep)) {
@@ -177,7 +177,7 @@ exports.deleteMaterial = async (req, res) => {
 
     await Material.deleteOne({ _id: req.params.id }).session(session);
     await session.commitTransaction();
-    res.json({ message: 'Material deleted successfully' });
+    res.json({ message: 'Material borrado correctamente' });
   } catch (error) {
     await session.abortTransaction();
     session.endSession();
