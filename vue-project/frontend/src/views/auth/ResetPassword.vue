@@ -54,7 +54,6 @@ export default {
   },
   methods: {
     emptyFields() {
-      // Verificar que los campos no estén vacíos y que cumplan las reglas de validación
       const passwordValid = this.passwordRules.every(rule => rule(this.password) === true);
       return !(this.password && passwordValid);
     },

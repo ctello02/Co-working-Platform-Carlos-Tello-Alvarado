@@ -6,7 +6,7 @@ const cookieParser = require('cookie-parser');
 const cors = require('cors');
 const verifyToken = require('./middleware/verify_tokens');
 
-// Conectar a la base de datos
+// Conexión a la base de datos
 const connectDB = require('./database/db');
 connectDB();
 
@@ -43,7 +43,7 @@ app.use(bodyParser.json());
 app.use(cookieParser());
 app.use(bodyParser.urlencoded({ extended: false }));
 
-// Configurar 'uploads' como carpeta estática para servir imágenes
+// Configuración de /uploads como carpeta estática
 app.use(
   '/uploads/spaces',
   express.static(SPACES_DIR, {
@@ -79,7 +79,7 @@ app.use('/api/reservations', reservationsRoutes);
 app.use('/api/paypal', paypalRoutes);
 app.use('/api/stats', statsRoutes);
 
-// healthcheck opcional para Render
+// healthcheck para Render
 app.get('/health', (_, res) => res.send('ok'));
 
 // Ruta principal
@@ -99,7 +99,7 @@ app.use((err, req, res, next) => {
   next(err);
 });
 
-// Iniciar el servidor
+// Inicio del servidor
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`API running on port ${PORT}`);

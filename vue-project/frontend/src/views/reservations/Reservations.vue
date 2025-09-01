@@ -1,7 +1,7 @@
 <template>
     <v-container fluid class="container">
         <v-col>
-            <v-row class="d-flex align-end">
+            <v-row class="d-flex align-end" :class="xs ? 'flex-column ga-2 justify-center align-center' : ''">
                 <v-tabs v-model="mainTab" align-tabs="center" slider-color="#1056bd" height="40">
                     <v-tab :ripple="false" value="calendar" class="no-hover text-none v-tab-text">Calendario</v-tab>
                     <v-tab :ripple="false" value="reservations" class="no-hover text-none v-tab-text">Reservas</v-tab>
@@ -47,15 +47,16 @@
 
                     <v-tabs-window-item value="reservations">
                         <!-- Filtro -->
-                        <v-row class="mt-5 mx-1 d-flex ga-3 ">
-                            <v-btn variant="text" :ripple="false" size="small"
+                        <v-row class="mt-5 mx-1 d-flex ga-3 "
+                            :class="xs ? 'flex-column justify-center align-center' : ''">
+                            <v-btn v-if="!xs" variant="text" :ripple="false" size="small"
                                 :icon="list ? 'mdi-format-list-bulleted' : 'mdi-view-grid-outline'"
                                 @click="list = !list" />
 
                             <v-select variant="outlined" density="compact" label="Mostar reservas" v-model="filter"
                                 item-title="label" item-value="value" :items="filterItems" style="max-width: 250px;" />
 
-                            <v-btn variant="text" :ripple="false" size="small" class="mt-2"
+                            <v-btn variant="text" :ripple="false" size="small" :class="xs ? 'mt-n3 mb-6' : 'mt-1'"
                                 :prepend-icon="dateDesc ? 'mdi-arrow-down' : 'mdi-arrow-up'"
                                 @click="dateDesc = !dateDesc">
                                 {{ dateDesc ? 'Descendente' : 'Ascendente' }}
@@ -127,7 +128,10 @@ import {
     createViewWeek,
 } from '@schedule-x/calendar';
 import '@schedule-x/theme-default/dist/index.css';
+
 import { useToast } from 'vue-toastification';
+import { useDisplay } from 'vuetify'
+const { smAndDown, xs } = useDisplay()
 /* -------------------------------------------------------------------- */
 
 
@@ -292,7 +296,7 @@ const calendarApp = createCalendar({
 
             reservationStore.setReservation(selectedReservation);
         },
-        onClickDate(date) { // p.e. YYYY-MM-DD
+        onClickDate(date) {
             if (calcPastDates(new Date(date))) return;      // Si se hace clic en una fecha pasada, se ignora
 
             const stringDate = parseToStringDate(new Date(date));
@@ -362,7 +366,6 @@ function getAllEvents() {
 
 function addCalendarEvents(reservations) {
     return reservations.map(reservation => {
-        // Usamos la función del composable useTime para transformar startTime y endTime
         const formattedStart = parseDateTo_YYYYMMDD_HHMM(reservation.startTime);
         const formattedEnd = parseDateTo_YYYYMMDD_HHMM(reservation.endTime);
         const name = reservation.spaceId?.name || reservation.materialId?.name;
@@ -571,7 +574,7 @@ const tableHeaders = computed(() => {
 function tableDropdownItems(reservations) {
     return reservations.map((reservation, i) => {
         return {
-            id: reservation._id,        // key para v-for
+            id: reservation._id,
             date: `${twoDigitsDate(new Date(reservation.startTime))}`,
             name: reservation.spaceId?.name || reservation.materialId?.name,
             schedule: `${getHoursAndMinsFromDate(reservation.startTime)}h - ${getHoursAndMinsFromDate(reservation.endTime)}h`,
@@ -589,11 +592,11 @@ const tableItems = computed(() => {
 
     return reservationsToSearch.map((reservation, i) => {
         return {
-            id: reservation._id,        // key para v-for
+            id: reservation._id,
             date: `${twoDigitsDate(new Date(reservation.startTime))}`,
             name: reservation.spaceId?.name || reservation.materialId?.name,
             schedule: `${getHoursAndMinsFromDate(reservation.startTime)}h - ${getHoursAndMinsFromDate(reservation.endTime)}h`,
-            object: reservation,      // guardamos el objeto para usarlo en las acciones
+            object: reservation,
         }
     })
 })

@@ -27,7 +27,6 @@
                                             color="surface-variant" :height="smAndDown ? '200px' : '300px'" cover />
                                         <v-card-text>
                                             <v-col>
-                                                <!-- Título -->
                                                 <v-row class="mt-n5 mb-n3" cols="12">
                                                     <v-col>
                                                         <span :class="smAndDown ? 'text-h5' : 'text-h4'">{{
@@ -40,7 +39,6 @@
                                                         </span>
                                                     </v-col>
                                                 </v-row>
-                                                <!-- Descripción -->
                                                 <v-row :class="smAndDown ? 'my-n3' : 'my-n2'" cols="12">
                                                     <v-col cols="1" class="d-flex align-center">
                                                         <v-icon icon="mdi-text" />
@@ -52,7 +50,6 @@
                                                             todayReservation.materialId?.description }}</span>
                                                     </v-col>
                                                 </v-row>
-                                                <!-- Fecha -->
                                                 <v-row :class="!smAndDown ? 'my-n3' : ''">
                                                     <v-col cols="1" class="d-flex align-center">
                                                         <v-icon icon="mdi-calendar-outline" size="small" />
@@ -65,7 +62,6 @@
                                                             todayReservation.startTime) }} </span>
                                                     </v-col>
                                                 </v-row>
-                                                <!-- Hora + Asientos -->
                                                 <v-row class="d-flex justify-center align-center"
                                                     :class="!smAndDown ? 'my-n3' : ''" cols="12">
                                                     <v-col :cols="smAndDown ? 12 : auto">
@@ -101,14 +97,13 @@
                                                                     reservado</span>
                                                                 <span :class="smAndDown ? '' : 'text-h6'" v-else>{{
                                                                     todayReservation.seatsReserved
-                                                                }}
+                                                                    }}
                                                                     asientos
                                                                     reservados</span>
                                                             </v-col>
                                                         </v-row>
                                                     </v-col>
                                                 </v-row>
-                                                <!-- Repetición + Precio -->
                                                 <v-row class="d-flex justify-center align-center"
                                                     :class="!smAndDown ? 'my-n3' : ''" cols="12">
                                                     <v-col :cols="smAndDown ? 12 : auto">
@@ -162,7 +157,6 @@
                                                 </v-row>
                                             </v-col>
                                         </v-card-text>
-                                        <!-- Acciones -->
                                         <v-card-actions v-if="!todayReservation.isPaid"
                                             class="d-flex justify-end ga-3 mt-n3 mb-5 mr-5">
                                             <TonalButton :color="show ? 'grey' : 'blue'" :loading="isLoading"
@@ -293,8 +287,7 @@ import { useTime } from '@/composables/useTime';
 
 import { useDisplay } from 'vuetify'
 
-// Breakpoints de Vuetify
-const { smAndDown, mdAndDown, lgAndUp } = useDisplay()
+const { smAndDown } = useDisplay()
 
 const router = useRouter();
 const reservationStore = useReservationStore();
@@ -499,7 +492,6 @@ function isExpired(endTime) {
     width: 100%;
     height: 100%;
     background-color: rgba(255, 255, 255, 0.75);
-    /* ajusta la opacidad */
 
     display: flex;
     justify-content: center;
@@ -507,10 +499,8 @@ function isExpired(endTime) {
     z-index: 10;
 }
 
-/* texto grande y centrado */
 .expired-text {
     font-size: 2rem;
-    /* aprox. h3 */
     font-weight: bold;
     color: #444;
     text-transform: uppercase;

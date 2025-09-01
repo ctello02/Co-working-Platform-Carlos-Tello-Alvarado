@@ -8,7 +8,7 @@
       <!-- Filtros generales -->
       <v-row>
         <v-card class="pa-2 mt-4 mb-n3" width="100%">
-          <v-card-text class="d-flex justify-space-between mb-n5 flex-wrap">
+          <v-card-text class="d-flex justify-space-between mb-n5 flex-wrap" :class="xs ? 'flex-column' : ''">
             <v-col xl="3" lg="3" md="4" sm="12" xs="12">
               <v-row>
                 <span class="text-h6">Seleccione una fecha</span>
@@ -89,47 +89,53 @@
                 <v-col v-for="spc in filteredSpaces" :key="spc._id" cols="12" md="6" lg="4">
                   <v-card>
                     <v-img :src="spc.image" height="200px" cover />
-                    <v-card-title class="text-h4 mb-n1">{{ spc.name }}</v-card-title>
-                    <v-card-text>
-                      <div class="d-flex align-center ga-2">
-                        <v-icon style="color: #4f5b66">mdi-clock-outline</v-icon>
-                        <span class="text-h6" style="color: #4f5b66">
-                          Abre: {{ makeHoursAndMinutes(spc.opening) }} —
-                          Cierra: {{ makeHoursAndMinutes(spc.closing) }}
-                        </span>
-                      </div>
-                      <div class="d-flex align-center ga-2">
-                        <v-icon style="color: #4f5b66">mdi-table-chair</v-icon>
-                        <span class="text-h6" style="color: #4f5b66">
-                          Capacidad: {{ spc.seats }} asientos
-                        </span>
-                      </div>
-                      <div class="d-flex align-center ga-2">
-                        <v-icon style="color: #4f5b66">mdi-timer-outline</v-icon>
-                        <span class="text-h6" style="color: #4f5b66" v-if="spc.duration < 60">Tiempos de: {{
-                          spc.duration }}
-                          minutos</span>
-                        <span class="text-h6" style="color: #4f5b66" v-if="spc.duration == 60">Tiempos de: {{
-                          spc.duration /
-                          60
-                        }}
-                          hora</span>
-                        <span class="text-h6" style="color: #4f5b66" v-if="spc.duration > 60">Tiempos de: {{
-                          spc.duration /
-                          60
-                        }}
-                          horas</span>
-                      </div>
-                      <div class="d-flex align-center ga-2">
-                        <v-icon style="color: #4f5b66">mdi-hand-coin-outline</v-icon>
-                        <span class="text-h6" style="color: #4f5b66" v-if="spc.pricing > 0">
-                          Precio por franja horaria: {{ spc.pricing }}€
-                        </span>
-                        <span class="text-h6" style="color: #4f5b66" v-else>
-                          Reservas gratis
-                        </span>
-                      </div>
-                    </v-card-text>
+                    <v-card-title class="d-flex text-h4 mb-n1 justify-space-between align-center">
+                      {{ spc.name }}
+                      <v-btn v-if="xs" :icon="isOpen(spc._id) ? 'mdi-chevron-up' : 'mdi-chevron-down'" variant="text"
+                        size="small" @click="toggle(spc._id)" />
+                    </v-card-title>
+                    <v-expand-transition>
+                      <v-card-text v-show="isOpen(spc._id)">
+                        <div class="d-flex align-center ga-2">
+                          <v-icon style="color: #4f5b66">mdi-clock-outline</v-icon>
+                          <span class="text-h6" style="color: #4f5b66">
+                            Abre: {{ makeHoursAndMinutes(spc.opening) }} —
+                            Cierra: {{ makeHoursAndMinutes(spc.closing) }}
+                          </span>
+                        </div>
+                        <div class="d-flex align-center ga-2">
+                          <v-icon style="color: #4f5b66">mdi-table-chair</v-icon>
+                          <span class="text-h6" style="color: #4f5b66">
+                            Capacidad: {{ spc.seats }} asientos
+                          </span>
+                        </div>
+                        <div class="d-flex align-center ga-2">
+                          <v-icon style="color: #4f5b66">mdi-timer-outline</v-icon>
+                          <span class="text-h6" style="color: #4f5b66" v-if="spc.duration < 60">Tiempos de: {{
+                            spc.duration }}
+                            minutos</span>
+                          <span class="text-h6" style="color: #4f5b66" v-if="spc.duration == 60">Tiempos de: {{
+                            spc.duration /
+                            60
+                          }}
+                            hora</span>
+                          <span class="text-h6" style="color: #4f5b66" v-if="spc.duration > 60">Tiempos de: {{
+                            spc.duration /
+                            60
+                          }}
+                            horas</span>
+                        </div>
+                        <div class="d-flex align-center ga-2">
+                          <v-icon style="color: #4f5b66">mdi-hand-coin-outline</v-icon>
+                          <span class="text-h6" style="color: #4f5b66" v-if="spc.pricing > 0">
+                            Precio por franja horaria: {{ spc.pricing }}€
+                          </span>
+                          <span class="text-h6" style="color: #4f5b66" v-else>
+                            Reservas gratis
+                          </span>
+                        </div>
+                      </v-card-text>
+                    </v-expand-transition>
                     <v-divider />
                     <!-- Selectores siempre visibles -->
                     <v-card-text>
@@ -184,41 +190,46 @@
                 <v-col v-for="mtl in filteredMaterials" :key="mtl._id" cols="12" md="6" lg="4">
                   <v-card>
                     <v-img :src="mtl.image" height="200px" cover />
-                    <v-card-title class="text-h4 mb-n1">{{ mtl.name }}</v-card-title>
-                    <v-card-text>
-                      <div class="d-flex align-center ga-2">
-                        <v-icon style="color: #4f5b66">mdi-clock-outline</v-icon>
-                        <span class="text-h6" style="color: #4f5b66">
-                          Abre: {{ makeHoursAndMinutes(mtl.opening) }} —
-                          Cierra: {{ makeHoursAndMinutes(mtl.closing) }}
-                        </span>
-                      </div>
-                      <div class="d-flex align-center ga-2">
-                        <v-icon style="color: #4f5b66">mdi-timer-outline</v-icon>
-                        <span class="text-h6" style="color: #4f5b66" v-if="mtl.duration < 60">Tiempos de: {{
-                          mtl.duration }}
-                          minutos</span>
-                        <span class="text-h6" style="color: #4f5b66" v-if="mtl.duration == 60">Tiempos de: {{
-                          mtl.duration /
-                          60
-                        }}
-                          hora</span>
-                        <span class="text-h6" style="color: #4f5b66" v-if="mtl.duration > 60">Tiempos de: {{
-                          mtl.duration /
-                          60
-                        }}
-                          horas</span>
-                      </div>
-                      <div class="d-flex align-center ga-2">
-                        <v-icon style="color: #4f5b66">mdi-hand-coin-outline</v-icon>
-                        <span class="text-h6" style="color: #4f5b66" v-if="mtl.pricing > 0">
-                          Precio por reserva: {{ mtl.pricing }}€
-                        </span>
-                        <span class="text-h6" style="color: #4f5b66" v-else>
-                          Reservas gratis
-                        </span>
-                      </div>
-                    </v-card-text>
+                    <v-card-title class="d-flex text-h4 mb-n1 justify-space-between align-center">
+                      {{ mtl.name }}
+                      <v-btn v-if="xs" :icon="isOpen(mtl._id) ? 'mdi-chevron-up' : 'mdi-chevron-down'" variant="text"
+                        size="small" @click="toggle(mtl._id)" /></v-card-title>
+                    <v-expand-transition v-show="isOpen(mtl._id)">
+                      <v-card-text>
+                        <div class="d-flex align-center ga-2">
+                          <v-icon style="color: #4f5b66">mdi-clock-outline</v-icon>
+                          <span class="text-h6" style="color: #4f5b66">
+                            Abre: {{ makeHoursAndMinutes(mtl.opening) }} —
+                            Cierra: {{ makeHoursAndMinutes(mtl.closing) }}
+                          </span>
+                        </div>
+                        <div class="d-flex align-center ga-2">
+                          <v-icon style="color: #4f5b66">mdi-timer-outline</v-icon>
+                          <span class="text-h6" style="color: #4f5b66" v-if="mtl.duration < 60">Tiempos de: {{
+                            mtl.duration }}
+                            minutos</span>
+                          <span class="text-h6" style="color: #4f5b66" v-if="mtl.duration == 60">Tiempos de: {{
+                            mtl.duration /
+                            60
+                          }}
+                            hora</span>
+                          <span class="text-h6" style="color: #4f5b66" v-if="mtl.duration > 60">Tiempos de: {{
+                            mtl.duration /
+                            60
+                          }}
+                            horas</span>
+                        </div>
+                        <div class="d-flex align-center ga-2">
+                          <v-icon style="color: #4f5b66">mdi-hand-coin-outline</v-icon>
+                          <span class="text-h6" style="color: #4f5b66" v-if="mtl.pricing > 0">
+                            Precio por reserva: {{ mtl.pricing }}€
+                          </span>
+                          <span class="text-h6" style="color: #4f5b66" v-else>
+                            Reservas gratis
+                          </span>
+                        </div>
+                      </v-card-text>
+                    </v-expand-transition>
                     <v-divider />
                     <!-- Selectores siempre visibles -->
                     <v-card-text>
@@ -277,6 +288,11 @@ import { useTime } from '@/composables/useTime';
 import { useSpaceSlots } from '@/composables/useSpaceSlots';
 import { useMaterialSlots } from '@/composables/useMaterialSlots';
 import TonalButton from '@/components/TonalButton.vue';
+import { useDisplay } from 'vuetify'
+
+const { xs } = useDisplay()
+
+const show = ref({})
 
 const router = useRouter();
 const spaceStore = useSpaceStore();
@@ -284,7 +300,7 @@ const materialStore = useMaterialStore();
 const userStore = useUserStore();
 const reservationStore = useReservationStore();
 
-// helpers de tiempo
+// funciones de tiempo
 const {
   timeFrames,
   generateAllTimes,
@@ -321,7 +337,6 @@ watch(date, () => {
     startTime.value = null;
   }
   // Marcamos que ya pudo cargar la hora inicial de la store
-  // El problema es que se inicializaba a null aunque hubiese una hora en la store
   initialLoaded.value = true;
   loadDayData();
 });
@@ -341,7 +356,7 @@ onMounted(async () => {
   }
 });
 
-// Cada vez que cambian filtros, actualizamos lista
+// Cada vez que cambian los filtros, actualizamos lista
 watch([startTime, durationSearched, reservationSeats], () => {
   filterSpaces();
   filterMaterials();
@@ -358,7 +373,6 @@ async function loadDayData() {
     oneShot = d1.data.reservations || [];
   } catch (e) {
     if (e.response?.status === 404) {
-      // no hay reservas: lo tomamos como un array vacío
       oneShot = [];
     } else throw e;
 
@@ -371,7 +385,6 @@ async function loadDayData() {
     periodic = d2.data.periodicReservations || [];
   } catch (e) {
     if (e.response?.status === 404) {
-      // no hay reservas periódicas: lo tomamos como un array vacío
       periodic = [];
     } else throw e;
   }
@@ -388,6 +401,7 @@ async function loadDayData() {
     });
   });
 
+  //para materiales
   materials.value.forEach(mtl => {
     slotsByMaterial[mtl._id] = useMaterialSlots({
       material: computed(() => materials.value.find(m => m._id === mtl._id)),
@@ -403,7 +417,7 @@ async function loadDayData() {
   isLoading.value = false;
 }
 
-// Filtra espacios con los criterios actuales
+// Filtra espacios
 function filterSpaces() {
   filteredSpaces.value = spaces.value.filter(spc => {
     // Si la fecha que se está buscando es hoy, se eliminan los espacios que no están abiertos a la hora actual
@@ -446,7 +460,6 @@ function filterSpaces() {
 
 function filterMaterials() {
   filteredMaterials.value = materials.value.filter(mtl => {
-    // Si la fecha que se está buscando es hoy, se eliminan los materiales que no están abiertos a la hora actual
     let searchedDate = new Date(date.value);
     const now = new Date();
     const nowMins = now.getHours() * 60 + now.getMinutes();
@@ -454,7 +467,6 @@ function filterMaterials() {
       return false;
     }
 
-    // Si no hay filtro de hora/duración/asientos, mostrar todos
     if (!startTime.value && !durationSearched.value) {
       return true;
     }
@@ -482,10 +494,9 @@ function filterMaterials() {
 
 function calcDurationAvailable(slots, duration) {
   const interval = 15;                          // Cada slot es de 15 min
-  const needed = Math.ceil(duration / interval);// Cuántos slots consecutivos hacen falta para cubrir la duración
+  const needed = Math.ceil(duration / interval);  // Número de cuántos slots consecutivos hacen falta para cubrir la duración
 
   // Recorremos todos los posibles inicios de bloque
-  // hasta slots.length - needed, para que quepa needed slots y no sobrepase el array cuando i = slots.length - needed
   for (let i = 0; i <= slots.length - needed; i++) {
     // Extraemos un bloque de tamaño needed
     // slots[i], slots[i+1], ..., slots[i+needed-1]
@@ -500,8 +511,6 @@ function calcDurationAvailable(slots, duration) {
   // Si hemos recorrido todo sin encontrar bloque, devolvemos false
   return false;
 }
-
-// Crea y guarda la reserva, y redirige
 
 async function createSpaceReservation(spc) {
   const day = parseToYYYYMMDD(formattedDate.value);
@@ -544,6 +553,19 @@ async function createMaterialReservation(mtl) {
   materialStore.setSelectedMaterial(mtl);
   router.push('/confirmReservation');
 }
+
+// Despegables en las tarjetas
+const isOpen = (id) => (xs.value ? !!show.value[id] : true)
+
+const toggle = (id) => {
+  if (!xs.value) return
+  show.value[id] = !show.value[id]
+}
+
+watch(xs, (isXs) => {
+  const keys = Object.keys(show.value)
+  keys.forEach(k => (show.value[k] = !isXs))
+}, { immediate: true })
 </script>
 <style scoped>
 .loader-overlay {

@@ -7,7 +7,7 @@
                 <div class="d-flex align-center">
                     <TonalButton color="blue" text="Crear material" class="mr-3" v-if="userStore.getIsAdmin"
                         @click="openCreateMaterial" />
-                    <v-btn variant="text" :ripple="false"
+                    <v-btn v-if="!xs" variant="text" :ripple="false"
                         :icon="list ? 'mdi-format-list-bulleted' : 'mdi-view-grid-outline'" @click="list = !list" />
                 </div>
             </v-row>
@@ -65,6 +65,9 @@ import MaterialCard from '@/components/MaterialCard.vue';
 import AskModal from '@/components/AskModal.vue';
 import Table from '@/components/Table.vue';
 import { useTime } from '@/composables/useTime';
+import { useDisplay } from 'vuetify'
+
+const { xs } = useDisplay()
 
 // Router, notificaciones y stores
 const router = useRouter();
@@ -83,22 +86,16 @@ const materials = ref(null);
 const deleteModal = ref(false);
 const bulkDeleteModal = ref(false);
 
-//Variables para la Tabla
-
-// Extraemos función del composable useTime
 const {
     makeHoursAndMinutes
 } = useTime();
 
 
-/* ------------------------- Ciclo de vida ------------------------- */
 onMounted(() => {
-    // Llamamos a getMaterials para obtener los materiales al montar el componente
     getMaterials();
 })
 
-/* ------------------------- Funciones del componente ------------------------- */
-// Obtiene los materiales a través del servicio
+// Obtiene los materiales 
 function getMaterials() {
     materialService.getMaterials()
         .then(res => {
@@ -165,8 +162,7 @@ const closeBulkDeleteDialog = () => {
     bulkDeleteModal.value = false;
 };
 
-/* ------------------------- Objetos de la tabla ------------------------- */
-// Encabezados
+// Encabezados de la tabla
 const tableHeaders = computed(() => {
     let headers = [
         { label: '#', width: '10%' },
@@ -194,7 +190,7 @@ const tableFields = computed(() => {
 const tableItems = computed(() => {
     return (materials.value || []).map((material, i) => {
         const item = {
-            id: material._id,        // key para v-for
+            id: material._id,
             name: material.name,
             description: material.description,
             schedule: `${makeHoursAndMinutes(material.opening)}h - ${makeHoursAndMinutes(material.closing)}h`,

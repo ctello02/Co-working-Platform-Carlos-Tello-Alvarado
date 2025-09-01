@@ -9,7 +9,7 @@ exports.getUsers = async (req, res) => {
   try {
     const users = await User.find().select('-password');
     if (users.length === 0) {
-      return res.status(404).json({ message: 'No users found' });
+      return res.status(404).json({ message: 'No se han encontrado usuarios' });
     }
     res.status(200).json({ users });
   } catch (error) {
@@ -21,13 +21,13 @@ exports.updateUser = async (req, res) => {
   try {
     let user = await User.findOne({ _id: req.body._id });
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({ message: 'Usuario no encontrado' });
     }
 
     user.set(req.body);
 
     await user.save();
-    res.status(200).json({ message: 'User updated successfully' });
+    res.status(200).json({ message: 'Usuario actualizado con éxito' });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -70,7 +70,7 @@ exports.deleteUser = async (req, res) => {
 
     await User.deleteOne({ _id: req.params.id }).session(session);
     await session.commitTransaction();
-    res.json({ message: 'User eliminado con éxito' });
+    res.json({ message: 'Usuario eliminado con éxito' });
   } catch (error) {
     await session.abortTransaction();
     session.endSession();
@@ -90,7 +90,7 @@ exports.bulkDeleteUser = async (req, res) => {
     let user = await User.findOne({ _id: userId }).session(session);
     if (!user) {
       await session.abortTransaction();
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({ message: 'Usuario no encontrado' });
     }
 
     const reservations = await Reservation.find({ userId }).session(session);

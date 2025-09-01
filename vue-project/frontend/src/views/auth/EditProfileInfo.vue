@@ -103,12 +103,12 @@ export default {
       if (this.successToastId) {
         toast.dismiss(this.successToastId); // Cierra el toast específico usando el ID
       } else {
-        toast.clear(); // Elimina todos los toasts como respaldo
+        toast.clear(); // Elimina todos los toasts
       }
       this.$router.push('/profile');
     },
     emptyFields() {
-      // Verificar que los campos no estén vacíos y que cumplan las reglas de validación
+      // Verifica que los campos no estén vacíos y que cumplan las reglas de validación
       const nameValid = this.nameRules.every(rule => rule(this.user.name) === true);
       const emailValid = this.emailRules.every(rule => rule(this.user.email) === true);
       const phoneValid = this.phoneRules.every(rule => rule(this.user.phone) === true);
@@ -140,7 +140,6 @@ export default {
         .then(res => {
           console.log(res.data);
           this.userStore.setThisUser(this.user);
-          // Mostrar la alerta de éxito y ocultarla después de 3 segundos
           this.successToastId = toast.success('¡Perfil editado con éxito!');
         })
         .catch(error => {

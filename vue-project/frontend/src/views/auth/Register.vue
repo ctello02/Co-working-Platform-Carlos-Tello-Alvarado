@@ -118,7 +118,6 @@ export default {
   }),
   methods: {
     emptyFields() {
-      // Verificar que los campos no estén vacíos y que cumplan las reglas de validación
       const nameValid = this.nameRules.every(rule => rule(this.name) === true);
       const emailValid = this.emailRules.every(rule => rule(this.email) === true);
       const passwordValid = this.passwordRules.every(rule => rule(this.password) === true);
@@ -152,7 +151,6 @@ export default {
             this.$router.push("/login");
           })
           .catch((error) => {
-            // Verifica si el código de estado es 500
             if (error.response && error.response.status === 409) {
               toast.error("El correo ya está en uso");
             } else {

@@ -115,7 +115,6 @@ const closingTime = ref(null);
 const fileInput = ref(null);
 const allTimes = ref([]);
 
-// Extraemos funciones del composable useTime
 const {
   timeFrames,
   generateAllTimes,
@@ -123,7 +122,6 @@ const {
   makeHoursAndMinutes
 } = useTime();
 
-// Cargar datos al montar el componente
 onMounted(() => {
   allTimes.value = generateAllTimes();
   material.value = materialStore.getSelectedMaterial;
@@ -179,20 +177,17 @@ const onFileChange = (e) => {
   previewUrl.value = URL.createObjectURL(file);
 };
 
-// Validación de campos vacíos
 const emptyFields = () => {
   return !newMaterial.value.name || !newMaterial.value.description ||
     !selectedTimeFrame.value || !openingTime.value || !closingTime.value;
 };
 
-// Guardar cambios
 const submit = async () => {
   if (emptyFields()) {
     toast.error('Formulario inválido');
     return;
   }
 
-  //Guardamos en el nuevo material los nuevos valores
   newMaterial.value.opening = makeMinutes(openingTime.value);
   newMaterial.value.closing = makeMinutes(closingTime.value);
   newMaterial.value.duration = parseFloat(selectedTimeFrame.value);
@@ -223,7 +218,6 @@ const submit = async () => {
   }
 };
 
-// Función para volver a la vista anterior
 const routerBack = () => {
   const toast = useToast();
   if (successToastId.value) {

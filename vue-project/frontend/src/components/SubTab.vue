@@ -19,7 +19,7 @@
 
             <!-- Modo tarjetas -->
             <v-row v-else>
-                <v-col v-for="reservation in filteredReservations" :key="reservation._id" lg="3" md="4" sm="12" xs="12"
+                <v-col v-for="reservation in filteredReservations" :key="reservation._id" lg="3" md="4" sm="6" xs="12"
                     class="ma-0 pa-0">
                     <ReservationCard :reservation="reservation" />
                 </v-col>
@@ -37,7 +37,7 @@
                             variant="text" size="small" />
                     </v-card-title>
 
-                    <!-- Contenido expandido/colapsado -->
+                    <!-- Contenido expandido o colapsado -->
                     <v-row v-if="expandedNames[itemName]">
                         <!-- Modo tabla -->
                         <v-col v-if="list">
@@ -66,7 +66,7 @@
                             variant="text" size="small" />
                     </v-card-title>
 
-                    <!-- Contenido expandido/colapsado -->
+                    <!-- Contenido expandido o colapsado -->
                     <v-row v-if="expandedDates[dateKey]">
                         <!-- Modo tabla -->
                         <v-col v-if="list">
@@ -90,7 +90,6 @@
 import Table from './Table.vue';
 import ReservationCard from './ReservationCard.vue';
 
-// Props que el padre le enviará a este componente
 const props = defineProps({
     reservations: { type: Array, default: () => [] },
     noReservationsMessage: { type: String, default: '' },

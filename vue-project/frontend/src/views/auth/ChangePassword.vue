@@ -65,7 +65,7 @@ export default {
             return this.oldPassword === this.newPassword;
         },
         emptyFields() {
-            // Verificar que los campos no estén vacíos y que cumplan las reglas de validación
+            // Verifica que los campos no estén vacíos y que cumplan las reglas de validación
             const oldPasswordValid = this.passwordRules.every(rule => rule(this.oldPassword) === true);
             const newPasswordValid = this.passwordRules.every(rule => rule(this.newPassword) === true);
             return !(this.oldPassword && this.newPassword && oldPasswordValid && newPasswordValid);

@@ -1,7 +1,6 @@
 <template>
     <v-container class="pa-5 container">
         <v-card v-if="space" class="mx-auto" :max-width="maxWidth" :class="isPreview ? 'spaceCardPreview' : ''">
-            <!-- Imagen -->
             <v-img :src="$resolve(space.image)" color="surface-variant"
                 :height="isPreview ? (smAndDown ? '120px' : '150px') : (smAndDown ? '200px' : '300px')" cover
                 :gradient="isPreview ? 'to bottom, rgba(0,0,0,.1), rgba(0,0,0,.5)' : ''" class="align-end">
@@ -12,7 +11,6 @@
 
             <v-card-text v-if="space && openingTime && closingTime">
                 <v-col>
-                    <!-- Título + acciones (solo no-preview) -->
                     <v-row class="mt-n5 mb-n6" cols="12" v-if="!isPreview">
                         <v-col>
                             <span :class="smAndDown ? 'text-h5' : 'text-h4'">{{ space.name }}</span>
@@ -25,7 +23,6 @@
                         </v-col>
                     </v-row>
 
-                    <!-- Descripción -->
                     <v-row cols="12" :class="isPreview ? 'mt-n7' : ''">
                         <v-col cols="1" class="d-flex align-center" :class="isPreview ? 'ml-n3 mt-2' : ''">
                             <v-icon icon="mdi-text" />
@@ -37,7 +34,6 @@
                         </v-col>
                     </v-row>
 
-                    <!-- Preview: horario y precio -->
                     <v-row class="my-n3" cols="12" v-if="isPreview">
                         <v-col cols="1" class="d-flex align-center ml-n3">
                             <v-icon icon="mdi-clock-outline" />
@@ -63,7 +59,6 @@
                         </v-col>
                     </v-row>
 
-                    <!-- Detalle (no preview): asientos y precio -->
                     <v-row v-if="!isPreview" :class="!smAndDown ? 'my-n3' : ''" cols="12">
                         <v-col :cols="smAndDown ? 12 : ''">
                             <v-row class="d-flex align-center" :class="smAndDown ? '' : 'my-n2'">
@@ -91,7 +86,6 @@
                         </v-col>
                     </v-row>
 
-                    <!-- Detalle (no preview): apertura / cierre -->
                     <v-row v-if="!isPreview" :class="!smAndDown ? 'my-n3' : ''">
                         <v-col :cols="smAndDown ? 12 : ''">
                             <v-row class="d-flex align-center" :class="smAndDown ? '' : 'my-n2'">
@@ -115,7 +109,6 @@
                         </v-col>
                     </v-row>
 
-                    <!-- Detalle (no preview): duración / repetición -->
                     <v-row v-if="!isPreview" class="d-flex justify-center align-center"
                         :class="!smAndDown ? 'my-n3' : ''" cols="12">
                         <v-col :cols="smAndDown ? 12 : ''">
@@ -128,7 +121,7 @@
                                         <template v-if="space.duration < 60">Reservas de {{ space.duration }}
                                             minutos</template>
                                         <template v-else-if="space.duration === 60">Reservas de {{ space.duration / 60
-                                            }} hora</template>
+                                        }} hora</template>
                                         <template v-else>Reservas de {{ space.duration / 60 }} horas</template>
                                     </span>
                                 </v-col>
@@ -151,14 +144,12 @@
                 </v-col>
             </v-card-text>
 
-            <!-- Acciones reserva -->
             <v-card-actions v-if="reserveActions" class="d-flex justify-end ga-3"
                 :class="smAndDown ? 'mt-2 mb-3 mr-3' : 'mt-n3 mb-3 mr-5'">
                 <TonalButton color="grey" text="Volver" @click="() => emit('go-back')" />
                 <TonalButton color="blue" text="Reservar" @click="() => emit('reserve')" />
             </v-card-actions>
 
-            <!-- Acciones preview admin -->
             <v-card-actions v-if="isPreview && adminActions"
                 class="d-flex align-center justify-space-between ga-3 mx-3 mb-3 mt-n3">
                 <v-btn @click.stop="() => emit('edit-space')" variant="tonal" size="small" icon="mdi-pencil" />

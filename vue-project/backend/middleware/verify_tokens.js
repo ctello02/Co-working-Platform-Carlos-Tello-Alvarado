@@ -11,7 +11,7 @@ module.exports = function (req, res, next) {
   if (!token) {
     return res
       .status(401)
-      .json({ success: false, message: 'No token provided' });
+      .json({ success: false, message: 'No se ha proporcionado un token' });
   }
 
   try {
@@ -22,6 +22,6 @@ module.exports = function (req, res, next) {
   } catch (e) {
     return res
       .status(401)
-      .json({ success: false, message: 'Failed to authenticate' });
+      .json({ success: false, message: 'Fallo en la autenticación' });
   }
 };

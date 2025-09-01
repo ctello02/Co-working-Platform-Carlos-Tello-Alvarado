@@ -77,6 +77,7 @@ const routes = [
     component: () => import('../views/user/EditUserInfo.vue'),
     meta: { adminOnly: true, section: 'users' }, // Solo accesible para usuarios administradores
   },
+
   // ---------------------------------------------------------------------------------
   // Sección de ESPACIOS
   {

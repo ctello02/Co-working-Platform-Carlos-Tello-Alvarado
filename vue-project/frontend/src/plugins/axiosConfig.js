@@ -4,7 +4,7 @@ import { useUserStore } from '@/store/userStore';
 const BASE = (import.meta.env.VITE_API_BASE || '').replace(/\/+$/, '');
 const baseURL = `${BASE || ''}/api`; // => '/api' en dev; 'https://...' + '/api' en prod
 
-// Crear una instancia de axios
+// Crea una instancia de axios
 const axiosInstance = axios.create({
   baseURL,
   timeout: 10000,

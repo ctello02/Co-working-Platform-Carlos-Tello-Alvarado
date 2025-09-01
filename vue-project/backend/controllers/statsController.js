@@ -19,13 +19,12 @@ exports.getRangeCharts = async (req, res) => {
       },
       { $sort: { _id: 1 } },
     ]);
-    // convertimos a labels/data
     const reservationsByDate = {
       labels: perDay.map((x) => x._id),
       data: perDay.map((x) => x.count),
     };
 
-    // Top 10 recursos (espacios o materiales) más reservados
+    // Top 10 recursos más reservados
     const topResources = await Reservation.aggregate([
       { $match: { startTime: { $gte: from, $lte: to } } },
       {
@@ -88,38 +87,18 @@ exports.getRangeCharts = async (req, res) => {
       rate: totalCount > 0 ? completedCount / totalCount : 0,
     };
 
-    // // Reservas periódicas por tipo
-    // const periodicStatsRaw = await PeriodicReservation.aggregate([
-    //   { $match: { startTime: { $gte: from, $lte: to } } },
-    //   {
-    //     $group: {
-    //       _id: '$periodicity',
-    //       count: { $sum: 1 },
-    //     },
-    //   },
-    // ]);
-    // const periodicStats = periodicStatsRaw.reduce(
-    //   (acc, cur) => {
-    //     acc[cur._id] = cur.count;
-    //     return acc;
-    //   },
-    //   { daily: 0, weekly: 0, monthly: 0 }
-    // );
     const periodicStatsRaw = await Reservation.aggregate([
-      // Filtramos por fecha y que exista periodicReservationId
       {
         $match: {
           startTime: { $gte: from, $lte: to },
           periodicReservationId: { $ne: null },
         },
       },
-      // Agrupamos por periodicReservationId para quedarnos uno de cada
       {
         $group: {
           _id: '$periodicReservationId',
         },
       },
-      // Hacemos lookup a PeriodicReservation para leer la periodicity
       {
         $lookup: {
           from: 'periodicreservations',
@@ -129,7 +108,6 @@ exports.getRangeCharts = async (req, res) => {
         },
       },
       { $unwind: '$pr' },
-      // Agrupamos ya por periodicity para contar
       {
         $group: {
           _id: '$pr.periodicity',
@@ -138,7 +116,6 @@ exports.getRangeCharts = async (req, res) => {
       },
     ]);
 
-    // Reducimos el array a un objeto inicializado
     const periodicStats = periodicStatsRaw.reduce(
       (acc, { _id, count }) => {
         acc[_id] = count;

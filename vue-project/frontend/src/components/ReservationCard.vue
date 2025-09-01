@@ -118,7 +118,6 @@ const reservationStore = useReservationStore();
 const spaceStore = useSpaceStore();
 const materialStore = useMaterialStore();
 
-// Extraemos funciones del composable useTime
 const {
     makeMinutesFromIsoLocal,
     getHoursAndMinsFromDate,
@@ -157,35 +156,28 @@ const calculatePrice = computed(() => {
     let dur = 0;
     let pricePer = 0;
     if (reservation?.spaceId) {
-        dur = reservation.spaceId.duration      // duración de un bloque, en minutos
-        pricePer = reservation.spaceId.pricing       // precio por bloque
+        dur = reservation.spaceId.duration
+        pricePer = reservation.spaceId.pricing
     } else {
-        dur = reservation.materialId.duration      // duración de un bloque, en minutos
-        pricePer = reservation.materialId.pricing       // precio por bloque
+        dur = reservation.materialId.duration
+        pricePer = reservation.materialId.pricing
     }
 
-    // convierto fecha ISO en minutos
     const startMin = makeMinutesFromIsoLocal(startStr)
     const endMin = makeMinutesFromIsoLocal(endStr)
 
-    // calculo cuántos bloques completos caben
     const blocks = (endMin - startMin) / dur
-    //console.log(blocks)
 
-    // en caso de que no sea un múltiplo exacto, redondeamos hacia abajo
     const fullBlocks = Math.floor(blocks)
     const seats = reservation?.seatsReserved || 1
     const total = fullBlocks * pricePer * seats
 
-    // toFixed devuelve una string con dos decimales
     return total.toFixed(2)
 });
 
 function parseLocalISO(isoString) {
-    // "2025-06-30T22:00:00.000Z" → ["2025-06-30", "22:00:00.000Z"]
     const [datePart, timePart] = isoString.split('T');
     const [year, month, day] = datePart.split('-').map(Number);
-    // "22:00:00.000Z" → "22:00:00.000" → ["22","00","00.000"]
     const [hh, mm] = timePart.replace('Z', '').split(':').map(Number);
     return new Date(year, month - 1, day, hh, mm);
 }

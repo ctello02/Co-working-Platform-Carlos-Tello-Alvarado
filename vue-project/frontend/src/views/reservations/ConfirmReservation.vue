@@ -15,49 +15,54 @@
                 <!-- Detalles de la reserva -->
                 <v-row>
                   <v-col>
-                    <span class="text-h5">Detalles de la reserva:</span>
+                    <span :class="xs ? 'text-h6' : 'text-h5'">Detalles de la reserva:</span>
                   </v-col>
                 </v-row>
                 <v-divider class="mt-1" />
                 <v-row class="d-flex align-center justify-center mt-6" cols="12">
-                  <span class="text-h4" v-if="reservation.item === 'space'">{{ space.name }}</span>
-                  <span class="text-h4" v-else>{{ material.name }}</span>
-                  <v-btn icon="mdi-information-outline" variant="text" density="compact" :ripple="false"
+                  <span :class="xs ? 'text-h5' : 'text-h4'" v-if="reservation.item === 'space'">{{ space.name }}</span>
+                  <span :class="xs ? 'text-h5' : 'text-h4'" v-else>{{ material.name }}</span>
+                  <v-btn v-if="!xs" icon="mdi-information-outline" variant="text" density="compact" :ripple="false"
                     @click="reservation.item === 'space' ? showSpaceModal = !showSpaceModal : showMaterialModal = !showMaterialModal" />
                 </v-row>
                 <v-row>
                   <v-col>
                     <v-row>
                       <v-col style="color: grey" class="text-center">
-                        <span class="text-h6">Fecha: </span>
+                        <span :class="xs ? '' : 'text-h6'">Fecha: </span>
                       </v-col>
                     </v-row>
                     <v-row>
                       <v-col class="text-center mt-n7">
-                        <span class="text-h4">{{ parseToStringDate(new Date(reservation.startTime)) }}</span>
+                        <span :class="xs ? 'text-h5' : 'text-h4'">{{ parseToStringDate(new Date(reservation.startTime))
+                        }}</span>
                       </v-col>
                     </v-row>
                   </v-col>
                 </v-row>
                 <v-divider class="mt-6" />
-                <v-row class="d-flex align-center my-2">
-                  <v-col cols="1">
-                    <v-icon size="small" icon="mdi-timer-sand" />
-                  </v-col>
-                  <v-col class="ml-n4 mr-7">
-                    <span class="text-h6">Hora de inicio: {{ startTime }}</span>
-                  </v-col>
-                  <v-col cols="1">
-                    <v-icon size="small" icon="mdi-timer-sand-complete" />
-                  </v-col>
-                  <v-col class="ml-n7 mr-7">
-                    <span class="text-h6">Hora de fin: {{ endTime }}</span>
-                  </v-col>
+                <v-row class="d-flex align-center my-2" :class="xs ? 'justify-center' : ''">
+                  <div class="d-flex align-center">
+                    <v-col cols="1">
+                      <v-icon size="small" icon="mdi-timer-sand" />
+                    </v-col>
+                    <v-col class="mr-7">
+                      <span :class="xs ? '' : 'text-h6'">Hora de inicio: {{ startTime }}</span>
+                    </v-col>
+                  </div>
+                  <div class="d-flex align-center">
+                    <v-col cols="1">
+                      <v-icon size="small" icon="mdi-timer-sand-complete" />
+                    </v-col>
+                    <v-col class=" mr-7">
+                      <span :class="xs ? '' : 'text-h6'">Hora de fin: {{ endTime }}</span>
+                    </v-col>
+                  </div>
                 </v-row>
                 <v-divider />
 
-                <v-row v-if="reservation.item === 'space'" class="mt-5 mb-n8">
-                  <v-col cols="5">
+                <v-row v-if="reservation.item === 'space'" class="d-flex mt-5 mb-n8" :class="xs ? 'flex-column' : ''">
+                  <v-col :cols="xs ? 12 : 5">
                     <v-text-field v-model.number="reservationSeats" :disabled="show" label="Número de asientos"
                       prepend-icon="mdi-table-chair" type="number" variant="outlined" density="compact" required
                       @input="reservationSeats = Math.max(1, reservationSeats)" />
@@ -73,7 +78,7 @@
                         <v-icon size="small" icon="mdi-repeat-off" />
                       </v-col>
                       <v-col>
-                        <span class="text-h6 ml-n4">Repetición no disponible</span>
+                        <span class="" :class="xs ? '' : 'ml-n4 text-h6'">Repetición no disponible</span>
                       </v-col>
                     </v-row>
                   </v-col>
@@ -90,7 +95,7 @@
                         <v-icon size="small" icon="mdi-repeat-off" />
                       </v-col>
                       <v-col cols="6">
-                        <span class="text-h6 ">Repetición no disponible</span>
+                        <span :class="xs ? '' : 'text-h6'">Repetición no disponible</span>
                       </v-col>
                     </v-row>
                   </v-col>
@@ -137,8 +142,8 @@
               </v-col>
             </v-card-text>
             <v-card-actions>
-              <v-row class="mt-n5 mb-6 mr-5 d-flex ga-3">
-                <TonalButton class="ml-8" color="grey" text="Volver" @click="routerBack" />
+              <v-row class="d-flex ga-3" :class="xs ? 'flex-column ma-3' : 'mt-n5 mb-6 mr-5 '">
+                <TonalButton :class="xs ? 'mb-n2' : 'ml-8'" color="grey" text="Volver" @click="routerBack" />
                 <v-spacer />
 
                 <TonalButton v-if="!show" color="blue" text="Reservar" :loading="isLoading"
@@ -150,7 +155,7 @@
             </v-card-actions>
 
             <v-expand-transition>
-              <div v-show="show" class="mt-n2 ma-7">
+              <div v-show="show" class="mt-n2" :class="xs ? 'ma-5' : 'ma-7'">
                 <div style="width: 100%;" id="paypal-button-container" />
               </div>
             </v-expand-transition>
@@ -187,6 +192,9 @@ import SpaceCard from '@/components/SpaceCard.vue';
 import MaterialCard from '@/components/MaterialCard.vue';
 
 import { useTime } from '@/composables/useTime';
+import { useDisplay } from 'vuetify'
+
+const { xs } = useDisplay()
 
 // ------------------------------------------------
 // Instancias de Router y Stores
@@ -286,7 +294,6 @@ async function getPeriodicReservations() {
     periodic = pr.data.periodicReservations || [];
   } catch (e) {
     if (e.response?.status === 404) {
-      // no hay reservas periódicas, lo tomamos como un array vacío
       periodic = [];
     } else throw e;
   }
@@ -566,25 +573,21 @@ const calculatePrice = computed(() => {
   let dur = 0;
   let pricePer = 0;
   if (reservation.value.item === 'space') {
-    dur = space.value.duration      // duración de un bloque, en minutos
-    pricePer = space.value.pricing       // precio por bloque
+    dur = space.value.duration
+    pricePer = space.value.pricing
   } else {
-    dur = material.value.duration      // duración de un bloque, en minutos
-    pricePer = material.value.pricing       // precio por bloque
+    dur = material.value.duration
+    pricePer = material.value.pricing
   }
 
-  // convierto fecha ISO en minutos
   const startMin = makeMinutesFromIsoLocal(startStr)
   const endMin = makeMinutesFromIsoLocal(endStr)
 
-  // calculo cuántos bloques completos caben
   const blocks = (endMin - startMin) / dur
 
-  // en caso de que no sea un múltiplo exacto, redondeamos hacia abajo
   const fullBlocks = Math.floor(blocks)
   const total = fullBlocks * pricePer * reservationSeats.value
 
-  // toFixed devuelve una string con dos decimales
   return total.toFixed(2)
 })
 
@@ -600,7 +603,6 @@ const routerBack = () => {
 </script>
 
 <style scoped>
-/* Transición de deslizamiento hacia la derecha (mostrar SpaceCard) */
 .slide-right-enter-active,
 .slide-right-leave-active {
   transition: opacity 0.3s ease, transform 0.3s ease;

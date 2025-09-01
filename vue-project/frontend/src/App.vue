@@ -11,7 +11,7 @@
 
 <script setup>
 import { useDisplay } from 'vuetify'
-const { mdAndDown, xs } = useDisplay()
+const { xs } = useDisplay()
 </script>
 
 <script>

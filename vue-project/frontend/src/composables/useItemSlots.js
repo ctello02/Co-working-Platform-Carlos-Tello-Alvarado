@@ -4,7 +4,7 @@ import { useTime } from '@/composables/useTime';
 import { useUserStore } from '@/store/userStore';
 
 /**
- * @param itemConfig           // { opening, closing, duration, capacity, id }
+ * @param itemConfig           // { opening, closing, duration, seats, id }
  * @param reservationDate      // fecha de la reserva
  * @param reservationsByDate   // array de reservas puntuales
  * @param periodicReservations // array de reservas periódicas
@@ -17,7 +17,7 @@ export function useItemSlots({
   reservationsByDate,
   periodicReservations,
   initialReservation = null,
-  calcUsedUnits, // ej: (r,t)=> r.seatsReserved  o  () => 0 para materiales
+  calcUsedUnits, // ej: (r,t)=> r.seatsReserved ó () => 0 para materiales
   foreignKey, //  'spaceId' o 'materialId'
 }) {
   const {
@@ -53,7 +53,7 @@ export function useItemSlots({
     { immediate: true }
   );
 
-  // Todas las reservas (reales y periódicas) normalizadas
+  // Todas las reservas (puntuales y periódicas)
   const allReservations = computed(() => {
     if (!itemConfig.value || !itemConfig.value.id) {
       return [];

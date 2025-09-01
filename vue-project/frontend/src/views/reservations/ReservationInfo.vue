@@ -1,13 +1,11 @@
 <template>
     <v-container class="pa-5 container">
         <v-card v-if="reservation && reservationUser" class="mx-auto" max-width="600">
-            <!-- Imagen -->
             <v-img :src="reservation.spaceId?.image || reservation.materialId?.image" color="surface-variant"
                 :height="smAndDown ? '200px' : '300px'" cover />
 
             <v-card-text v-if="reservation">
                 <v-col>
-                    <!-- Título + acciones de admin -->
                     <v-row class="mt-n5 mb-n3" cols="12">
                         <v-col>
                             <span :class="smAndDown ? 'text-h5' : 'text-h4'">
@@ -22,7 +20,6 @@
                         </v-col>
                     </v-row>
 
-                    <!-- Descripción -->
                     <v-row :class="smAndDown ? 'my-n3' : 'my-n2'" cols="12">
                         <v-col cols="1" class="d-flex align-center">
                             <v-icon icon="mdi-text" />
@@ -34,7 +31,6 @@
                         </v-col>
                     </v-row>
 
-                    <!-- Usuario (solo admin) -->
                     <v-row v-if="userStore.isAdmin" :class="smAndDown ? '' : 'my-n3'" cols="12">
                         <v-col cols="1" class="d-flex align-center">
                             <v-icon icon="mdi-account-outline" />
@@ -46,7 +42,6 @@
                         </v-col>
                     </v-row>
 
-                    <!-- Fecha -->
                     <v-row :class="!smAndDown ? 'my-n3' : ''">
                         <v-col cols="1" class="d-flex align-center">
                             <v-icon icon="mdi-calendar-outline" size="small" />
@@ -61,7 +56,6 @@
                         </v-col>
                     </v-row>
 
-                    <!-- Hora + Asientos -->
                     <v-row class="d-flex justify-center align-center" :class="!smAndDown ? 'my-n3' : ''" cols="12">
                         <v-col :cols="smAndDown ? 12 : ''">
                             <v-row>
@@ -97,7 +91,6 @@
                         </v-col>
                     </v-row>
 
-                    <!-- Repetición + Precio -->
                     <v-row class="d-flex justify-center align-center" :class="!smAndDown ? 'my-n3' : ''" cols="12">
                         <v-col :cols="smAndDown ? 12 : ''">
                             <v-row>
@@ -142,7 +135,6 @@
                 </v-col>
             </v-card-text>
 
-            <!-- Acciones -->
             <v-card-actions class="d-flex ga-3"
                 :class="xs ? 'mt-2 mb-4 mr-3 justify-center flex-column' : 'mt-n3 mb-5 mr-5 justify-end'">
                 <TonalButton color="grey" text="Volver" @click="routerBack" />
@@ -191,7 +183,6 @@ import { useToast } from 'vue-toastification';
 
 import { useDisplay } from 'vuetify'
 
-// Breakpoints de Vuetify
 const { smAndDown, xs } = useDisplay()
 
 // Instanciar stores
@@ -217,7 +208,6 @@ const isLoading = ref(false);
 
 const show = ref(false);
 
-// Extraemos funciones del composable useTime
 const {
     parseRepetition,
     getHoursAndMinsFromDate,
@@ -230,7 +220,6 @@ const {
     makeMinutesFromIsoLocal
 } = useTime();
 
-// Al montar el componente, se asigna la reserva y se redirige si no existe
 onMounted(async () => {
     reservation.value = await reservationStore.getReservation;
 
@@ -322,25 +311,21 @@ const calculatePrice = computed(() => {
     let dur = 0;
     let pricePer = 0;
     if (reservationStore.getReservation?.spaceId) {
-        dur = space?.value.duration      // duración de un bloque, en minutos
-        pricePer = space?.value.pricing       // precio por bloque
+        dur = space?.value.duration
+        pricePer = space?.value.pricing
     } else {
-        dur = material?.value.duration      // duración de un bloque, en minutos
-        pricePer = material?.value.pricing       // precio por bloque
+        dur = material?.value.duration
+        pricePer = material?.value.pricing
     }
 
-    // convierto fecha ISO en minutos
     const startMin = makeMinutesFromIsoLocal(startStr)
     const endMin = makeMinutesFromIsoLocal(endStr)
 
-    // calculo cuántos bloques completos caben
     const blocks = (endMin - startMin) / dur
 
-    // en caso de que no sea un múltiplo exacto, redondeamos hacia abajo
     const fullBlocks = Math.floor(blocks)
     const total = fullBlocks * pricePer * reservationSeats?.value
 
-    // toFixed devuelve una string con dos decimales
     return total.toFixed(2)
 });
 

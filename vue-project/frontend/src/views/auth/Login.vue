@@ -104,7 +104,6 @@ export default {
   },
   methods: {
     emptyFields() {
-      // Verificar que los campos no estén vacíos y que cumplan las reglas de validación
       const emailValido = this.emailRules.every(rule => rule(this.email) === true);
       const passwordValido = this.passwordRules.every(rule => rule(this.password) === true);
 

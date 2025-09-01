@@ -30,7 +30,7 @@ exports.getSpaces = async (req, res) => {
   try {
     const spaces = await Space.find();
     if (spaces.length === 0) {
-      return res.status(404).json({ message: 'No spaces found' });
+      return res.status(404).json({ message: 'Espacio no encontrado' });
     }
     res.status(200).json({ spaces });
   } catch (error) {
@@ -51,7 +51,6 @@ exports.createSpace = async (req, res) => {
       return res.status(400).json({ message: 'Archivo de imagen no válido' });
     }
 
-    // nombre y ruta segura
     const base = safeBaseName(req.body.name);
     const filename = `${base}-${Date.now()}.webp`;
     const abs = path.resolve(SPACES_DIR, filename);
@@ -77,7 +76,7 @@ exports.updateSpace = async (req, res) => {
   try {
     const updatedSpace = await Space.findOne({ _id: req.body.id });
     if (!updatedSpace)
-      return res.status(404).json({ message: 'Space not found' });
+      return res.status(404).json({ message: 'Espacio no encontrado' });
 
     let newImageRel = null;
     let prevAbsToDelete = null;
@@ -104,7 +103,6 @@ exports.updateSpace = async (req, res) => {
 
       newImageRel = `spaces/${filename}`;
 
-      // Preparar borrado de la imagen anterior
       if (updatedSpace.image) {
         try {
           const prevName = path.basename(
@@ -118,12 +116,12 @@ exports.updateSpace = async (req, res) => {
     }
 
     const updates = { ...req.body };
-    if (newImageRel) updates.image = `/uploads/${newImageRel}`; // ruta relativa
+    if (newImageRel) updates.image = `/uploads/${newImageRel}`;
 
     updatedSpace.set(updates);
     const saved = await updatedSpace.save();
 
-    // Borramos la imagen antigua solo si hay nueva y el save fue exitoso
+    // Borramos la imagen antigua solo si hay nueva
     if (prevAbsToDelete) {
       try {
         await fs.unlink(prevAbsToDelete);
@@ -146,7 +144,7 @@ exports.deleteSpace = async (req, res) => {
     if (!space) {
       await session.abortTransaction();
       session.endSession();
-      return res.status(404).json({ message: 'Space not found' });
+      return res.status(404).json({ message: 'Espacio no encontrado' });
     }
 
     const now = new Date();
@@ -158,7 +156,7 @@ exports.deleteSpace = async (req, res) => {
     if (reservations.length > 0) {
       await session.abortTransaction();
       session.endSession();
-      return res.status(409).json({ message: 'Space has reservations' });
+      return res.status(409).json({ message: 'El espacio tiene reservas' });
     }
 
     let periodicReservations = await PeriodicReservation.find({
@@ -169,7 +167,7 @@ exports.deleteSpace = async (req, res) => {
       session.endSession();
       return res
         .status(409)
-        .json({ message: 'Space has periodic reservations' });
+        .json({ message: 'El espacio tiene reservas periódicas' });
     }
 
     const prev = path.basename(new URL('http://x' + space.image).pathname);
@@ -180,7 +178,7 @@ exports.deleteSpace = async (req, res) => {
 
     await Space.deleteOne({ _id: req.params.id }).session(session);
     await session.commitTransaction();
-    res.status(200).json({ message: 'Space deleted successfully' });
+    res.status(200).json({ message: 'Espacio borrado correctamente' });
   } catch (error) {
     await session.abortTransaction();
     session.endSession();

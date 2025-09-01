@@ -107,28 +107,25 @@ const calculatePrice = computed(() => {
         dur = reservation.spaceId.duration      // duración de un bloque, en minutos
         pricePer = reservation.spaceId.pricing       // precio por bloque
     } else {
-        dur = reservation.materialId.duration      // duración de un bloque, en minutos
-        pricePer = reservation.materialId.pricing       // precio por bloque
+        dur = reservation.materialId.duration
+        pricePer = reservation.materialId.pricing
     }
 
-    // convierto fecha ISO en minutos
+    // convertir fecha ISO en minutos
     const startMin = makeMinutesFromIsoLocal(startStr)
     const endMin = makeMinutesFromIsoLocal(endStr)
 
-    // calculo cuántos bloques completos caben
+    // calculo de cuántos bloques completos caben
     const blocks = (endMin - startMin) / dur
-    //console.log(blocks)
 
     // en caso de que no sea un múltiplo exacto, redondeamos hacia abajo
     const fullBlocks = Math.floor(blocks)
     const seats = reservation?.seatsReserved || 1
     const total = fullBlocks * pricePer * seats
 
-    // toFixed devuelve una string con dos decimales
     return total.toFixed(2)
 });
 
-// Extraemos funciones del composable useTime
 const {
     getHoursAndMinsFromDate,
     twoDigitsDate,

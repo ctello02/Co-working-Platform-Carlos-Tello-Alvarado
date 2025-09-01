@@ -1,4 +1,3 @@
-// composables/useMaterialSlots.js
 import { useItemSlots } from './useItemSlots';
 import { computed } from 'vue';
 

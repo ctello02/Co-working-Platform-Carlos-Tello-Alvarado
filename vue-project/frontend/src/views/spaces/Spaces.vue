@@ -7,7 +7,7 @@
                 <div class="d-flex align-center">
                     <TonalButton color="blue" text="Crear espacio" class="mr-3" v-if="userStore.getIsAdmin"
                         @click="openCreateSpace" />
-                    <v-btn variant="text" :ripple="false"
+                    <v-btn v-if="!xs" variant="text" :ripple="false"
                         :icon="list ? 'mdi-format-list-bulleted' : 'mdi-view-grid-outline'" @click="list = !list" />
                 </div>
             </v-row>
@@ -64,40 +64,33 @@ import SpaceCard from '@/components/SpaceCard.vue';
 import AskModal from '@/components/AskModal.vue';
 import Table from '@/components/Table.vue';
 import { useTime } from '@/composables/useTime';
+import { useDisplay } from 'vuetify'
 
-// Router, notificaciones y stores
+const { xs } = useDisplay()
+
 const router = useRouter();
 const toast = useToast();
 const spaceStore = useSpaceStore();
 const userStore = computed(() => {
     return useUserStore();
 });
-// Computed para saber si el usuario es admin
 const isAdmin = computed(() => userStore.value.getIsAdmin)
 
 
-// Variables reactivas
 const list = ref(false);
 const spaces = ref(null);
 const deleteModal = ref(false);
 const bulkDeleteModal = ref(false);
 
-//Variables para la Tabla
-
-// Extraemos función del composable useTime
 const {
     makeHoursAndMinutes
 } = useTime();
 
 
-/* ------------------------- Ciclo de vida ------------------------- */
 onMounted(() => {
-    // Llamamos a getSpaces para obtener los espacios al montar el componente
     getSpaces();
 })
 
-/* ------------------------- Funciones del componente ------------------------- */
-// Obtiene los espacios a través del servicio
 function getSpaces() {
     spaceService.getSpaces()
         .then(res => {
@@ -110,8 +103,6 @@ function getSpaces() {
 };
 
 
-// Borrar el espacio. Si se pasa el id, se borra ese espacio, 
-// si no, se borra el espacio seleccionado de la SpaceStore
 const deleteSpace = (id) => {
     spaceService.deleteSpace(id ? id : spaceStore.getSelectedSpace._id)
         .then(res => {
@@ -127,7 +118,6 @@ const deleteSpace = (id) => {
         });
 };
 
-// Borrar el espacio y todas sus reservas. Se borra el espacio seleccionado de la SpaceStore
 const bulkDeleteSpace = () => {
     spaceService.bulkDeleteSpace(spaceStore.getSelectedSpace._id)
         .then(res => {
@@ -141,20 +131,18 @@ const bulkDeleteSpace = () => {
 };
 
 
-//Funciones auxiliares para acciones como ver, crear o editar el espacio
 const openSpace = (space) => {
-    spaceStore.setSelectedSpace(space); // Guardar el espacio seleccionado en el store
-    router.push('/spaceInfo');    // Navegar a la nueva ruta
+    spaceStore.setSelectedSpace(space);
+    router.push('/spaceInfo');
 };
 const openCreateSpace = () => {
     router.push('/createSpace');
 };
 const openEditSpaceInfo = (space) => {
-    spaceStore.setSelectedSpace(space); // Guardar el espacio seleccionado en el store
+    spaceStore.setSelectedSpace(space);
     router.push('/editSpaceInfo');
 };
 const openDeleteModal = (space) => {
-    //selectedSpace.value = { ...space }; // Hacer una copia del espacio seleccionado
     spaceStore.setSelectedSpace(space);
     deleteModal.value = true;
 };
@@ -165,8 +153,6 @@ const closeBulkDeleteDialog = () => {
     bulkDeleteModal.value = false;
 };
 
-/* ------------------------- Objetos de la tabla ------------------------- */
-// Encabezados
 const tableHeaders = computed(() => {
     let headers = [
         { label: '#', width: '10%' },
@@ -180,7 +166,6 @@ const tableHeaders = computed(() => {
     return headers
 });
 
-// Campos que se mostrarán en cada fila
 const tableFields = computed(() => {
     let fields = ['name', 'description', 'schedule']
 
@@ -190,18 +175,16 @@ const tableFields = computed(() => {
     return fields
 });
 
-// Transformamos 'spaces' en 'tableItems'
 const tableItems = computed(() => {
     return (spaces.value || []).map((space, i) => {
         const item = {
-            id: space._id,        // key para v-for
+            id: space._id,
             name: space.name,
             description: space.description,
             schedule: `${makeHoursAndMinutes(space.opening)}h - ${makeHoursAndMinutes(space.closing)}h`,
-            object: space,      // guardamos el objeto para usarlo en las acciones
+            object: space,
         }
 
-        // Si NO es admin, mostramos la duración en la última columna
         if (!isAdmin.value) {
             if (space.duration < 60) {
                 item.duration = `Reservas de ${space.duration} minutos`
@@ -215,7 +198,6 @@ const tableItems = computed(() => {
     })
 })
 
-// Botones de acción si es admin
 const actionButtons = [
     {
         icon: 'mdi-pencil',
@@ -229,7 +211,6 @@ const actionButtons = [
 ];
 
 
-// Cuando se hace click en una fila, abrimos el espacio
 function handleRowClick(item) {
     openSpace(item.object)
 }

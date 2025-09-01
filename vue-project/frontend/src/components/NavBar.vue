@@ -2,7 +2,7 @@
     <!-- Barra superior -->
     <v-app-bar :style="colorNav" density="comfortable" app>
         <template #prepend>
-            <!-- Hamburguesa solo en móvil -->
+            <!-- Menú hamburguesa solo en móvil -->
             <v-app-bar-nav-icon v-if="mdAndDown" @click="drawer = !drawer" />
 
             <!-- Logo a la izquierda -->
