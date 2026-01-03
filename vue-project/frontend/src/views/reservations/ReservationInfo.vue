@@ -143,7 +143,7 @@
                     text="Marcar como pagada" @click="markPaidModal = true" />
 
                 <TonalButton :color="show ? 'grey' : 'blue'" :loading="isLoading"
-                    v-if="!reservation.isPaid && reservationUser._id === userStore.getId"
+                    v-if="!reservation.isPaid && reservationUser._id === userStore.getId && calculatePrice > 0"
                     :text="show ? 'Cancelar pago' : 'Pagar'" @click="show ? closePayPal() : startPayPalPayment()" />
             </v-card-actions>
 
