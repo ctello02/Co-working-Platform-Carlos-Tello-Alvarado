@@ -93,7 +93,7 @@ async function validateAvailability({
 function toNullableId(v) {
   if (v == null) return null;
   if (typeof v === 'string') {
-    const t = v.trim().toLowerCase();
+    const t = v.trim().toLowerCase();    
     if (!t || t === 'null' || t === 'undefined') return null;
   }
   return isValidObjectId(v) ? v : null;
@@ -110,7 +110,6 @@ exports.createReservation = async (req, res) => {
     const payload = { ...req.body };
     payload.spaceId = toNullableId(payload.spaceId);
     payload.materialId = toNullableId(payload.materialId);
-    payload.seatsReserved = toNullableId(payload.seatsReserved);
     payload.periodicReservationId = toNullableId(payload.periodicReservationId);
 
     const { userId, startTime, endTime } = payload;

@@ -97,7 +97,7 @@
                                                                     reservado</span>
                                                                 <span :class="smAndDown ? '' : 'text-h6'" v-else>{{
                                                                     todayReservation.seatsReserved
-                                                                    }}
+                                                                }}
                                                                     asientos
                                                                     reservados</span>
                                                             </v-col>
@@ -140,7 +140,7 @@
                                                                         {{ calculatePrice(todayReservation,
                                                                             todayReservation.startTime,
                                                                             todayReservation.endTime) }}€
-                                                                        <span v-if="reservation.isPaid">
+                                                                        <span v-if="todayReservation.isPaid">
                                                                             (Pagada)
                                                                         </span>
                                                                         <span v-else>
