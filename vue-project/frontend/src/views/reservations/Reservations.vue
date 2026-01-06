@@ -13,7 +13,8 @@
                 <v-spacer />
                 <TonalButton v-if="userStore.isAdmin" class="mr-1" color="grey" text="Ver reservas de hoy"
                     @click="openTodayReservations" />
-                <TonalButton class="mr-1 ml-2" color="blue" text="Crear reserva" @click="openCreateReservation" />
+                <TonalButton class="mr-1 ml-2" color="blue" text="Crear reserva"
+                    @click="openCreateReservationForToday" />
             </v-row>
 
             <v-row>
@@ -467,6 +468,12 @@ function openTodayReservations() {
 };
 
 function openCreateReservation() {
+    router.push('/createReservation');
+};
+
+function openCreateReservationForToday() {
+    const today = new Date();
+    reservationStore.setCalendarDate(today)
     router.push('/createReservation');
 };
 
