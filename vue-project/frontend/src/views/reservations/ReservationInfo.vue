@@ -147,7 +147,7 @@
                     :text="show ? 'Cancelar pago' : 'Pagar'" @click="show ? closePayPal() : startPayPalPayment()" />
             </v-card-actions>
 
-            <v-expand-transition>
+            <v-expand-transition :disabled="skipAnimation">
                 <div v-show="show" class="mt-n2 ma-7" :class="xs ? 'ma-0' : ''">
                     <div style="width: 100%;" id="paypal-button-container" />
                 </div>
@@ -207,6 +207,7 @@ const paypalLoaded = ref(false);
 const isLoading = ref(false);
 
 const show = ref(false);
+const skipAnimation = ref(false);
 
 const {
     parseRepetition,
@@ -245,7 +246,9 @@ onMounted(async () => {
         else canEdit.value = true;
 
         if (reservation.value.toPayment) {
-            startPayPalPayment();
+            skipAnimation.value = true; // Desactivamos el v-expand del botón de pago
+            show.value = true;          // Forzamos que el div ya esté en el DOM
+            startPayPalPayment();       // Renderizamos PayPa
         }
     }
 });
@@ -346,24 +349,26 @@ async function startPayPalPayment() {
     isLoading.value = true;
 
     try {
-        show.value = true;
-
         await loadPayPalSdk();
 
-        await nextTick();
+        if (!show.value) {
+            skipAnimation.value = false;
+            show.value = true;
+        }
 
         const price = calculatePrice.value;
 
-        const container = document.getElementById('paypal-button-container');
+        let container = document.getElementById('paypal-button-container');
 
+        // Si no existe, esperamos un pequeño delay de 50ms
         if (!container) {
+            await nextTick();
             await new Promise(resolve => setTimeout(resolve, 50));
+            container = document.getElementById('paypal-button-container');
         }
 
-        const finalContainer = document.getElementById('paypal-button-container');
-
-        if (finalContainer) {
-            finalContainer.innerHTML = '';
+        if (container) {
+            container.innerHTML = '';
             paypal.Buttons({
                 createOrder: () => {
                     return paypalService
@@ -383,7 +388,7 @@ async function startPayPalPayment() {
                     console.error(err);
                     toast.error('Error en el pago');
                 }
-            }).render(finalContainer);
+            }).render(container);
         } else {
             throw new Error("No se encontró el contenedor de PayPal");
         }
