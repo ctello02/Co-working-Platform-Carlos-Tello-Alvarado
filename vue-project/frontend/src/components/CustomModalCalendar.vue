@@ -6,7 +6,7 @@
                     <v-btn @click="() => emit('see-event')" variant="text" size="x-small"
                         icon="mdi-information-outline" />
                     <v-btn @click="() => emit('pay-event')" variant="text" size="x-small" icon="mdi-hand-coin-outline"
-                        v-if="!reservation?.isPaid && calculatePrice > 0" />
+                        v-if="!reservation?.isPaid && calculatePrice > 0 && !calcPastDates(reservation?.startTime)" />
                     <v-btn v-if="reservation?.canEdit" @click="() => emit('edit-event')" variant="text" size="x-small"
                         icon="mdi-pencil" />
                     <v-btn v-if="reservation?.canEdit" @click="() => emit('delete-event')" variant="text" size="x-small"
@@ -130,6 +130,7 @@ const {
     getHoursAndMinsFromDate,
     twoDigitsDate,
     makeMinutesFromIsoLocal,
+    calcPastDates,
 } = useTime();
 
 </script>

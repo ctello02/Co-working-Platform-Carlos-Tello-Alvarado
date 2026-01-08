@@ -142,8 +142,8 @@
                 <TonalButton v-if="!reservation.isPaid && reservationUser._id !== userStore.getId" color="blue"
                     text="Marcar como pagada" @click="markPaidModal = true" />
 
-                <TonalButton :color="show ? 'grey' : 'blue'" :loading="isLoading"
-                    v-if="!reservation.isPaid && reservationUser._id === userStore.getId && calculatePrice > 0"
+                <TonalButton :color="show ? 'grey' : 'blue'" :loading="isLoading" :ripple="false"
+                    v-if="!reservation.isPaid && reservationUser._id === userStore.getId && calculatePrice > 0 && !calcPastDates(reservation.startTime)"
                     :text="show ? 'Cancelar pago' : 'Pagar'" @click="show ? closePayPal() : startPayPalPayment()" />
             </v-card-actions>
 
@@ -168,7 +168,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, nextTick } from 'vue';
 import { useUserStore } from '@/store/userStore';
 import { useReservationStore } from '@/store/reservationStore';
 import { useSpaceStore } from '@/store/spaceStore';
@@ -213,11 +213,11 @@ const {
     getHoursAndMinsFromDate,
     parseToStringDate,
     twoDigitsDate,
-    calcPastEvents,
+    calcPastDates,
     isWithinNext24Hours,
     isToday,
     parseDateTo_YYYYMMDD_HHMM,
-    makeMinutesFromIsoLocal
+    makeMinutesFromIsoLocal,
 } = useTime();
 
 onMounted(async () => {
@@ -233,20 +233,20 @@ onMounted(async () => {
             material.value = materialStore.getSelectedMaterial;
         }
 
-        if (reservation.value.toPayment) {
-            startPayPalPayment();
-        }
-
         getUserByReservationId(reservation.value._id);
 
         // si es el pasado, es hoy, o queda menos de 24 horas para que empiece, 
         // NO se puede editar
-        if (calcPastEvents(reservation.value.startTime) ||
+        if (calcPastDates(reservation.value.startTime) ||
             isToday(reservation.value.startTime) ||
             isWithinNext24Hours(parseDateTo_YYYYMMDD_HHMM(reservation.value.startTime))
         )
             canEdit.value = false;
         else canEdit.value = true;
+
+        if (reservation.value.toPayment) {
+            startPayPalPayment();
+        }
     }
 });
 
@@ -346,39 +346,52 @@ async function startPayPalPayment() {
     isLoading.value = true;
 
     try {
+        show.value = true;
+
         await loadPayPalSdk();
+
+        await nextTick();
 
         const price = calculatePrice.value;
 
-        // Sólo renderizamos los botones si aún no existen
         const container = document.getElementById('paypal-button-container');
-        if (container) {
-            container.innerHTML = ''
+
+        if (!container) {
+            await new Promise(resolve => setTimeout(resolve, 50));
         }
-        paypal.Buttons({
-            createOrder: () => {
-                return paypalService
-                    .createOrder(reservation.value._id, price)
-                    .then(r => r.data.orderID);
-            },
-            onApprove: async (data) => {
-                const res = await paypalService.captureOrder(data.orderID, reservation.value._id);
-                if (res.data.paymentStatus === 'COMPLETED') {
-                    toast.success('Pago completado con éxito');
-                    reservation.value.isPaid = true;
-                    reservationStore.setReservation(reservation.value);
-                    show.value = false;
+
+        const finalContainer = document.getElementById('paypal-button-container');
+
+        if (finalContainer) {
+            finalContainer.innerHTML = '';
+            paypal.Buttons({
+                createOrder: () => {
+                    return paypalService
+                        .createOrder(reservation.value._id, price)
+                        .then(r => r.data.orderID);
+                },
+                onApprove: async (data) => {
+                    const res = await paypalService.captureOrder(data.orderID, reservation.value._id);
+                    if (res.data.paymentStatus === 'COMPLETED') {
+                        toast.success('Pago completado con éxito');
+                        reservation.value.isPaid = true;
+                        reservationStore.setReservation(reservation.value);
+                        show.value = false;
+                    }
+                },
+                onError: (err) => {
+                    console.error(err);
+                    toast.error('Error en el pago');
                 }
-            },
-            onError: (err) => {
-                console.error(err);
-                toast.error('Error en el pago');
-            }
-        }).render(container);
-        show.value = true;
+            }).render(finalContainer);
+        } else {
+            throw new Error("No se encontró el contenedor de PayPal");
+        }
+
     } catch (err) {
         console.error(err);
         toast.error('No se pudo cargar PayPal o crear la orden');
+        show.value = false; // Si falla, ocultamos el contenedor
     } finally {
         isLoading.value = false;
     }

@@ -181,22 +181,6 @@ export function useTime() {
   };
 
   /**
-   * Comprueba si el evento o la fecha pasada es anterior al día actual
-   * y devuelve true (si es una fecha pasada) o false (si es un evento futuro).
-   */
-  function calcPastEvents(calendarEvent) {
-    const today = new Date();
-    let selectedDate;
-
-    selectedDate = new Date(calendarEvent.end || calendarEvent);
-
-    if (selectedDate < today) {
-      return true;
-    }
-    return false;
-  }
-
-  /**
    * Comprueba si el evento o la fecha pasada es igual al día actual
    * y devuelve true si lo es o false en caso contrario.
    */
@@ -252,13 +236,17 @@ export function useTime() {
   function calcPastDates(date) {
     const today = new Date();
 
+    let selectedDate;
+
+    selectedDate = new Date(date.end || date);
+
     if (
-      date.getDate() == today.getDate() &&
-      date.getMonth() == today.getMonth() &&
-      date.getFullYear() == today.getFullYear()
+      selectedDate.getDate() == today.getDate() &&
+      selectedDate.getMonth() == today.getMonth() &&
+      selectedDate.getFullYear() == today.getFullYear()
     )
       return false;
-    else if (date < today) {
+    else if (selectedDate < today) {
       return true;
     }
     return false;
@@ -277,7 +265,6 @@ export function useTime() {
     parseToYYYYMMDD,
     parseDateTo_YYYYMMDD_HHMM,
     twoDigitsDate,
-    calcPastEvents,
     isToday,
     isWithinNext24Hours,
     isWithinNext7Days,
