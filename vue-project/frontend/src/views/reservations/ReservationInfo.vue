@@ -142,12 +142,12 @@
                 <TonalButton v-if="!reservation.isPaid && reservationUser._id !== userStore.getId" color="blue"
                     text="Marcar como pagada" @click="markPaidModal = true" />
 
-                <TonalButton :color="show ? 'grey' : 'blue'" :loading="isLoading"
-                    v-if="!reservation.isPaid && reservationUser._id === userStore.getId && calculatePrice > 0"
+                <TonalButton :color="show ? 'grey' : 'blue'" :loading="isLoading" :ripple="false"
+                    v-if="!reservation.isPaid && reservationUser._id === userStore.getId && calculatePrice > 0 && !calcPastDates(reservation.startTime)"
                     :text="show ? 'Cancelar pago' : 'Pagar'" @click="show ? closePayPal() : startPayPalPayment()" />
             </v-card-actions>
 
-            <v-expand-transition>
+            <v-expand-transition :disabled="skipAnimation">
                 <div v-show="show" class="mt-n2 ma-7" :class="xs ? 'ma-0' : ''">
                     <div style="width: 100%;" id="paypal-button-container" />
                 </div>
@@ -168,7 +168,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, nextTick } from 'vue';
 import { useUserStore } from '@/store/userStore';
 import { useReservationStore } from '@/store/reservationStore';
 import { useSpaceStore } from '@/store/spaceStore';
@@ -207,17 +207,18 @@ const paypalLoaded = ref(false);
 const isLoading = ref(false);
 
 const show = ref(false);
+const skipAnimation = ref(false);
 
 const {
     parseRepetition,
     getHoursAndMinsFromDate,
     parseToStringDate,
     twoDigitsDate,
-    calcPastEvents,
+    calcPastDates,
     isWithinNext24Hours,
     isToday,
     parseDateTo_YYYYMMDD_HHMM,
-    makeMinutesFromIsoLocal
+    makeMinutesFromIsoLocal,
 } = useTime();
 
 onMounted(async () => {
@@ -233,20 +234,22 @@ onMounted(async () => {
             material.value = materialStore.getSelectedMaterial;
         }
 
-        if (reservation.value.toPayment) {
-            startPayPalPayment();
-        }
-
         getUserByReservationId(reservation.value._id);
 
         // si es el pasado, es hoy, o queda menos de 24 horas para que empiece, 
         // NO se puede editar
-        if (calcPastEvents(reservation.value.startTime) ||
+        if (calcPastDates(reservation.value.startTime) ||
             isToday(reservation.value.startTime) ||
             isWithinNext24Hours(parseDateTo_YYYYMMDD_HHMM(reservation.value.startTime))
         )
             canEdit.value = false;
         else canEdit.value = true;
+
+        if (reservation.value.toPayment) {
+            skipAnimation.value = true; // Desactivamos el v-expand del botón de pago
+            show.value = true;          // Forzamos que el div ya esté en el DOM
+            startPayPalPayment();       // Renderizamos PayPa
+        }
     }
 });
 
@@ -348,37 +351,52 @@ async function startPayPalPayment() {
     try {
         await loadPayPalSdk();
 
+        if (!show.value) {
+            skipAnimation.value = false;
+            show.value = true;
+        }
+
         const price = calculatePrice.value;
 
-        // Sólo renderizamos los botones si aún no existen
-        const container = document.getElementById('paypal-button-container');
-        if (container) {
-            container.innerHTML = ''
+        let container = document.getElementById('paypal-button-container');
+
+        // Si no existe, esperamos un pequeño delay de 50ms
+        if (!container) {
+            await nextTick();
+            await new Promise(resolve => setTimeout(resolve, 50));
+            container = document.getElementById('paypal-button-container');
         }
-        paypal.Buttons({
-            createOrder: () => {
-                return paypalService
-                    .createOrder(reservation.value._id, price)
-                    .then(r => r.data.orderID);
-            },
-            onApprove: async (data) => {
-                const res = await paypalService.captureOrder(data.orderID, reservation.value._id);
-                if (res.data.paymentStatus === 'COMPLETED') {
-                    toast.success('Pago completado con éxito');
-                    reservation.value.isPaid = true;
-                    reservationStore.setReservation(reservation.value);
-                    show.value = false;
+
+        if (container) {
+            container.innerHTML = '';
+            paypal.Buttons({
+                createOrder: () => {
+                    return paypalService
+                        .createOrder(reservation.value._id, price)
+                        .then(r => r.data.orderID);
+                },
+                onApprove: async (data) => {
+                    const res = await paypalService.captureOrder(data.orderID, reservation.value._id);
+                    if (res.data.paymentStatus === 'COMPLETED') {
+                        toast.success('Pago completado con éxito');
+                        reservation.value.isPaid = true;
+                        reservationStore.setReservation(reservation.value);
+                        show.value = false;
+                    }
+                },
+                onError: (err) => {
+                    console.error(err);
+                    toast.error('Error en el pago');
                 }
-            },
-            onError: (err) => {
-                console.error(err);
-                toast.error('Error en el pago');
-            }
-        }).render(container);
-        show.value = true;
+            }).render(container);
+        } else {
+            throw new Error("No se encontró el contenedor de PayPal");
+        }
+
     } catch (err) {
         console.error(err);
         toast.error('No se pudo cargar PayPal o crear la orden');
+        show.value = false; // Si falla, ocultamos el contenedor
     } finally {
         isLoading.value = false;
     }

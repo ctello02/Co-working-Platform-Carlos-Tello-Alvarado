@@ -23,14 +23,14 @@
                         <ScheduleXCalendar class="mt-4 mx-1" :calendar-app="calendarApp">
                             <template #timeGridEvent="{ calendarEvent }">
                                 <div
-                                    :style="calcPastEvents(calendarEvent) ? timeGridPastEventStyles : timeGridEventStyles">
+                                    :style="calcPastDates(calendarEvent) ? timeGridPastEventStyles : timeGridEventStyles">
                                     <span v-if="calendarEvent.options === true">🔁</span>
                                     {{ calendarEvent.title }}
                                 </div>
                             </template>
 
                             <template #monthGridEvent="{ calendarEvent }">
-                                <div :style="calcPastEvents(calendarEvent) ? pastEventStyles : eventStyles">
+                                <div :style="calcPastDates(calendarEvent) ? pastEventStyles : eventStyles">
                                     <span v-if="calendarEvent.options === true">🔁</span>
                                     {{ calendarEvent.title }}
                                 </div>
@@ -154,7 +154,6 @@ const {
     makeHoursAndMinutes,
     parseDateTo_YYYYMMDD_HHMM,
     parseToStringDate,
-    calcPastEvents,
     isWithinNext24Hours,
     isToday,
     calcPastDates,
@@ -288,7 +287,7 @@ const calendarApp = createCalendar({
 
             // si es el pasado, es hoy, o queda menos de 24 horas para que empiece, 
             // NO se puede editar
-            if (calcPastEvents(calendarEvent) ||
+            if (calcPastDates(calendarEvent) ||
                 isToday(calendarEvent.start) ||
                 isWithinNext24Hours(calendarEvent)
             )
@@ -312,7 +311,7 @@ const calendarApp = createCalendar({
             dialog.value = true;
         },
         onClickDateTime(dateTime) {
-            if (calcPastEvents(dateTime)) return;      // Si se hace clic en una fecha pasada, se ignora
+            if (calcPastDates(dateTime)) return;      // Si se hace clic en una fecha pasada, se ignora
 
             // Se dividen las fechas y horas en partes separadas
             let [datePart, timePart] = dateTime.split(" ");
